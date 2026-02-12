@@ -74,7 +74,7 @@ describe('JSXGraph PRT', () => {
             feedback: {},
         }, 'prt1');
 
-        expect(xml).toContain('all_correct: true;');
+        expect(xml).toContain('all_correct: is(1 = 0);');
     });
 });
 
