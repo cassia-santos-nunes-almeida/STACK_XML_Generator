@@ -188,8 +188,9 @@ function renderMatrixConfig(part, idx) {
 }
 
 function renderGradingConfig(part, idx) {
-    // Only show grading config for types that use tolerances
-    if (part.type === 'radio' || part.type === 'string' || part.type === 'jsxgraph') {
+    // Only show grading config for types that use numerical tolerances
+    // Algebraic and Matrix use symbolic equivalence (AlgEquiv), not tolerances
+    if (part.type !== 'numerical' && part.type !== 'units') {
         return '';
     }
 
