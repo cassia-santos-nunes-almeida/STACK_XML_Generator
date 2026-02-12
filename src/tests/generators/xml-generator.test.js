@@ -153,4 +153,21 @@ describe('XML Generator Integration', () => {
         expect(xml).toContain('ATUnits');
         expect(xml).not.toMatch(/<prt>[\s\S]*?<answertest>AlgEquiv<\/answertest>/);
     });
+
+    it('emits tans_ alias in questionvariables when checkPowerOf10 is enabled', () => {
+        const p10Data = {
+            ...sampleData,
+            parts: [{
+                ...sampleData.parts[0],
+                grading: { ...sampleData.parts[0].grading, checkPowerOf10: true },
+            }],
+        };
+        const xml = generateStackXML(p10Data);
+        expect(xml).toContain('tans_ans1: ans1;');
+    });
+
+    it('does NOT emit tans_ alias when checkPowerOf10 is disabled', () => {
+        const xml = generateStackXML(sampleData);
+        expect(xml).not.toContain('tans_ans1');
+    });
 });

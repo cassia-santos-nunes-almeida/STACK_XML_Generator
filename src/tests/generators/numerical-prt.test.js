@@ -89,6 +89,23 @@ describe('Numerical PRT Generator', () => {
         expect(xml).toContain('<tans>true</tans>');
     });
 
+    it('uses tans_ alias for teacher answer in p10 ratio (not student input)', () => {
+        const part = {
+            ...basePart,
+            grading: { ...basePart.grading, checkPowerOf10: true },
+        };
+        const xml = generateNumericalPRT(part, 'prt1');
+
+        // Must reference tans_ans1 for the teacher answer
+        expect(xml).toContain('tans_ans1');
+        // The safe_tans must use the alias
+        expect(xml).toMatch(/p10_safe_tans:.*tans_ans1/);
+        // The ratio must be: student_input / safe_teacher_answer
+        expect(xml).toMatch(/p10_ratio:\s*ans1\s*\/\s*p10_safe_tans/);
+        // Must NOT have the old bug pattern (ans1 / ans1)
+        expect(xml).not.toMatch(/p10_safe_tans:.*if is\(ans1 = 0\) then 1 else ans1/);
+    });
+
     it('does NOT include power-of-10 check when disabled', () => {
         const xml = generateNumericalPRT(basePart, 'prt1');
         expect(xml).not.toContain('p10_ratio');
