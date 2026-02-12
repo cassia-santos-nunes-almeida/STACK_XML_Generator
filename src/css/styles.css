@@ -306,6 +306,20 @@ button, .btn {
 .jsxgraph-section { margin-top: 8px; }
 .jsxgraph-section textarea { font-family: monospace; font-size: 0.82rem; }
 .jsxgraph-section label { margin-top: 8px; }
+.graph-preset-help {
+    margin: 6px 0 10px;
+    padding: 8px 12px;
+    background: #eff6ff;
+    border-left: 3px solid var(--primary);
+    border-radius: 4px;
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: var(--text);
+}
+.graph-preset-help code { background: #dbeafe; padding: 1px 4px; border-radius: 3px; font-size: 0.8rem; }
+.graph-params { margin: 8px 0; }
+.graph-params input[type="number"] { max-width: 120px; }
+.graph-regenerate { margin-top: 4px; }
 
 /* ===== String ===== */
 .string-section { margin-top: 8px; font-size: 0.85rem; }

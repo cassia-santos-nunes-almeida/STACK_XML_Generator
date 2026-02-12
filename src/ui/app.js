@@ -54,10 +54,9 @@ function initApp() {
         state.generateSampleValues();
     });
 
-    // Load template
-    const btnLoadTemplate = document.getElementById('btn-load-template');
-    if (btnLoadTemplate && templateSelect) {
-        btnLoadTemplate.addEventListener('click', () => {
+    // Load template on select change
+    if (templateSelect) {
+        templateSelect.addEventListener('change', () => {
             const key = templateSelect.value;
             if (key && TEMPLATES[key]) {
                 state.loadTemplate(TEMPLATES[key]);
@@ -65,9 +64,12 @@ function initApp() {
                 showNotification('Template loaded.', 'success');
             }
         });
+    }
 
-        // Also load on select change
-        templateSelect.addEventListener('change', () => {
+    // Load template button (optional)
+    const btnLoadTemplate = document.getElementById('btn-load-template');
+    if (btnLoadTemplate && templateSelect) {
+        btnLoadTemplate.addEventListener('click', () => {
             const key = templateSelect.value;
             if (key && TEMPLATES[key]) {
                 state.loadTemplate(TEMPLATES[key]);

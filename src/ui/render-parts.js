@@ -96,16 +96,39 @@ function renderRadioOptions(part, idx) {
 }
 
 function renderJSXGraphConfig(part, idx) {
+    const preset = part.graphPreset || '';
+    const showParams = preset !== '';
+
     return `
     <div class="jsxgraph-section">
         <div class="form-group">
             <label>Graph Type Preset</label>
             <select class="graph-preset" data-idx="${idx}">
                 <option value="">-- Custom Code --</option>
-                <option value="pointPlacement">Point Placement (students place points)</option>
-                <option value="functionSketch">Function Sketch (students draw curve)</option>
-                <option value="vectorDraw">Vector Drawing</option>
+                <option value="pointPlacement" ${preset === 'pointPlacement' ? 'selected' : ''}>Point Placement</option>
+                <option value="functionSketch" ${preset === 'functionSketch' ? 'selected' : ''}>Function Sketch</option>
+                <option value="vectorDraw" ${preset === 'vectorDraw' ? 'selected' : ''}>Vector Drawing</option>
             </select>
+        </div>
+        ${renderGraphPresetHelp(preset)}
+        <div class="graph-params ${showParams ? '' : 'hidden'}">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Max Points
+                        <span class="tooltip" title="Maximum number of points/interactions the student can place on the graph. Used in both the JS code (limit) and Maxima grading (expected count).">?</span>
+                    </label>
+                    <input type="number" class="graph-max-points" value="${part.graphMaxPoints || 5}"
+                        min="1" max="20" data-idx="${idx}">
+                </div>
+                <div class="form-group">
+                    <label>Tolerance
+                        <span class="tooltip" title="How close (in graph units) a student's point must be to the expected position to be considered correct.">?</span>
+                    </label>
+                    <input type="number" class="graph-tolerance" value="${part.graphTolerance || 5}"
+                        min="0.1" max="50" step="0.1" data-idx="${idx}">
+                </div>
+            </div>
+            <button class="small-btn graph-regenerate" data-idx="${idx}">Regenerate Code with These Settings</button>
         </div>
         <div class="form-group">
             <label>Client-Side JavaScript (Graph Setup)
@@ -120,6 +143,26 @@ function renderJSXGraphConfig(part, idx) {
             <textarea class="grading-code" rows="8" data-idx="${idx}" placeholder="/* Must set all_correct: true or false */&#10;all_correct: true;">${escapeHtml(part.gradingCode || '')}</textarea>
         </div>
     </div>`;
+}
+
+function renderGraphPresetHelp(preset) {
+    const help = {
+        pointPlacement: `<strong>Point Placement</strong> &mdash; Students click to place points on the graph.
+            The JS code limits how many points can be placed (<em>Max Points</em>).
+            The Maxima grading checks each student point against <code>correct_points</code> (a list you must define in Variables, e.g. <code>correct_points: [[10,20],[30,40]]</code>).
+            Each point must be within <em>Tolerance</em> graph units of the expected position.`,
+        functionSketch: `<strong>Function Sketch</strong> &mdash; Students click to place control points; a spline is drawn through them.
+            The Maxima grading compares each student Y-value against <code>expected_y</code> (a list you define in Variables).
+            A student passes if at least 80% of their points are within <em>Tolerance</em> of the expected values.`,
+        vectorDraw: `<strong>Vector Drawing</strong> &mdash; Students drag a start and end point to define a vector.
+            The answer is stored as <code>[startX, startY, endX, endY]</code>.
+            The Maxima grading compares the vector components (dx, dy) against <code>expected_vector: [dx, dy]</code> (defined in Variables).
+            <em>Max Points</em> is not used for this preset.`,
+    };
+
+    if (!preset || !help[preset]) return '';
+
+    return `<div class="graph-preset-help"><small>${help[preset]}</small></div>`;
 }
 
 function renderStringConfig(part, idx) {
@@ -350,6 +393,21 @@ function attachPartEvents(container, parts, handlers) {
         el.addEventListener('change', () => {
             if (el.value && handlers.onGraphPreset) {
                 handlers.onGraphPreset(parseInt(el.dataset.idx), el.value);
+            }
+        });
+    });
+    container.querySelectorAll('.graph-max-points').forEach(el => {
+        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'graphMaxPoints', parseInt(el.value)));
+    });
+    container.querySelectorAll('.graph-tolerance').forEach(el => {
+        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'graphTolerance', parseFloat(el.value)));
+    });
+    container.querySelectorAll('.graph-regenerate').forEach(el => {
+        el.addEventListener('click', () => {
+            const idx = parseInt(el.dataset.idx);
+            const presetSelect = container.querySelector(`.graph-preset[data-idx="${idx}"]`);
+            if (presetSelect?.value && handlers.onGraphPreset) {
+                handlers.onGraphPreset(idx, presetSelect.value);
             }
         });
     });
