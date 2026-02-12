@@ -4,6 +4,7 @@ import { renderVariables } from './render-variables.js';
 import { renderParts } from './render-parts.js';
 import { renderPreview } from './render-preview.js';
 import { renderImages, renderFeedbackEditor, renderHints } from './render-general.js';
+import { GRAPH_GRADING_TEMPLATES } from '../generators/prts/jsxgraph-prt.js';
 
 export default class UIManager {
     constructor(stateManager) {
@@ -109,7 +110,6 @@ export default class UIManager {
     }
 
     _applyGraphPreset(partIdx, presetKey) {
-        const { GRAPH_GRADING_TEMPLATES } = require('../generators/prts/jsxgraph-prt.js');
         const part = this.state.data.parts[partIdx];
         if (!part) return;
 
