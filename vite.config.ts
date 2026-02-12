@@ -2,9 +2,9 @@ import path from 'path';
 import { defineConfig, loadEnv } from 'vite';
 
 export default defineConfig(({ mode }) => {
-    base: '/STACK_XML_Generator/',
     const env = loadEnv(mode, '.', '');
     return {
+      base: '/STACK_XML_Generator/',  
       root: 'src',
       server: {
         port: 3000,
