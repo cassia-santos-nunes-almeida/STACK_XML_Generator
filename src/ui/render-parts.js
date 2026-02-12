@@ -68,6 +68,8 @@ function renderTypeSpecificUI(part, idx) {
             return renderJSXGraphConfig(part, idx);
         case INPUT_TYPES.STRING:
             return renderStringConfig(part, idx);
+        case INPUT_TYPES.MATRIX:
+            return renderMatrixConfig(part, idx);
         default:
             return '';
     }
@@ -128,6 +130,17 @@ function renderStringConfig(part, idx) {
             <input type="checkbox" class="case-sensitive" data-idx="${idx}" ${caseSensitive ? 'checked' : ''}>
             Case-sensitive matching
         </label>
+    </div>`;
+}
+
+function renderMatrixConfig(part, idx) {
+    return `
+    <div class="matrix-section">
+        <div class="form-group">
+            <label>Box Size (width of each cell input)</label>
+            <input type="number" class="matrix-box-size" value="${part.matrixBoxSize || 5}"
+                min="1" max="20" data-idx="${idx}">
+        </div>
     </div>`;
 }
 
@@ -305,6 +318,11 @@ function attachPartEvents(container, parts, handlers) {
     // Case sensitivity (string type)
     container.querySelectorAll('.case-sensitive').forEach(el => {
         el.addEventListener('change', () => handlers.onGrading(parseInt(el.dataset.idx), 'caseSensitive', el.checked));
+    });
+
+    // Matrix box size
+    container.querySelectorAll('.matrix-box-size').forEach(el => {
+        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'matrixBoxSize', parseInt(el.value)));
     });
 
     // MCQ options

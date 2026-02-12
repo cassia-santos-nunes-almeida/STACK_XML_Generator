@@ -49,6 +49,16 @@
                     <label>Question Name</label>
                     <input type="text" id="q-name" placeholder="e.g., ENG-101 Inductor Calc">
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Default Grade <span class="tooltip" title="Total marks for this question in Moodle">?</span></label>
+                        <input type="number" id="q-default-grade" value="1" min="0" step="0.5">
+                    </div>
+                    <div class="form-group">
+                        <label>Penalty <span class="tooltip" title="Mark deduction per failed attempt (0-1)">?</span></label>
+                        <input type="number" id="q-penalty" value="0.1" min="0" max="1" step="0.05">
+                    </div>
+                </div>
 
                 <div class="form-group">
                     <label>Images (Drag & Drop or Click)</label>

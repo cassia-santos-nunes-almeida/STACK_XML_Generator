@@ -6,12 +6,13 @@
  * @returns {string} XML string
  */
 export function generateMatrixInput(part) {
+    const boxsize = part.matrixBoxSize || 5;
     return `
     <input>
       <name>${part.answer}</name>
       <type>matrix</type>
       <tans>${part.answer}</tans>
-      <boxsize>5</boxsize>
+      <boxsize>${boxsize}</boxsize>
       <strictsyntax>1</strictsyntax>
       <insertstars>0</insertstars>
       <syntaxhint></syntaxhint>

@@ -14,6 +14,8 @@ export default class UIManager {
         this.els = {
             qName: document.getElementById('q-name'),
             qText: document.getElementById('q-text'),
+            qDefaultGrade: document.getElementById('q-default-grade'),
+            qPenalty: document.getElementById('q-penalty'),
             varList: document.getElementById('variables-list'),
             partList: document.getElementById('parts-list'),
             previewBox: document.getElementById('preview-box'),
@@ -44,6 +46,12 @@ export default class UIManager {
         }
         if (this.els.qText && this.els.qText.value !== data.questionText) {
             this.els.qText.value = data.questionText || '';
+        }
+        if (this.els.qDefaultGrade && this.els.qDefaultGrade.value !== String(data.defaultGrade ?? 1)) {
+            this.els.qDefaultGrade.value = data.defaultGrade ?? 1;
+        }
+        if (this.els.qPenalty && this.els.qPenalty.value !== String(data.penalty ?? 0.1)) {
+            this.els.qPenalty.value = data.penalty ?? 0.1;
         }
 
         // Render sub-sections
@@ -145,6 +153,18 @@ export default class UIManager {
         if (this.els.qText) {
             this.els.qText.addEventListener('input', () => {
                 this.state.updateGeneral(this.els.qName?.value || '', this.els.qText.value);
+            });
+        }
+        if (this.els.qDefaultGrade) {
+            this.els.qDefaultGrade.addEventListener('change', () => {
+                this.state.data.defaultGrade = parseFloat(this.els.qDefaultGrade.value) || 1;
+                this.state.notify();
+            });
+        }
+        if (this.els.qPenalty) {
+            this.els.qPenalty.addEventListener('change', () => {
+                this.state.data.penalty = parseFloat(this.els.qPenalty.value) || 0;
+                this.state.notify();
             });
         }
     }

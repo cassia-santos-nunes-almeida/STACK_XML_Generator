@@ -48,7 +48,10 @@ export function renderPreview(previewBox, liveVarsEl, validationBox, data, previ
             });
             partsHtml += '</div>';
         } else if (p.type === 'jsxgraph') {
-            partsHtml += '<div class="preview-graph-placeholder">[Interactive Graph]</div>';
+            partsHtml += `<div class="preview-graph-placeholder">
+                <strong>JSXGraph Interactive Area</strong><br>
+                <small>Students will interact with the graph here. Preview available in Moodle.</small>
+            </div>`;
         } else if (p.type === 'matrix') {
             partsHtml += '<div class="preview-input"><input type="text" disabled placeholder="matrix([[1,2],[3,4]])"></div>';
         } else {

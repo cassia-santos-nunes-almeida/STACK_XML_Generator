@@ -61,8 +61,8 @@ ${imageFiles}
     <generalfeedback format="html">
       <text><![CDATA[${convertMathDelimiters(generalFeedback)}]]></text>
     </generalfeedback>
-    <defaultgrade>${parts.length || 1}</defaultgrade>
-    <penalty>0.1</penalty>
+    <defaultgrade>${data.defaultGrade ?? (parts.length || 1)}</defaultgrade>
+    <penalty>${data.penalty ?? 0.1}</penalty>
     <hidden>0</hidden>
 ${hints}`;
 }
