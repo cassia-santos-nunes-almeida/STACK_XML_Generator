@@ -122,11 +122,13 @@ export default class UIManager {
         if (!part) return;
 
         const ansVar = part.answer || 'ans1';
+        const numPoints = part.graphMaxPoints || 5;
+        const tolerance = part.graphTolerance || 5;
 
-        // Generate preset graph code and grading code
-        const presetGraphCode = generatePresetGraphCode(presetKey, ansVar);
-        const presetGradingCode = GRAPH_GRADING_TEMPLATES[presetKey]?.(ansVar, 5, 5) || '';
+        const presetGraphCode = generatePresetGraphCode(presetKey, ansVar, numPoints);
+        const presetGradingCode = GRAPH_GRADING_TEMPLATES[presetKey]?.(ansVar, numPoints, tolerance) || '';
 
+        this.state.updatePart(partIdx, 'graphPreset', presetKey);
         this.state.updatePart(partIdx, 'graphCode', presetGraphCode);
         this.state.updatePart(partIdx, 'gradingCode', presetGradingCode);
     }
@@ -232,8 +234,9 @@ export default class UIManager {
 /**
  * Generates preset graph JavaScript code for common graph types.
  */
-function generatePresetGraphCode(presetKey, ansVar) {
+function generatePresetGraphCode(presetKey, ansVar, numPoints) {
     const refVar = `${ansVar}Ref`;
+    const maxPts = numPoints || 5;
 
     switch (presetKey) {
         case 'pointPlacement':
@@ -252,7 +255,7 @@ board.on('down', function(e) {
     var x = Math.round(coords[0]);
     var y = Math.round(coords[1]);
 
-    if (studentPoints.length < 5) {
+    if (studentPoints.length < ${maxPts}) {
         var p = board.create('point', [x, y], {
             name: '(' + x + ',' + y + ')',
             size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
