@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateAlgebraicPRT } from '../../generators/prts/algebraic-prt.js';
 import { generateMatrixPRT } from '../../generators/prts/matrix-prt.js';
 import { generateStringPRT } from '../../generators/prts/string-prt.js';
-import { generateJSXGraphPRT } from '../../generators/prts/jsxgraph-prt.js';
+import { generateJSXGraphPRT, GRAPH_GRADING_TEMPLATES } from '../../generators/prts/jsxgraph-prt.js';
 
 describe('Algebraic PRT', () => {
     it('uses AlgEquiv test', () => {
@@ -75,5 +75,36 @@ describe('JSXGraph PRT', () => {
         }, 'prt1');
 
         expect(xml).toContain('all_correct: true;');
+    });
+});
+
+describe('GRAPH_GRADING_TEMPLATES', () => {
+    it('pointPlacement uses arithmetic counting instead of apply("and")', () => {
+        const code = GRAPH_GRADING_TEMPLATES.pointPlacement('ans1', 5, 5);
+        // Must NOT use apply("and", ...) — "and" is a Maxima special form, not a function
+        expect(code).not.toContain('apply("and"');
+        // Should use arithmetic counting: sum 1s and compare to total
+        expect(code).toContain('num_correct');
+        expect(code).toContain('apply("+", pt_checks)');
+        expect(code).toContain('is(num_correct = 5)');
+    });
+
+    it('pointPlacement generates valid pt_checks with if/then/else', () => {
+        const code = GRAPH_GRADING_TEMPLATES.pointPlacement('ans1', 3, 10);
+        expect(code).toContain('then 1 else 0');
+        expect(code).toContain('i, 1, 3');
+    });
+
+    it('functionSketch uses arithmetic counting', () => {
+        const code = GRAPH_GRADING_TEMPLATES.functionSketch('ans1', 3);
+        // Already uses correct pattern
+        expect(code).not.toContain('apply("and"');
+        expect(code).toContain('num_correct');
+    });
+
+    it('vectorDraw does not use apply("and")', () => {
+        const code = GRAPH_GRADING_TEMPLATES.vectorDraw('ans1', 2);
+        expect(code).not.toContain('apply("and"');
+        expect(code).toContain('all_correct');
     });
 });

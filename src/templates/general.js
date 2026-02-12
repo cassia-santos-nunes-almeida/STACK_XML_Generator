@@ -121,13 +121,14 @@ correct_count: is(length(ans1) = 5);
 /* Check each point within tolerance */
 tolerance: 5;
 pt_checks: makelist(
-    is(abs(ans1[i][1] - correct_points[i][1]) < tolerance) and
-    is(abs(ans1[i][2] - correct_points[i][2]) < tolerance),
+    if is(abs(ans1[i][1] - correct_points[i][1]) < tolerance) and
+       is(abs(ans1[i][2] - correct_points[i][2]) < tolerance) then 1 else 0,
     i, 1, 5
 );
 
 /* All must be correct */
-all_correct: correct_count and is(apply("and", pt_checks));`,
+num_correct: apply("+", pt_checks);
+all_correct: correct_count and is(num_correct = 5);`,
                 feedback: {
                     correct: 'Correct! All points are in the right positions.',
                     incorrect: 'Some points are not in the correct positions. Check each key point of the function.',

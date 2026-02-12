@@ -31,25 +31,13 @@ export function generateNumericalPRT(part, prtName) {
 
     if (hasPowerOf10) {
         // Power-of-10 detection in feedback variables
-        // Checks if student answer differs from teacher answer by exactly a power of 10
-        feedbackVars = `
-      <feedbackvariables>
-        <text><![CDATA[
-/* Power of 10 detection */
-sa_ratio: ${answer} / ${answer};
-is_p10_high: is(abs(sa_ratio - 10) < 0.5);
-is_p10_low: is(abs(sa_ratio - 0.1) < 0.05);
-is_p10_error: is(is_p10_high or is_p10_low);
-]]></text>
-      </feedbackvariables>`;
-        // Note: In the PRT, sans refers to student input and tans to question variable.
-        // The feedbackvariables can reference sans directly.
-        // We rewrite to use the actual student/teacher vars
+        // Uses tans_<answer> alias (defined in questionvariables) for the teacher answer,
+        // because the student input shadows <answer> in PRT context.
         feedbackVars = `
       <feedbackvariables>
         <text><![CDATA[
 /* Power of 10 detection: check if student is off by factor of 10 or 0.1 */
-p10_safe_tans: if is(${answer} = 0) then 1 else ${answer};
+p10_safe_tans: if is(tans_${answer} = 0) then 1 else tans_${answer};
 p10_ratio: ${answer} / p10_safe_tans;
 is_p10_high: is(abs(p10_ratio - 10) < 1);
 is_p10_low: is(abs(p10_ratio - 0.1) < 0.01);

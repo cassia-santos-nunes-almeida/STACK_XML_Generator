@@ -59,13 +59,14 @@ correct_count: is(length(${answerVar}) = ${numPoints});
 /* Check each point is within tolerance of the expected position */
 tolerance: ${tolerance || 5};
 pt_checks: makelist(
-    is(abs(${answerVar}[i][1] - correct_points[i][1]) < tolerance) and
-    is(abs(${answerVar}[i][2] - correct_points[i][2]) < tolerance),
+    if is(abs(${answerVar}[i][1] - correct_points[i][1]) < tolerance) and
+       is(abs(${answerVar}[i][2] - correct_points[i][2]) < tolerance) then 1 else 0,
     i, 1, ${numPoints}
 );
 
 /* All points must be correct */
-all_correct: correct_count and is(apply("and", pt_checks));
+num_correct: apply("+", pt_checks);
+all_correct: correct_count and is(num_correct = ${numPoints});
 `,
 
     functionSketch: (answerVar, tolerance) => `

@@ -31,6 +31,15 @@ export function generateQuestionVariables(data) {
         }
     });
 
+    // Teacher-answer aliases for power-of-10 detection
+    // In PRT feedbackvariables, the student input shadows the question variable with
+    // the same name (e.g., ans1). This alias captures the teacher answer before that.
+    (data.parts || []).forEach(p => {
+        if (p.grading?.checkPowerOf10 && p.answer) {
+            lines.push(`tans_${p.answer}: ${p.answer};`);
+        }
+    });
+
     const content = lines.join('\n');
 
     return `

@@ -65,6 +65,9 @@ export function parseStackXML(xmlString) {
         // Skip old-format opt_ansX variables too
         if (parsed.name.startsWith('opt_ans')) return;
 
+        // Skip teacher-answer aliases for power-of-10 detection (tans_ansX)
+        if (parsed.name.startsWith('tans_')) return;
+
         const type = detectVariableType(parsed.value);
         state.variables.push({
             name: parsed.name,
