@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>STACK Question Builder for Moodle 4.5</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script>
+        window.MathJax = {
+            tex: { inlineMath: [['\\(', '\\)']], displayMath: [['\\[', '\\]']] },
+            svg: { fontCache: 'global' }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <script type="module" crossorigin src="/assets/index-XhoqI1Hp.js"></script>
+</head>
+<body>
+    <header>
+        <div class="brand">
+            <h1>STACK Question Builder</h1>
+            <span class="badge">Moodle 4.5</span>
+        </div>
+        <div class="actions">
+            <div class="template-group">
+                <select id="template-select">
+                    <option value="">-- Select Template --</option>
+                </select>
+            </div>
+            <div class="divider"></div>
+            <button id="btn-save" class="secondary">Save JSON</button>
+            <label class="btn secondary">
+                Load File <input type="file" id="file-upload" hidden accept=".json, .xml">
+            </label>
+            <button id="btn-preview-xml" class="secondary">Preview XML</button>
+            <button id="btn-export-xml" class="primary">Download Moodle XML</button>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- LEFT: Editor Panel -->
+        <section id="editor-panel">
+            <div id="diagnostics" class="hidden warning-banner" role="alert">
+                <strong>System Check:</strong> MathJax not loaded yet...
+            </div>
+
+            <!-- 1. General Settings -->
+            <div class="card">
+                <h2>1. General Settings</h2>
+                <div class="form-group">
+                    <label>Question Name</label>
+                    <input type="text" id="q-name" placeholder="e.g., ENG-101 Inductor Calc">
+                </div>
+
+                <div class="form-group">
+                    <label>Images (Drag & Drop or Click)</label>
+                    <div class="image-uploader" id="drop-zone">
+                        <span>+ Upload Image (PNG, JPG)</span>
+                        <input type="file" id="img-input" hidden accept="image/*">
+                    </div>
+                    <div id="image-list" class="image-grid"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Question Text (use {@var@} for variables)</label>
+                    <div class="toolbar" id="q-text-toolbar">
+                        <div id="toolbar-vars" class="toolbar-group"></div>
+                        <div class="toolbar-group border-left">
+                            <button class="tool-btn" data-insert="\( x^2 \)">Math</button>
+                            <button class="tool-btn" data-insert="\[ y = mx + c \]">Display</button>
+                            <button class="tool-btn" data-insert="<br>">Br</button>
+                            <button class="tool-btn" data-insert="<b>bold</b>">B</button>
+                            <button class="tool-btn" data-insert="<i>italic</i>">I</button>
+                        </div>
+                    </div>
+                    <textarea id="q-text" rows="6" placeholder="Calculate the area..."></textarea>
+                </div>
+            </div>
+
+            <!-- 2. Parts -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>2. Parts (Inputs & Grading)</h2>
+                    <button id="btn-add-part" class="small-btn">+ Add Part</button>
+                </div>
+                <div id="parts-list"></div>
+            </div>
+
+            <!-- 3. Variables -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>3. Variables (Maxima)</h2>
+                    <div style="display:flex; gap:10px;">
+                        <button id="btn-detect-vars" class="small-btn" style="background:#ecfdf5; color:#047857; border-color:#a7f3d0;">
+                            Auto-Detect {@vars@}
+                        </button>
+                        <button id="btn-add-var" class="small-btn">+ Add</button>
+                    </div>
+                </div>
+                <div id="variables-list"></div>
+                <div class="helper-bar">
+                    <small>Quick Insert:</small>
+                    <button class="syntax-btn" data-insert="rand(10)">rand()</button>
+                    <button class="syntax-btn" data-insert="rand_with_step(0,10,0.1)">rand_step()</button>
+                    <button class="syntax-btn" data-insert="rand([1,2,3,4,5])">rand_list()</button>
+                    <button class="syntax-btn" data-insert="integrate(x^2, x)">integrate()</button>
+                    <button class="syntax-btn" data-insert="diff(sin(x), x)">diff()</button>
+                    <button class="syntax-btn" data-insert="matrix([1,2],[3,4])">matrix()</button>
+                    <button class="syntax-btn" data-insert="determinant(A)">det()</button>
+                </div>
+                <button id="btn-gen-sample" class="secondary full-width" style="margin-top: 10px;">Generate Sample Values</button>
+            </div>
+
+            <!-- 4. Feedback & Hints -->
+            <div class="card">
+                <h2>4. Feedback & Hints</h2>
+                <div id="feedback-editor"></div>
+                <div id="hints-editor" style="margin-top:15px;"></div>
+            </div>
+        </section>
+
+        <!-- RIGHT: Live Preview -->
+        <section id="preview-panel">
+            <div class="sticky-wrapper">
+                <h2>Live Preview</h2>
+                <div id="preview-box" class="preview-content">
+                    <em>Start typing to see the preview...</em>
+                </div>
+
+                <div id="validation-warnings" class="hidden"></div>
+
+                <div class="card bg-light">
+                    <h3>Current Variable Values</h3>
+                    <ul id="live-vars" class="var-readout"></ul>
+                </div>
+
+                <div class="info-box">
+                    <small>Preview shows generated random values. Export to XML to test grading logic in Moodle.</small>
+                </div>
+            </div>
+        </section>
+    </main>
+
+</body>
+</html>
