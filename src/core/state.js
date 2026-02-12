@@ -16,6 +16,8 @@ export default class StateManager {
             images: [],
             generalFeedback: '',
             hints: [],
+            defaultGrade: 1,
+            penalty: 0.1,
         };
         this.previewValues = {};
     }

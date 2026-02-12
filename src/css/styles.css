@@ -67,9 +67,28 @@ header {
 
 .sticky-wrapper { position: sticky; top: 90px; }
 
+/* ===== Form Row (side-by-side fields) ===== */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+/* ===== Responsive ===== */
 @media (max-width: 1000px) {
     .container { grid-template-columns: 1fr; }
     .sticky-wrapper { position: static; }
+}
+
+@media (max-width: 768px) {
+    header { flex-direction: column; gap: 8px; padding: 10px 16px; }
+    .actions { justify-content: center; }
+    .container { padding: 12px; gap: 12px; }
+    .form-row { grid-template-columns: 1fr; }
+    .var-row { grid-template-columns: 40px 70px 70px 1fr 50px 26px; gap: 4px; }
+    .grading-inputs { grid-template-columns: 1fr; }
+    .syntax-categories { grid-template-columns: 1fr; }
 }
 
 /* ===== Cards ===== */
@@ -290,6 +309,10 @@ button, .btn {
 
 /* ===== String ===== */
 .string-section { margin-top: 8px; font-size: 0.85rem; }
+
+/* ===== Matrix ===== */
+.matrix-section { margin-top: 8px; }
+.matrix-section input[type="number"] { max-width: 120px; }
 
 /* ===== Feedback ===== */
 .feedback-section { margin-top: 12px; padding-top: 8px; border-top: 1px solid #f3f4f6; }
