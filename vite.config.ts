@@ -3,7 +3,6 @@ import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
     return {
-      base: '/STACK_XML_Generator/',  
       root: 'src',
       base: '/STACK_XML_Generator/',
       server: {
