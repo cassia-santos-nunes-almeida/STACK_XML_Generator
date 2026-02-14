@@ -40,8 +40,9 @@ export function generateStackXML(data) {
     });
 
     // 6. PRT elements (one per part — grading logic)
-    (data.parts || []).forEach((p, idx) => {
-        xml += generatePRT(p, idx);
+    const allParts = data.parts || [];
+    allParts.forEach((p, idx) => {
+        xml += generatePRT(p, idx, allParts);
     });
 
     // 7. Close question

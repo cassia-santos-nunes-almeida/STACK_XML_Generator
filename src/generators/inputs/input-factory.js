@@ -7,6 +7,7 @@ import { generateRadioInput } from './radio-input.js';
 import { generateMatrixInput } from './matrix-input.js';
 import { generateStringInput } from './string-input.js';
 import { generateJSXGraphInput } from './jsxgraph-input.js';
+import { generateNotesInput } from './notes-input.js';
 
 /**
  * Generates the <input> XML element for a given part.
@@ -30,6 +31,8 @@ export function generateInput(part) {
             return generateStringInput(part);
         case INPUT_TYPES.JSXGRAPH:
             return generateJSXGraphInput(part);
+        case INPUT_TYPES.NOTES:
+            return generateNotesInput(part);
         default:
             return generateAlgebraicInput(part);
     }
