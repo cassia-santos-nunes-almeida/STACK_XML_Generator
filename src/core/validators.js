@@ -145,6 +145,20 @@ export function validateQuestionData(data) {
                 issues.push({ level: 'warning', message: `Part (${label}): Graph grading code is empty.` });
             }
         }
+
+        // Validate prerequisites
+        if (part.prerequisite) {
+            const prereqPart = (data.parts || []).find(p => p.id === part.prerequisite);
+            if (!prereqPart) {
+                issues.push({ level: 'error', message: `Part (${label}): Prerequisite references a non-existent part.` });
+            } else if (prereqPart.id >= part.id) {
+                issues.push({ level: 'error', message: `Part (${label}): Prerequisite must reference an earlier part.` });
+            }
+            // Warn about circular prerequisites
+            if (prereqPart && prereqPart.prerequisite === part.id) {
+                issues.push({ level: 'error', message: `Part (${label}): Circular prerequisite detected with part (${String.fromCharCode(96 + prereqPart.id)}).` });
+            }
+        }
     });
 
     // Check variable expressions

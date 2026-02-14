@@ -15,6 +15,14 @@ export function generateQuestionHeader(data) {
     const partsHtml = parts.map(p => {
         let partContent = `<div class="stack-part">`;
         const label = String.fromCharCode(96 + p.id);
+
+        // Show prerequisite notice if this part depends on another
+        if (p.prerequisite) {
+            const prereqLabel = String.fromCharCode(96 + p.prerequisite);
+            partContent += `<div class="prerequisite-notice" style="background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;padding:8px;margin-bottom:8px;font-size:0.9em;">
+<strong>Prerequisite:</strong> You must answer part (${prereqLabel}) correctly before attempting this part.</div>`;
+        }
+
         partContent += `<p><strong>(${label})</strong> ${convertMathDelimiters(p.text || '')}</p>`;
 
         if (p.type === 'jsxgraph') {
@@ -24,6 +32,13 @@ ${p.graphCode || ''}
 [[/jsxgraph]]
 </div>
 <p style="display:none">[[input:${p.answer}]] [[validation:${p.answer}]]</p>`;
+        } else if (p.type === 'notes') {
+            // Notes/reasoning part — show instructions
+            partContent += `<div>[[input:${p.answer}]]</div>`;
+            if (p.notesRequireImage) {
+                partContent += `<div style="margin-top:8px;padding:10px;background:#eff6ff;border:1px solid #3b82f6;border-radius:4px;">
+<strong>Show your working:</strong> Please also photograph or scan your handwritten calculations and attach them using the file upload area below the question. Clear, legible working helps your teacher understand your reasoning and provide better feedback.</div>`;
+            }
         } else {
             partContent += `<div>[[input:${p.answer}]]</div>`;
             partContent += `<div style="margin-top:4px"><small style="color:#6b7280"><em>The box below shows how your answer was interpreted. Please verify it matches what you intended before submitting.</em></small></div>`;
@@ -131,6 +146,14 @@ function generateAutoHints(parts) {
         typeHints.push(
             'For the interactive graph: make sure you have placed all required points. ' +
             'You can use the reset button to start over if needed.'
+        );
+    }
+
+    if (types.has('notes')) {
+        typeHints.push(
+            'For reasoning parts: explain your approach step by step. ' +
+            'Show the formulas you used, any assumptions you made, and how you arrived at your answer. ' +
+            'If asked to attach handwritten working, make sure your photo or scan is clear and legible.'
         );
     }
 

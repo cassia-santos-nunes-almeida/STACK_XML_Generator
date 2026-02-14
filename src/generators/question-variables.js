@@ -31,12 +31,36 @@ export function generateQuestionVariables(data) {
         }
     });
 
-    // Teacher-answer aliases for power-of-10 detection
+    // Teacher-answer aliases for power-of-10 detection and prerequisite checking
     // In PRT feedbackvariables, the student input shadows the question variable with
     // the same name (e.g., ans1). This alias captures the teacher answer before that.
+    const needsTansAlias = new Set();
     (data.parts || []).forEach(p => {
         if (p.grading?.checkPowerOf10 && p.answer) {
-            lines.push(`tans_${p.answer}: ${p.answer};`);
+            needsTansAlias.add(p.answer);
+        }
+    });
+    // Also add aliases for parts that are prerequisites (needed by prerequisite check)
+    (data.parts || []).forEach(p => {
+        if (p.prerequisite) {
+            const prereqPart = (data.parts || []).find(pp => pp.id === p.prerequisite);
+            if (prereqPart && (prereqPart.type === 'numerical' || prereqPart.type === 'units')) {
+                needsTansAlias.add(prereqPart.answer);
+            }
+        }
+    });
+    needsTansAlias.forEach(answer => {
+        lines.push(`tans_${answer}: ${answer};`);
+    });
+
+    // Notes parts need a placeholder answer variable
+    (data.parts || []).forEach(p => {
+        if (p.type === INPUT_TYPES.NOTES && p.answer) {
+            // Only add if user hasn't defined this variable themselves
+            const userDefined = (data.variables || []).some(v => v.name === p.answer);
+            if (!userDefined) {
+                lines.push(`${p.answer}: "Your reasoning here";`);
+            }
         }
     });
 

@@ -127,6 +127,25 @@ export function parseStackXML(xmlString) {
             }
         }
 
+        // Detect image upload instruction for notes parts
+        const imgInstruction = pd.innerHTML.includes('photograph or scan your handwritten');
+        if (imgInstruction) {
+            const ansMatch = pd.innerHTML.match(/\[\[input:(ans\d+)\]\]/);
+            if (ansMatch) {
+                partTexts[ansMatch[1] + '_notesRequireImage'] = true;
+            }
+        }
+
+        // Detect prerequisite notice
+        const prereqNotice = pd.querySelector('.prerequisite-notice');
+        if (prereqNotice) {
+            const prereqMatch = prereqNotice.textContent.match(/part \(([a-z])\)/);
+            const ansMatch = pd.innerHTML.match(/\[\[input:(ans\d+)\]\]/);
+            if (prereqMatch && ansMatch) {
+                partTexts[ansMatch[1] + '_prerequisite'] = prereqMatch[1].charCodeAt(0) - 96;
+            }
+        }
+
         pd.remove();
     });
 
@@ -162,6 +181,10 @@ export function parseStackXML(xmlString) {
             part.type = INPUT_TYPES.UNITS;
         } else if (type === 'string') {
             part.type = INPUT_TYPES.STRING;
+        } else if (type === 'notes') {
+            part.type = INPUT_TYPES.NOTES;
+            part.notesAutoCredit = true;
+            part.notesRequireImage = false;
         } else if (type === 'matrix') {
             part.type = INPUT_TYPES.MATRIX;
         } else if (type === 'radio' || type === 'dropdown') {
@@ -188,6 +211,26 @@ export function parseStackXML(xmlString) {
             // Power of 10 detection
             if (fbVars.includes('is_p10') || fbVars.includes('p10_ratio')) {
                 part.grading.checkPowerOf10 = true;
+            }
+
+            // Prerequisite detection
+            if (fbVars.includes('prereq_passed')) {
+                const prereqMatch = fbVars.match(/Prerequisite check: verify part \(([a-z])\)/);
+                if (prereqMatch) {
+                    part.prerequisite = prereqMatch[1].charCodeAt(0) - 96;
+                }
+            }
+
+            // Notes auto-credit detection (PRT uses sans=1, tans=1 and quiet=1)
+            const firstNode = prt.querySelector('node');
+            if (firstNode) {
+                const quiet = firstNode.querySelector('quiet')?.textContent;
+                const sans = firstNode.querySelector('sans')?.textContent;
+                const tans = firstNode.querySelector('tans')?.textContent;
+                if (quiet === '1' && sans === '1' && tans === '1' && type === 'notes') {
+                    const score = firstNode.querySelector('truescore')?.textContent;
+                    part.notesAutoCredit = score === '1';
+                }
             }
 
             // Analyze nodes for tolerances and feedback
@@ -231,6 +274,16 @@ export function parseStackXML(xmlString) {
                     }
                 }
             });
+        }
+
+        // Recover notes image requirement from question text
+        if (partTexts[name + '_notesRequireImage']) {
+            part.notesRequireImage = true;
+        }
+
+        // Recover prerequisite from question text
+        if (partTexts[name + '_prerequisite']) {
+            part.prerequisite = partTexts[name + '_prerequisite'];
         }
 
         state.parts.push(part);

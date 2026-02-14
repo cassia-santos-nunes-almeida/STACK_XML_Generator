@@ -18,11 +18,11 @@ export function renderParts(container, parts, variables, handlers) {
         return;
     }
 
-    container.innerHTML = parts.map((p, idx) => renderPart(p, idx, variables)).join('');
+    container.innerHTML = parts.map((p, idx) => renderPart(p, idx, variables, parts)).join('');
     attachPartEvents(container, parts, handlers);
 }
 
-function renderPart(part, idx, variables) {
+function renderPart(part, idx, variables, allParts) {
     const label = String.fromCharCode(97 + idx);
     const ansVars = variables.filter(v => v.name.startsWith('ans')).map(v => v.name);
 
@@ -39,24 +39,51 @@ function renderPart(part, idx, variables) {
                     <option value="matrix" ${part.type === 'matrix' ? 'selected' : ''}>Matrix</option>
                     <option value="string" ${part.type === 'string' ? 'selected' : ''}>Text/String</option>
                     <option value="jsxgraph" ${part.type === 'jsxgraph' ? 'selected' : ''}>Interactive Graph</option>
+                    <option value="notes" ${part.type === 'notes' ? 'selected' : ''}>Show Reasoning</option>
                 </select>
                 <button class="del-part danger-btn" data-idx="${idx}" title="Delete part">&times;</button>
             </div>
         </div>
         <div class="part-body">
+            ${renderPrerequisiteSelector(part, idx, allParts)}
             <div class="form-group">
                 <label>Part Text / Instruction</label>
-                <textarea class="part-text" rows="2" data-idx="${idx}" placeholder="What should the student calculate?">${escapeHtml(part.text || '')}</textarea>
+                <textarea class="part-text" rows="2" data-idx="${idx}" placeholder="${part.type === 'notes' ? 'Explain your reasoning for the answer above...' : 'What should the student calculate?'}">${escapeHtml(part.text || '')}</textarea>
             </div>
+            ${part.type !== 'notes' ? `
             <div class="form-group">
                 <label>Answer Variable <span class="tooltip" title="The variable holding the correct answer (must be defined in Variables section)">?</span></label>
                 <input type="text" class="part-ans" value="${escapeAttr(part.answer || '')}" data-idx="${idx}" placeholder="e.g., ans1">
-            </div>
+            </div>` : `
+            <input type="hidden" class="part-ans" value="${escapeAttr(part.answer || '')}" data-idx="${idx}">
+            `}
 
             ${renderTypeSpecificUI(part, idx)}
             ${renderGradingConfig(part, idx)}
             ${renderFeedbackConfig(part, idx)}
         </div>
+    </div>`;
+}
+
+function renderPrerequisiteSelector(part, idx, allParts) {
+    // Only show prerequisite option if there are earlier parts to depend on
+    if (idx === 0 || !allParts || allParts.length < 2) return '';
+
+    const prerequisiteParts = allParts.filter((p, i) => i < idx);
+    const currentPrereq = part.prerequisite || '';
+
+    return `
+    <div class="form-group prerequisite-group">
+        <label>Prerequisite
+            <span class="tooltip" title="Require the student to answer a previous part correctly before this part is graded. If the prerequisite is not met, the student receives 0 marks and a message to complete the required part first.">?</span>
+        </label>
+        <select class="part-prerequisite" data-idx="${idx}">
+            <option value="">-- None (independent) --</option>
+            ${prerequisiteParts.map(p => {
+                const pLabel = String.fromCharCode(96 + p.id);
+                return `<option value="${p.id}" ${currentPrereq === p.id ? 'selected' : ''}>Part (${pLabel}) must be correct first</option>`;
+            }).join('')}
+        </select>
     </div>`;
 }
 
@@ -70,6 +97,8 @@ function renderTypeSpecificUI(part, idx) {
             return renderStringConfig(part, idx);
         case INPUT_TYPES.MATRIX:
             return renderMatrixConfig(part, idx);
+        case INPUT_TYPES.NOTES:
+            return renderNotesConfig(part, idx);
         default:
             return '';
     }
@@ -183,6 +212,46 @@ function renderMatrixConfig(part, idx) {
             <label>Box Size (width of each cell input)</label>
             <input type="number" class="matrix-box-size" value="${part.matrixBoxSize || 5}"
                 min="1" max="20" data-idx="${idx}">
+        </div>
+    </div>`;
+}
+
+function renderNotesConfig(part, idx) {
+    const autoCredit = part.notesAutoCredit !== false;
+    const requireImage = part.notesRequireImage || false;
+    const boxSize = part.notesBoxSize || 6;
+
+    return `
+    <div class="notes-section">
+        <div class="notes-info" style="background:#f0fdf4;border:1px solid #22c55e;border-radius:4px;padding:10px;margin-bottom:10px;font-size:0.9em;">
+            <strong>Show Reasoning</strong> &mdash; This part creates a text area where students explain their working,
+            approach, or reasoning. It is designed for teacher review, not automated grading.
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" class="notes-auto-credit" data-idx="${idx}" ${autoCredit ? 'checked' : ''}>
+                <strong>Award marks automatically</strong>
+                <span class="tooltip" title="When checked, students receive full marks for providing any response. The teacher can then review and adjust marks manually in Moodle. When unchecked, the part awards 0 marks and is purely for the teacher to review and grade manually.">?</span>
+            </label>
+        </div>
+        <div class="form-group">
+            <label>
+                <input type="checkbox" class="notes-require-image" data-idx="${idx}" ${requireImage ? 'checked' : ''}>
+                <strong>Ask for handwritten working (image upload)</strong>
+                <span class="tooltip" title="Adds an instruction asking students to photograph or scan their handwritten calculations and attach them via Moodle's file upload. This encourages students to show detailed working beyond what they type.">?</span>
+            </label>
+        </div>
+        <div class="form-group">
+            <label>Text area height (rows)</label>
+            <input type="number" class="notes-box-size" value="${boxSize}"
+                min="3" max="20" data-idx="${idx}">
+        </div>
+        <div class="form-group">
+            <label>Placeholder hint for students
+                <span class="tooltip" title="Optional hint text shown in the text area before the student starts typing.">?</span>
+            </label>
+            <input type="text" class="notes-syntax-hint" value="${escapeAttr(part.notesSyntaxHint || '')}" data-idx="${idx}"
+                placeholder="e.g., Describe your approach step by step...">
         </div>
     </div>`;
 }
@@ -411,6 +480,28 @@ function attachPartEvents(container, parts, handlers) {
                 handlers.onGraphPreset(idx, presetSelect.value);
             }
         });
+    });
+
+    // Prerequisite selector
+    container.querySelectorAll('.part-prerequisite').forEach(el => {
+        el.addEventListener('change', () => {
+            const val = el.value ? parseInt(el.value) : null;
+            handlers.onUpdatePart(parseInt(el.dataset.idx), 'prerequisite', val);
+        });
+    });
+
+    // Notes config
+    container.querySelectorAll('.notes-auto-credit').forEach(el => {
+        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'notesAutoCredit', el.checked));
+    });
+    container.querySelectorAll('.notes-require-image').forEach(el => {
+        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'notesRequireImage', el.checked));
+    });
+    container.querySelectorAll('.notes-box-size').forEach(el => {
+        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'notesBoxSize', parseInt(el.value)));
+    });
+    container.querySelectorAll('.notes-syntax-hint').forEach(el => {
+        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'notesSyntaxHint', el.value));
     });
 
     // Custom feedback

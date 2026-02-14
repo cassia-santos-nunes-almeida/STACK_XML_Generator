@@ -161,6 +161,11 @@ export default class StateManager {
             graphCode: '',
             gradingCode: '',
             feedback: {},
+            prerequisite: null,
+            notesAutoCredit: true,
+            notesRequireImage: false,
+            notesBoxSize: 6,
+            notesSyntaxHint: '',
         });
         this.notify();
     }
@@ -287,11 +292,26 @@ export default class StateManager {
 
     /** Renumber part IDs and answer variables after deletion */
     _renumberParts() {
+        // Build a map of old ID -> new ID for prerequisite updates
+        const idMap = {};
+        this.data.parts.forEach((p, idx) => {
+            idMap[p.id] = idx + 1;
+        });
+
         this.data.parts.forEach((p, idx) => {
             const newId = idx + 1;
             // Update answer variable reference if it follows the ansN pattern
             if (p.answer === `ans${p.id}`) {
                 p.answer = `ans${newId}`;
+            }
+            // Update prerequisite references
+            if (p.prerequisite) {
+                if (idMap[p.prerequisite] !== undefined) {
+                    p.prerequisite = idMap[p.prerequisite];
+                } else {
+                    // Prerequisite part was deleted
+                    p.prerequisite = null;
+                }
             }
             p.id = newId;
         });
@@ -341,6 +361,11 @@ export default class StateManager {
             if (!p.text) p.text = `Part ${String.fromCharCode(97 + idx)}:`;
             if (!p.id) p.id = idx + 1;
             if (!p.answer) p.answer = `ans${p.id}`;
+            if (p.prerequisite === undefined) p.prerequisite = null;
+            if (p.notesAutoCredit === undefined) p.notesAutoCredit = true;
+            if (p.notesRequireImage === undefined) p.notesRequireImage = false;
+            if (p.notesBoxSize === undefined) p.notesBoxSize = 6;
+            if (p.notesSyntaxHint === undefined) p.notesSyntaxHint = '';
 
             return p;
         });

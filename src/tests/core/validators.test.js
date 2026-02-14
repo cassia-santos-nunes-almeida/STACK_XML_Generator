@@ -130,5 +130,54 @@ describe('Validators', () => {
             });
             expect(issues.some(i => i.message.includes('tolerance') || i.message.includes('Tight'))).toBe(true);
         });
+
+        it('reports prerequisite referencing non-existent part', () => {
+            const issues = validateQuestionData({
+                name: 'Test', questionText: 'test',
+                parts: [{
+                    id: 1, type: 'numerical', answer: 'ans1',
+                    grading: {}, options: [],
+                    prerequisite: 99,
+                }],
+                variables: [],
+            });
+            expect(issues.some(i => i.message.includes('non-existent'))).toBe(true);
+        });
+
+        it('reports prerequisite referencing a later part', () => {
+            const issues = validateQuestionData({
+                name: 'Test', questionText: 'test',
+                parts: [
+                    { id: 1, type: 'numerical', answer: 'ans1', grading: {}, options: [], prerequisite: 2 },
+                    { id: 2, type: 'numerical', answer: 'ans2', grading: {}, options: [], prerequisite: null },
+                ],
+                variables: [],
+            });
+            expect(issues.some(i => i.message.includes('earlier part'))).toBe(true);
+        });
+
+        it('reports circular prerequisites', () => {
+            const issues = validateQuestionData({
+                name: 'Test', questionText: 'test',
+                parts: [
+                    { id: 1, type: 'numerical', answer: 'ans1', grading: {}, options: [], prerequisite: 2 },
+                    { id: 2, type: 'numerical', answer: 'ans2', grading: {}, options: [], prerequisite: 1 },
+                ],
+                variables: [],
+            });
+            expect(issues.some(i => i.message.includes('Circular'))).toBe(true);
+        });
+
+        it('accepts valid prerequisite chain', () => {
+            const issues = validateQuestionData({
+                name: 'Test', questionText: 'test',
+                parts: [
+                    { id: 1, type: 'numerical', answer: 'ans1', grading: {}, options: [], prerequisite: null },
+                    { id: 2, type: 'numerical', answer: 'ans2', grading: {}, options: [], prerequisite: 1 },
+                ],
+                variables: [],
+            });
+            expect(issues.some(i => i.message.includes('Prerequisite') && i.level === 'error')).toBe(false);
+        });
     });
 });

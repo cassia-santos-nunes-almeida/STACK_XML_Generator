@@ -21,6 +21,7 @@ export const INPUT_TYPES = {
     MATRIX: 'matrix',
     STRING: 'string',
     JSXGRAPH: 'jsxgraph',
+    NOTES: 'notes',
 };
 
 // Score modes for PRT nodes
@@ -98,6 +99,8 @@ export const DEFAULT_FEEDBACK = {
     powerOf10Error: 'Your answer appears to be off by a power of 10. Check your unit conversions or decimal placement.',
     wrongUnits: 'Check the units of your answer.',
     partialCredit: 'Partially correct. You are on the right track.',
+    notesReceived: 'Thank you for showing your reasoning. Your working will be reviewed by your teacher.',
+    prerequisiteNotMet: 'Please answer the prerequisite part correctly before attempting this part.',
 };
 
 // JSXGraph preset templates for common graph types

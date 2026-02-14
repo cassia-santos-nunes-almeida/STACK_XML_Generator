@@ -7,15 +7,18 @@ import { generateRadioPRT } from './radio-prt.js';
 import { generateMatrixPRT } from './matrix-prt.js';
 import { generateStringPRT } from './string-prt.js';
 import { generateJSXGraphPRT } from './jsxgraph-prt.js';
+import { generateNotesPRT } from './notes-prt.js';
+import { generatePrerequisiteNode } from './prerequisite-node.js';
 
 /**
  * Generates the complete PRT XML block for a given part.
  *
  * @param {object} part - Part data object
  * @param {number} partIndex - 0-based index of the part
+ * @param {Array} allParts - All parts (needed for prerequisite checking)
  * @returns {string} Complete <prt> XML element
  */
-export function generatePRT(part, partIndex) {
+export function generatePRT(part, partIndex, allParts) {
     const prtName = `prt${part.id || partIndex + 1}`;
 
     let prtBody = '';
@@ -41,10 +44,21 @@ export function generatePRT(part, partIndex) {
         case INPUT_TYPES.JSXGRAPH:
             prtBody = generateJSXGraphPRT(part, prtName);
             break;
+        case INPUT_TYPES.NOTES:
+            prtBody = generateNotesPRT(part, prtName);
+            break;
         default:
             // Fallback to algebraic equivalence
             prtBody = generateAlgebraicPRT(part, prtName);
             break;
+    }
+
+    // If this part has a prerequisite, wrap the PRT with a prerequisite check node
+    if (part.prerequisite && allParts) {
+        const prereqPart = allParts.find(p => p.id === part.prerequisite);
+        if (prereqPart) {
+            prtBody = generatePrerequisiteNode(part, prereqPart, prtName, prtBody);
+        }
     }
 
     return `
