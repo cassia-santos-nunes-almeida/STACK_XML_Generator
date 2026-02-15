@@ -39,29 +39,6 @@ export function convertMathDelimiters(str) {
 }
 
 /**
- * Creates an XML element with optional attributes and text content.
- */
-export function xmlElement(tag, content, attrs = {}) {
-    const attrStr = Object.entries(attrs)
-        .map(([k, v]) => ` ${k}="${escapeXml(v)}"`)
-        .join('');
-    if (content === null || content === undefined) {
-        return `<${tag}${attrStr}/>`;
-    }
-    return `<${tag}${attrStr}>${content}</${tag}>`;
-}
-
-/**
- * Creates a <text> element, optionally with CDATA wrapping.
- */
-export function textElement(content, useCdata = false) {
-    if (useCdata) {
-        return `<text>${cdata(content)}</text>`;
-    }
-    return `<text>${escapeXml(content)}</text>`;
-}
-
-/**
  * Creates a feedback element with HTML format.
  * Uses CDATA wrapping to preserve HTML content like <br>, <p>, {@var@} etc.
  */
@@ -72,10 +49,3 @@ export function feedbackElement(tag, message) {
     return `<${tag} format="html"><text>${cdata(message)}</text></${tag}>`;
 }
 
-/**
- * Indents a multi-line XML string by a given number of spaces.
- */
-export function indent(xml, spaces = 4) {
-    const pad = ' '.repeat(spaces);
-    return xml.split('\n').map(line => pad + line).join('\n');
-}

@@ -1,4 +1,5 @@
 // Renders the general settings section: name, text, images, feedback, hints
+import { escapeHtml, escapeAttr } from './escape-utils.js';
 
 /**
  * Renders the image gallery and handles image upload UI.
@@ -93,14 +94,4 @@ export function renderHints(container, hints, handlers) {
         el.addEventListener('click', () => handlers.onRemove(parseInt(el.dataset.idx)));
     });
     container.querySelector('.add-hint')?.addEventListener('click', () => handlers.onAdd());
-}
-
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function escapeAttr(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }

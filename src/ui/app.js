@@ -4,6 +4,7 @@ import UIManager from './ui-manager.js';
 import { generateStackXML } from '../generators/xml-generator.js';
 import { TEMPLATES } from '../templates/index.js';
 import { validateQuestionData } from '../core/validators.js';
+import { escapeHtml } from './escape-utils.js';
 
 function initApp() {
     const state = new StateManager();
@@ -173,10 +174,6 @@ function showNotification(message, type = 'info') {
         notif.classList.add('fade-out');
         setTimeout(() => notif.remove(), 300);
     }, 3000);
-}
-
-function escapeHtml(str) {
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
 // Initialize

@@ -2,7 +2,7 @@
 // FIXES BUG 6: rand_with_step returns number
 // FIXES BUG 7: Part IDs renumbered after deletion
 import { parseStackXML } from '../parsers/xml-parser.js';
-import { evaluatePreviewValue, detectVariableType } from '../parsers/variable-parser.js';
+import { evaluatePreviewValue } from '../parsers/variable-parser.js';
 import { DEFAULT_GRADING } from './constants.js';
 
 export default class StateManager {

@@ -1,5 +1,6 @@
 // Renders the variables editor section with syntax helpers and examples
 import { SYNTAX_EXAMPLES } from '../core/constants.js';
+import { escapeHtml, escapeAttr } from './escape-utils.js';
 
 /**
  * Renders the variables list with controls and syntax example panel.
@@ -137,12 +138,3 @@ function attachVariableEvents(container, handlers) {
     });
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function escapeAttr(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
