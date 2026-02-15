@@ -63,9 +63,13 @@ export function textElement(content, useCdata = false) {
 
 /**
  * Creates a feedback element with HTML format.
+ * Uses CDATA wrapping to preserve HTML content like <br>, <p>, {@var@} etc.
  */
 export function feedbackElement(tag, message) {
-    return `<${tag} format="html"><text>${escapeXml(message)}</text></${tag}>`;
+    if (!message) {
+        return `<${tag} format="html"><text></text></${tag}>`;
+    }
+    return `<${tag} format="html"><text>${cdata(message)}</text></${tag}>`;
 }
 
 /**
