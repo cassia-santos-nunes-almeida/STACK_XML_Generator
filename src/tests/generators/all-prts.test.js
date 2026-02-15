@@ -79,25 +79,35 @@ describe('JSXGraph PRT', () => {
 });
 
 describe('GRAPH_GRADING_TEMPLATES', () => {
-    it('pointPlacement uses arithmetic counting instead of apply("and")', () => {
+    it('pointPlacement converts matrix to list and uses nearest-point matching', () => {
         const code = GRAPH_GRADING_TEMPLATES.pointPlacement('ans1', 5, 5);
+        // Must convert student matrix to list via args()
+        expect(code).toContain('matrixp(student_raw)');
+        expect(code).toContain('args(student_raw)');
         // Must NOT use apply("and", ...) — "and" is a Maxima special form, not a function
         expect(code).not.toContain('apply("and"');
         // Should use arithmetic counting: sum 1s and compare to total
         expect(code).toContain('num_correct');
         expect(code).toContain('apply("+", pt_checks)');
         expect(code).toContain('is(num_correct = 5)');
+        // Should use nearest-point matching, not sequential
+        expect(code).toContain('matched_expected');
+        expect(code).toContain('matched_student');
+        expect(code).toContain('best_dist');
     });
 
-    it('pointPlacement generates valid pt_checks with if/then/else', () => {
+    it('pointPlacement generates feedback table with matched points', () => {
         const code = GRAPH_GRADING_TEMPLATES.pointPlacement('ans1', 3, 10);
         expect(code).toContain('then 1 else 0');
-        expect(code).toContain('i, 1, 3');
+        expect(code).toContain('feedback_msg');
+        expect(code).toContain('<table');
+        expect(code).toContain('Your closest');
     });
 
-    it('functionSketch uses arithmetic counting', () => {
+    it('functionSketch converts matrix to list and uses arithmetic counting', () => {
         const code = GRAPH_GRADING_TEMPLATES.functionSketch('ans1', 3);
-        // Already uses correct pattern
+        expect(code).toContain('matrixp(student_raw)');
+        expect(code).toContain('args(student_raw)');
         expect(code).not.toContain('apply("and"');
         expect(code).toContain('num_correct');
     });
