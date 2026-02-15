@@ -1,4 +1,5 @@
 // Renders the live preview panel with variable substitution and MathJax
+import { escapeHtml } from './escape-utils.js';
 
 /**
  * Renders the live preview of the question.
@@ -154,7 +155,3 @@ function validateForPreview(data, previewValues) {
     return warnings;
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}

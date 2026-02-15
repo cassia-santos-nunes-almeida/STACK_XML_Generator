@@ -1,6 +1,7 @@
 // Renders the parts (inputs & grading) editor section
 import { INPUT_TYPES, GRADING_PRESETS, DEFAULT_FEEDBACK } from '../core/constants.js';
 import { GRAPH_GRADING_TEMPLATES } from '../generators/prts/jsxgraph-prt.js';
+import { escapeHtml, escapeAttr } from './escape-utils.js';
 
 /**
  * Renders the parts list with type-specific editors and grading configuration.
@@ -522,12 +523,3 @@ function attachPartEvents(container, parts, handlers) {
     });
 }
 
-function escapeHtml(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
-
-function escapeAttr(str) {
-    if (!str) return '';
-    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-}
