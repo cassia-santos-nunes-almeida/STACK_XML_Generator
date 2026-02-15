@@ -3,6 +3,13 @@
 import { INPUT_TYPES, DEFAULT_GRADING } from '../core/constants.js';
 import { detectVariableType, parseVariableDefinition } from './variable-parser.js';
 
+const SIMPLE_TYPE_MAP = {
+    numerical: INPUT_TYPES.NUMERICAL,
+    units: INPUT_TYPES.UNITS,
+    string: INPUT_TYPES.STRING,
+    matrix: INPUT_TYPES.MATRIX,
+};
+
 /**
  * Parses a STACK question XML string into an editor state object.
  *
@@ -175,106 +182,22 @@ export function parseStackXML(xmlString) {
         if (type === 'algebraic') {
             // Could be algebraic or jsxgraph — check for graph code
             part.type = part.graphCode ? INPUT_TYPES.JSXGRAPH : INPUT_TYPES.ALGEBRAIC;
-        } else if (type === 'numerical') {
-            part.type = INPUT_TYPES.NUMERICAL;
-        } else if (type === 'units') {
-            part.type = INPUT_TYPES.UNITS;
-        } else if (type === 'string') {
-            part.type = INPUT_TYPES.STRING;
         } else if (type === 'notes') {
             part.type = INPUT_TYPES.NOTES;
             part.notesAutoCredit = true;
             part.notesRequireImage = false;
-        } else if (type === 'matrix') {
-            part.type = INPUT_TYPES.MATRIX;
         } else if (type === 'radio' || type === 'dropdown') {
             part.type = INPUT_TYPES.RADIO;
             // Recover options from ta_ansX variable (FIXES BUG 4)
             if (radioVarMap[name]) {
                 part.options = radioVarMap[name];
             }
+        } else if (SIMPLE_TYPE_MAP[type]) {
+            part.type = SIMPLE_TYPE_MAP[type];
         }
 
         // 8. Analyze PRT for grading settings
-        const prtName = name.replace('ans', 'prt');
-        const prt = Array.from(doc.querySelectorAll('prt'))
-            .find(p => p.querySelector('name')?.textContent === prtName);
-
-        if (prt) {
-            // Check for JSXGraph grading code
-            const fbVars = prt.querySelector('feedbackvariables text')?.textContent || '';
-            if (fbVars.includes('all_correct') || fbVars.includes('pt_checks')) {
-                part.type = INPUT_TYPES.JSXGRAPH;
-                part.gradingCode = fbVars.trim();
-            }
-
-            // Power of 10 detection
-            if (fbVars.includes('is_p10') || fbVars.includes('p10_ratio')) {
-                part.grading.checkPowerOf10 = true;
-            }
-
-            // Prerequisite detection
-            if (fbVars.includes('prereq_passed')) {
-                const prereqMatch = fbVars.match(/Prerequisite check: verify part \(([a-z])\)/);
-                if (prereqMatch) {
-                    part.prerequisite = prereqMatch[1].charCodeAt(0) - 96;
-                }
-            }
-
-            // Notes auto-credit detection (PRT uses sans=1, tans=1 and quiet=1)
-            const firstNode = prt.querySelector('node');
-            if (firstNode) {
-                const quiet = firstNode.querySelector('quiet')?.textContent;
-                const sans = firstNode.querySelector('sans')?.textContent;
-                const tans = firstNode.querySelector('tans')?.textContent;
-                if (quiet === '1' && sans === '1' && tans === '1' && type === 'notes') {
-                    const score = firstNode.querySelector('truescore')?.textContent;
-                    part.notesAutoCredit = score === '1';
-                }
-            }
-
-            // Analyze nodes for tolerances and feedback
-            const nodes = prt.querySelectorAll('node');
-            nodes.forEach(node => {
-                const nodeId = node.querySelector('name')?.textContent;
-                const testType = node.querySelector('answertest')?.textContent;
-                const testOpt = node.querySelector('testoptions')?.textContent;
-
-                // Extract custom feedback messages
-                const trueFb = node.querySelector('truefeedback text')?.textContent?.trim();
-                const falseFb = node.querySelector('falsefeedback text')?.textContent?.trim();
-
-                if (part.type === INPUT_TYPES.NUMERICAL || part.type === INPUT_TYPES.UNITS) {
-                    if (testType === 'ATNumAbs' || testType === 'ATUnits') {
-                        if (nodeId === '0') {
-                            part.grading.wideTol = parseFloat(testOpt) || 0.2;
-                            if (falseFb) part.feedback.incorrect = falseFb;
-                        }
-                        if (nodeId === '1') {
-                            part.grading.tightTol = parseFloat(testOpt) || 0.05;
-                            if (trueFb) part.feedback.correct = trueFb;
-                            if (falseFb) part.feedback.closeButInaccurate = falseFb;
-                        }
-                    }
-                    if (testType === 'ATNumSigFigs') {
-                        part.grading.checkSigFigs = true;
-                        part.grading.sigFigs = parseInt(testOpt) || 3;
-                        if (falseFb) part.feedback.wrongSigFigs = falseFb;
-                    }
-                }
-
-                // MCQ: recover correct answer
-                if (part.type === INPUT_TYPES.RADIO && nodeId === '0') {
-                    const correctTans = node.querySelector('tans')?.textContent;
-                    if (correctTans && part.options.length > 0) {
-                        const correctIdx = parseInt(correctTans) - 1;
-                        if (correctIdx >= 0 && correctIdx < part.options.length) {
-                            part.options[correctIdx].correct = true;
-                        }
-                    }
-                }
-            });
-        }
+        analyzePRT(doc, part, name, type);
 
         // Recover notes image requirement from question text
         if (partTexts[name + '_notesRequireImage']) {
@@ -296,6 +219,92 @@ export function parseStackXML(xmlString) {
 }
 
 /**
+ * Analyzes the PRT (Potential Response Tree) for a part and populates
+ * grading settings, feedback, and type overrides.
+ */
+function analyzePRT(doc, part, name, type) {
+    const prtName = name.replace('ans', 'prt');
+    const prt = Array.from(doc.querySelectorAll('prt'))
+        .find(p => p.querySelector('name')?.textContent === prtName);
+
+    if (!prt) return;
+
+    // Check for JSXGraph grading code
+    const fbVars = prt.querySelector('feedbackvariables text')?.textContent || '';
+    if (fbVars.includes('all_correct') || fbVars.includes('pt_checks')) {
+        part.type = INPUT_TYPES.JSXGRAPH;
+        part.gradingCode = fbVars.trim();
+    }
+
+    // Power of 10 detection
+    if (fbVars.includes('is_p10') || fbVars.includes('p10_ratio')) {
+        part.grading.checkPowerOf10 = true;
+    }
+
+    // Prerequisite detection
+    if (fbVars.includes('prereq_passed')) {
+        const prereqMatch = fbVars.match(/Prerequisite check: verify part \(([a-z])\)/);
+        if (prereqMatch) {
+            part.prerequisite = prereqMatch[1].charCodeAt(0) - 96;
+        }
+    }
+
+    // Notes auto-credit detection (PRT uses sans=1, tans=1 and quiet=1)
+    const firstNode = prt.querySelector('node');
+    if (firstNode) {
+        const quiet = firstNode.querySelector('quiet')?.textContent;
+        const sans = firstNode.querySelector('sans')?.textContent;
+        const tans = firstNode.querySelector('tans')?.textContent;
+        if (quiet === '1' && sans === '1' && tans === '1' && type === 'notes') {
+            const score = firstNode.querySelector('truescore')?.textContent;
+            part.notesAutoCredit = score === '1';
+        }
+    }
+
+    // Analyze nodes for tolerances and feedback
+    const nodes = prt.querySelectorAll('node');
+    nodes.forEach(node => {
+        const nodeId = node.querySelector('name')?.textContent;
+        const testType = node.querySelector('answertest')?.textContent;
+        const testOpt = node.querySelector('testoptions')?.textContent;
+
+        // Extract custom feedback messages
+        const trueFb = node.querySelector('truefeedback text')?.textContent?.trim();
+        const falseFb = node.querySelector('falsefeedback text')?.textContent?.trim();
+
+        if (part.type === INPUT_TYPES.NUMERICAL || part.type === INPUT_TYPES.UNITS) {
+            if (testType === 'ATNumAbs' || testType === 'ATUnits') {
+                if (nodeId === '0') {
+                    part.grading.wideTol = parseFloat(testOpt) || 0.2;
+                    if (falseFb) part.feedback.incorrect = falseFb;
+                }
+                if (nodeId === '1') {
+                    part.grading.tightTol = parseFloat(testOpt) || 0.05;
+                    if (trueFb) part.feedback.correct = trueFb;
+                    if (falseFb) part.feedback.closeButInaccurate = falseFb;
+                }
+            }
+            if (testType === 'ATNumSigFigs') {
+                part.grading.checkSigFigs = true;
+                part.grading.sigFigs = parseInt(testOpt) || 3;
+                if (falseFb) part.feedback.wrongSigFigs = falseFb;
+            }
+        }
+
+        // MCQ: recover correct answer
+        if (part.type === INPUT_TYPES.RADIO && nodeId === '0') {
+            const correctTans = node.querySelector('tans')?.textContent;
+            if (correctTans && part.options.length > 0) {
+                const correctIdx = parseInt(correctTans) - 1;
+                if (correctIdx >= 0 && correctIdx < part.options.length) {
+                    part.options[correctIdx].correct = true;
+                }
+            }
+        }
+    });
+}
+
+/**
  * Parses STACK radio option list: [[label, true/false], ...]
  */
 function parseRadioOptions(value) {
@@ -303,10 +312,7 @@ function parseRadioOptions(value) {
         const trimmed = value.trim();
         if (!trimmed.startsWith('[')) return [];
 
-        // Parse the nested list structure
         const options = [];
-        const innerMatch = trimmed.match(/\[([^\[\]]*(?:\[[^\]]*\][^\[\]]*)*)\]/);
-        if (!innerMatch) return [];
 
         // Split by ], [ to get individual option pairs
         const pairs = trimmed.match(/\["([^"]*)",\s*(true|false)\]/g);
