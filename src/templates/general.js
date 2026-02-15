@@ -73,36 +73,59 @@ board.create('text', [62, -5, 't (s)'], {fontSize: 14});
 board.create('text', [-3, 65, 'f(t)'], {fontSize: 14});
 
 var studentPoints = [];
+var segments = [];
+
+function getMouseCoords(e) {
+    var cPos = board.getCoordsTopLeftCorner(e),
+        absPos = JXG.getPosition(e),
+        dx = absPos[0] - cPos[0],
+        dy = absPos[1] - cPos[1];
+    return new JXG.Coords(JXG.COORDS_BY_SCREEN, [dx, dy], board);
+}
 
 board.on('down', function(e) {
-    var coords = board.getUsrCoordsOfMouse(e);
-    var x = Math.round(coords[0]);
-    var y = Math.round(coords[1]);
+    var canCreate = true, coords, el, x, y;
 
-    if (studentPoints.length < 5) {
-        var p = board.create('point', [x, y], {
-            name: '(' + x + ',' + y + ')',
-            size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
-        });
-        studentPoints.push(p);
+    if (e[JXG.touchProperty]) return;
 
-        if (studentPoints.length > 1) {
-            board.create('segment',
-                [studentPoints[studentPoints.length-2], studentPoints[studentPoints.length-1]],
-                {strokeColor: '#ef4444', strokeWidth: 2}
-            );
+    coords = getMouseCoords(e);
+
+    for (el in board.objects) {
+        if (JXG.isPoint(board.objects[el]) && board.objects[el].hasPoint(coords.scrCoords[1], coords.scrCoords[2])) {
+            canCreate = false;
+            break;
         }
-        updateAnswer();
     }
+
+    if (!canCreate || studentPoints.length >= 5) return;
+
+    x = Math.round(coords.usrCoords[1]);
+    y = Math.round(coords.usrCoords[2]);
+
+    var p = board.create('point', [x, y], {
+        name: '(' + x + ',' + y + ')',
+        size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb',
+        snapToGrid: true
+    });
+    p.on('drag', function() { updateAnswer(); });
+    studentPoints.push(p);
+
+    if (studentPoints.length > 1) {
+        segments.push(board.create('segment',
+            [studentPoints[studentPoints.length-2], studentPoints[studentPoints.length-1]],
+            {strokeColor: '#ef4444', strokeWidth: 2}
+        ));
+    }
+    updateAnswer();
 });
 
 function updateAnswer() {
     var arr = [];
     for (var i = 0; i < studentPoints.length; i++) {
-        arr.push('[' + studentPoints[i].X().toFixed(0) + ',' + studentPoints[i].Y().toFixed(0) + ']');
+        arr.push('[' + Math.round(studentPoints[i].X()) + ',' + Math.round(studentPoints[i].Y()) + ']');
     }
     var el = document.getElementById(ans1Ref);
-    if(el) el.value = '[' + arr.join(',') + ']';
+    if(el) el.value = studentPoints.length > 0 ? '[' + arr.join(',') + ']' : '[]';
 }
 
 board.create('button', [5, 60, 'Reset', function() {
@@ -112,8 +135,9 @@ board.create('button', [5, 60, 'Reset', function() {
         axis: true, showNavigation: true, showCopyright: false, grid: true
     });
     studentPoints = [];
+    segments = [];
     var el = document.getElementById(ans1Ref);
-    if(el) el.value = '';
+    if(el) el.value = '[]';
 }]);`,
                 gradingCode: `/* Check number of points */
 correct_count: is(length(ans1) = 5);
