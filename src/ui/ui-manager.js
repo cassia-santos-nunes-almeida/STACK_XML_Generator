@@ -242,34 +242,61 @@ function generatePresetGraphCode(presetKey, ansVar, numPoints) {
         case 'pointPlacement':
             return `var board = JXG.JSXGraph.initBoard(divid, {
     boundingbox: [-5, 70, 65, -70],
-    axis: true, showNavigation: true, showCopyright: false, grid: true
+    axis: true, showNavigation: false, showCopyright: false, grid: true
 });
 
-board.create('text', [62, -5, 't'], {fontSize: 14});
-board.create('text', [-3, 65, 'f(t)'], {fontSize: 14});
+board.create('text', [62, -5, 't'], {fontSize: 14, fixed: true});
+board.create('text', [-3, 65, 'f(t)'], {fontSize: 14, fixed: true});
 
 var studentPoints = [];
+var segments = [];
+var pointListDisplay = board.create('text', [-4, -60,
+    function() {
+        if (studentPoints.length === 0) return 'Points placed: none';
+        var pts = [];
+        for (var i = 0; i < studentPoints.length; i++) {
+            pts.push('(' + studentPoints[i].X().toFixed(0) + ',' + studentPoints[i].Y().toFixed(0) + ')');
+        }
+        return 'Points (' + studentPoints.length + '/${maxPts}): ' + pts.join(', ');
+    }
+], {fontSize: 12, fixed: true});
 
-board.on('down', function(e) {
-    var coords = board.getUsrCoordsOfMouse(e);
+var isResetting = false;
+
+function addPoint(x, y) {
+    if (studentPoints.length >= ${maxPts}) return;
+    var p = board.create('point', [x, y], {
+        name: '(' + x + ',' + y + ')',
+        size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb',
+        fixed: true
+    });
+    studentPoints.push(p);
+
+    if (studentPoints.length > 1) {
+        segments.push(board.create('segment',
+            [studentPoints[studentPoints.length-2], studentPoints[studentPoints.length-1]],
+            {strokeColor: '#ef4444', strokeWidth: 2}
+        ));
+    }
+    updateAnswer();
+}
+
+board.on('up', function(e) {
+    if (isResetting) return;
+    if (studentPoints.length >= ${maxPts}) return;
+
+    var target = e.target || e.srcElement;
+    if (target && target.tagName && target.tagName.toLowerCase() === 'button') return;
+
+    var i, coords = board.getUsrCoordsOfMouse(e);
     var x = Math.round(coords[0]);
     var y = Math.round(coords[1]);
 
-    if (studentPoints.length < ${maxPts}) {
-        var p = board.create('point', [x, y], {
-            name: '(' + x + ',' + y + ')',
-            size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
-        });
-        studentPoints.push(p);
-
-        if (studentPoints.length > 1) {
-            board.create('segment',
-                [studentPoints[studentPoints.length-2], studentPoints[studentPoints.length-1]],
-                {strokeColor: '#ef4444', strokeWidth: 2}
-            );
-        }
-        updateAnswer();
+    for (i = 0; i < studentPoints.length; i++) {
+        if (studentPoints[i].X() === x && studentPoints[i].Y() === y) return;
     }
+
+    addPoint(x, y);
 });
 
 function updateAnswer() {
@@ -281,33 +308,59 @@ function updateAnswer() {
     if(el) el.value = '[' + arr.join(',') + ']';
 }
 
-board.create('button', [5, 60, 'Reset', function() {
-    JXG.JSXGraph.freeBoard(board);
-    board = JXG.JSXGraph.initBoard(divid, {
-        boundingbox: [-5, 70, 65, -70],
-        axis: true, showNavigation: true, showCopyright: false, grid: true
-    });
+function doReset() {
+    isResetting = true;
+    for (var i = segments.length - 1; i >= 0; i--) { board.removeObject(segments[i]); }
+    for (var i = studentPoints.length - 1; i >= 0; i--) { board.removeObject(studentPoints[i]); }
     studentPoints = [];
+    segments = [];
     var el = document.getElementById(${refVar});
     if(el) el.value = '';
-}]);`;
+    board.update();
+    setTimeout(function() { isResetting = false; }, 100);
+}
+
+board.create('button', [5, 60, 'Reset', doReset]);
+
+/* Load existing answer (supports Moodle "Fill in correct answers") */
+(function() {
+    var el = document.getElementById(${refVar});
+    if (!el || !el.value) return;
+    var val = el.value.trim();
+    if (!val || val.length < 3) return;
+    try {
+        var inner = val.slice(1, -1);
+        var pairs = inner.match(/\\[([^\\]]+)\\]/g);
+        if (!pairs) return;
+        for (var i = 0; i < pairs.length && i < ${maxPts}; i++) {
+            var nums = pairs[i].slice(1, -1).split(',');
+            if (nums.length >= 2) {
+                addPoint(Math.round(parseFloat(nums[0])), Math.round(parseFloat(nums[1])));
+            }
+        }
+    } catch(e) {}
+})();`;
 
         case 'functionSketch':
             return `var board = JXG.JSXGraph.initBoard(divid, {
     boundingbox: [-2, 12, 12, -2],
-    axis: true, showNavigation: true, showCopyright: false, grid: true
+    axis: true, showNavigation: false, showCopyright: false, grid: true
 });
 
 var points = [];
 var curve = null;
 
-board.on('down', function(e) {
+board.on('up', function(e) {
+    var target = e.target || e.srcElement;
+    if (target && target.tagName && target.tagName.toLowerCase() === 'button') return;
+
     var coords = board.getUsrCoordsOfMouse(e);
     var x = Math.round(coords[0] * 2) / 2;
     var y = Math.round(coords[1] * 2) / 2;
 
     var p = board.create('point', [x, y], {
-        size: 3, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
+        size: 3, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb',
+        fixed: true
     });
     points.push(p);
 
