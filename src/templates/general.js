@@ -83,6 +83,26 @@ function getMouseCoords(e) {
     return new JXG.Coords(JXG.COORDS_BY_SCREEN, [dx, dy], board);
 }
 
+function addPoint(x, y) {
+    var p = board.create('point', [x, y], {
+        name: '(' + Math.round(x) + ',' + Math.round(y) + ')',
+        size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb',
+        snapToGrid: true
+    });
+    p.on('drag', function() {
+        p.setName('(' + Math.round(p.X()) + ',' + Math.round(p.Y()) + ')');
+        board.update();
+    });
+    studentPoints.push(p);
+    if (studentPoints.length > 1) {
+        segments.push(board.create('segment',
+            [studentPoints[studentPoints.length-2], studentPoints[studentPoints.length-1]],
+            {strokeColor: '#ef4444', strokeWidth: 2}
+        ));
+    }
+    return p;
+}
+
 board.on('down', function(e) {
     var canCreate = true, coords, el, x, y;
 
@@ -101,56 +121,77 @@ board.on('down', function(e) {
 
     x = Math.round(coords.usrCoords[1]);
     y = Math.round(coords.usrCoords[2]);
-
-    var p = board.create('point', [x, y], {
-        name: '(' + x + ',' + y + ')',
-        size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb',
-        snapToGrid: true
-    });
-    p.on('drag', function() { updateAnswer(); });
-    studentPoints.push(p);
-
-    if (studentPoints.length > 1) {
-        segments.push(board.create('segment',
-            [studentPoints[studentPoints.length-2], studentPoints[studentPoints.length-1]],
-            {strokeColor: '#ef4444', strokeWidth: 2}
-        ));
-    }
-    updateAnswer();
+    addPoint(x, y);
 });
 
-function updateAnswer() {
-    var arr = [];
+/* Use STACK binding API for proper state persistence */
+stack_jxg.custom_bind(ans1Ref, function() {
+    if (studentPoints.length === 0) return '[]';
+    var parts = [];
     for (var i = 0; i < studentPoints.length; i++) {
-        arr.push('[' + Math.round(studentPoints[i].X()) + ',' + Math.round(studentPoints[i].Y()) + ']');
+        parts.push('[' + Math.round(studentPoints[i].X()) + ',' + Math.round(studentPoints[i].Y()) + ']');
     }
-    var el = document.getElementById(ans1Ref);
-    if(el) el.value = studentPoints.length > 0 ? '[' + arr.join(',') + ']' : '[]';
-}
-
-board.create('button', [5, 60, 'Reset', function() {
-    JXG.JSXGraph.freeBoard(board);
-    board = JXG.JSXGraph.initBoard(divid, {
-        boundingbox: [-5, 70, 65, -70],
-        axis: true, showNavigation: true, showCopyright: false, grid: true
-    });
+    return '[' + parts.join(',') + ']';
+}, function(data) {
+    if (!data || data === '[]' || data === '') return;
+    var matches = data.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
+    if (!matches) return;
+    for (var i = segments.length - 1; i >= 0; i--) board.removeObject(segments[i]);
+    for (var i = studentPoints.length - 1; i >= 0; i--) board.removeObject(studentPoints[i]);
     studentPoints = [];
     segments = [];
-    var el = document.getElementById(ans1Ref);
-    if(el) el.value = '[]';
-}]);`,
-                gradingCode: `/* Check number of points */
-correct_count: is(length(ans1) = 5);
+    for (var i = 0; i < matches.length && i < 5; i++) {
+        var nums = matches[i].match(/(-?[\\d.]+)/g);
+        if (nums && nums.length >= 2) addPoint(parseFloat(nums[0]), parseFloat(nums[1]));
+    }
+    board.update();
+}, studentPoints);
 
-/* Check each point within tolerance */
+board.create('button', [5, 60, 'Reset', function() {
+    for (var i = segments.length - 1; i >= 0; i--) board.removeObject(segments[i]);
+    for (var i = studentPoints.length - 1; i >= 0; i--) board.removeObject(studentPoints[i]);
+    studentPoints = [];
+    segments = [];
+    board.update();
+}]);`,
+                gradingCode: `/* Convert student answer from matrix to list (Maxima parses [[a,b]] as matrix) */
+student_raw: ans1;
+student_pts: if matrixp(student_raw) then args(student_raw) else student_raw;
+
+/* Check number of points */
+student_count: length(student_pts);
+correct_count: is(student_count = 5);
+
+/* Tolerance for point matching */
 tolerance: 5;
-pt_checks: makelist(
-    if is(abs(ans1[i][1] - correct_points[i][1]) < tolerance) and
-       is(abs(ans1[i][2] - correct_points[i][2]) < tolerance) then 1 else 0,
-    i, 1, 5
+
+/* Nearest-point matching (order-independent) */
+matched_expected: makelist(false, i, 1, 5);
+matched_student: makelist(false, i, 1, student_count);
+
+match_results: block([],
+    for ei: 1 thru 5 do (
+        block([best_dist, best_si, ex, ey, d],
+            ex: correct_points[ei][1],
+            ey: correct_points[ei][2],
+            best_dist: 99999,
+            best_si: 0,
+            for si: 1 thru student_count do (
+                if not matched_student[si] then (
+                    d: sqrt((student_pts[si][1] - ex)^2 + (student_pts[si][2] - ey)^2),
+                    if is(d < best_dist) then (best_dist: d, best_si: si)
+                )
+            ),
+            if is(best_si > 0) and is(best_dist < tolerance) then (
+                matched_expected[ei]: true,
+                matched_student[best_si]: true
+            )
+        )
+    ),
+    matched_expected
 );
 
-/* All must be correct */
+pt_checks: makelist(if matched_expected[i] then 1 else 0, i, 1, 5);
 num_correct: apply("+", pt_checks);
 all_correct: correct_count and is(num_correct = 5);`,
                 feedback: {

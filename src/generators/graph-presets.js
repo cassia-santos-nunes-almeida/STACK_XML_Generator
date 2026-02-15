@@ -273,6 +273,27 @@ function getMouseCoords(e) {
     return new JXG.Coords(JXG.COORDS_BY_SCREEN, [dx, dy], board);
 }
 
+/* Create a point and wire it into the tracked arrays */
+function addPoint(x, y) {
+    var p = board.create('point', [x, y], {
+        name: '(' + Math.round(x) + ',' + Math.round(y) + ')',
+        size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb',
+        snapToGrid: true
+    });
+    p.on('drag', function() {
+        p.setName('(' + Math.round(p.X()) + ',' + Math.round(p.Y()) + ')');
+        board.update();
+    });
+    studentPoints.push(p);
+    if (studentPoints.length > 1) {
+        segments.push(board.create('segment',
+            [studentPoints[studentPoints.length-2], studentPoints[studentPoints.length-1]],
+            {strokeColor: '#ef4444', strokeWidth: 2}
+        ));
+    }
+    return p;
+}
+
 board.on('down', function(e) {
     var canCreate = true, coords, el, x, y;
 
@@ -291,47 +312,40 @@ board.on('down', function(e) {
 
     x = Math.round(coords.usrCoords[1]);
     y = Math.round(coords.usrCoords[2]);
-
-    var p = board.create('point', [x, y], {
-        name: '(' + x + ',' + y + ')',
-        size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb',
-        snapToGrid: true
-    });
-    p.on('drag', function() { updateAnswer(); });
-    studentPoints.push(p);
-
-    if (studentPoints.length > 1) {
-        segments.push(board.create('segment',
-            [studentPoints[studentPoints.length-2], studentPoints[studentPoints.length-1]],
-            {strokeColor: '#ef4444', strokeWidth: 2}
-        ));
-    }
-    updateAnswer();
+    addPoint(x, y);
 });
 
-function updateAnswer() {
+/* Use STACK binding API — serializer writes Maxima list, deserializer restores points */
+stack_jxg.custom_bind(${refVar}, function() {
+    if (studentPoints.length === 0) return '[]';
     var parts = [];
     for (var i = 0; i < studentPoints.length; i++) {
-        var px = Math.round(studentPoints[i].X());
-        var py = Math.round(studentPoints[i].Y());
-        parts.push('[' + px + ',' + py + ']');
+        parts.push('[' + Math.round(studentPoints[i].X()) + ',' + Math.round(studentPoints[i].Y()) + ']');
     }
-    var el = document.getElementById(${refVar});
-    if (el) {
-        el.value = studentPoints.length > 0 ? '[' + parts.join(',') + ']' : '[]';
-    }
-}
-
-board.create('button', [5, 60, 'Reset', function() {
-    JXG.JSXGraph.freeBoard(board);
-    board = JXG.JSXGraph.initBoard(divid, {
-        boundingbox: [-5, 70, 65, -70],
-        axis: true, showNavigation: true, showCopyright: false, grid: true
-    });
+    return '[' + parts.join(',') + ']';
+}, function(data) {
+    /* Deserialize: restore points from saved answer on page reload */
+    if (!data || data === '[]' || data === '') return;
+    var matches = data.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
+    if (!matches) return;
+    /* Clear existing points */
+    for (var i = segments.length - 1; i >= 0; i--) board.removeObject(segments[i]);
+    for (var i = studentPoints.length - 1; i >= 0; i--) board.removeObject(studentPoints[i]);
     studentPoints = [];
     segments = [];
-    var el = document.getElementById(${refVar});
-    if (el) el.value = '[]';
+    for (var i = 0; i < matches.length && i < ${maxPts}; i++) {
+        var nums = matches[i].match(/(-?[\\d.]+)/g);
+        if (nums && nums.length >= 2) addPoint(parseFloat(nums[0]), parseFloat(nums[1]));
+    }
+    board.update();
+}, studentPoints);
+
+board.create('button', [5, 60, 'Reset', function() {
+    for (var i = segments.length - 1; i >= 0; i--) board.removeObject(segments[i]);
+    for (var i = studentPoints.length - 1; i >= 0; i--) board.removeObject(studentPoints[i]);
+    studentPoints = [];
+    segments = [];
+    board.update();
 }]);`;
 
         case 'functionSketch':
@@ -349,6 +363,23 @@ function getMouseCoords(e) {
         dx = absPos[0] - cPos[0],
         dy = absPos[1] - cPos[1];
     return new JXG.Coords(JXG.COORDS_BY_SCREEN, [dx, dy], board);
+}
+
+function redrawCurve() {
+    if (curve) board.removeObject(curve);
+    if (points.length > 1) {
+        curve = board.create('spline', points, {strokeColor: '#ef4444', strokeWidth: 2});
+    }
+}
+
+function addSketchPoint(x, y) {
+    var p = board.create('point', [x, y], {
+        size: 3, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
+    });
+    p.on('drag', function() { redrawCurve(); });
+    points.push(p);
+    redrawCurve();
+    return p;
 }
 
 board.on('down', function(e) {
@@ -369,36 +400,33 @@ board.on('down', function(e) {
 
     var x = Math.round(coords.usrCoords[1] * 2) / 2;
     var y = Math.round(coords.usrCoords[2] * 2) / 2;
-
-    var p = board.create('point', [x, y], {
-        size: 3, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
-    });
-    p.on('drag', function() {
-        updateAnswer();
-        if (points.length > 1) {
-            if (curve) board.removeObject(curve);
-            curve = board.create('spline', points, {strokeColor: '#ef4444', strokeWidth: 2});
-        }
-    });
-    points.push(p);
-
-    if (points.length > 1 && curve) board.removeObject(curve);
-    if (points.length > 1) {
-        curve = board.create('spline', points, {strokeColor: '#ef4444', strokeWidth: 2});
-    }
-    updateAnswer();
+    addSketchPoint(x, y);
 });
 
-function updateAnswer() {
+/* Use STACK binding API */
+stack_jxg.custom_bind(${refVar}, function() {
+    if (points.length === 0) return '[]';
     var parts = [];
     for (var i = 0; i < points.length; i++) {
         var px = (Math.round(points[i].X() * 2) / 2).toFixed(1);
         var py = (Math.round(points[i].Y() * 2) / 2).toFixed(1);
         parts.push('[' + px + ',' + py + ']');
     }
-    var el = document.getElementById(${refVar});
-    if (el) el.value = points.length > 0 ? '[' + parts.join(',') + ']' : '[]';
-}`;
+    return '[' + parts.join(',') + ']';
+}, function(data) {
+    if (!data || data === '[]' || data === '') return;
+    var matches = data.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
+    if (!matches) return;
+    for (var i = points.length - 1; i >= 0; i--) board.removeObject(points[i]);
+    if (curve) board.removeObject(curve);
+    points = [];
+    curve = null;
+    for (var i = 0; i < matches.length; i++) {
+        var nums = matches[i].match(/(-?[\\d.]+)/g);
+        if (nums && nums.length >= 2) addSketchPoint(parseFloat(nums[0]), parseFloat(nums[1]));
+    }
+    board.update();
+}, points);`;
 
         case 'vectorDraw':
             return `var board = JXG.JSXGraph.initBoard(divid, {
@@ -415,15 +443,19 @@ var endPt = board.create('point', [3, 4], {
 
 board.create('arrow', [startPt, endPt], {strokeWidth: 3, strokeColor: '#10b981'});
 
-function updateAnswer() {
-    var el = document.getElementById(${refVar});
-    if (el) el.value = '[' + startPt.X().toFixed(1) + ',' + startPt.Y().toFixed(1) + ',' +
-                              endPt.X().toFixed(1) + ',' + endPt.Y().toFixed(1) + ']';
-}
-
-startPt.on('drag', updateAnswer);
-endPt.on('drag', updateAnswer);
-updateAnswer();`;
+/* Use STACK binding API — serialize as flat list [startX, startY, endX, endY] */
+stack_jxg.custom_bind(${refVar}, function() {
+    return '[' + startPt.X().toFixed(1) + ',' + startPt.Y().toFixed(1) + ',' +
+                 endPt.X().toFixed(1) + ',' + endPt.Y().toFixed(1) + ']';
+}, function(data) {
+    if (!data || data === '' || data === '[]') return;
+    var nums = data.match(/(-?[\\d.]+)/g);
+    if (nums && nums.length >= 4) {
+        startPt.moveTo([parseFloat(nums[0]), parseFloat(nums[1])]);
+        endPt.moveTo([parseFloat(nums[2]), parseFloat(nums[3])]);
+    }
+    board.update();
+}, [startPt, endPt]);`;
 
         default:
             return '// Custom graph code here';
