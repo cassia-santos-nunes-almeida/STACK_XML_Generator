@@ -18,6 +18,10 @@ export default class StateManager {
             hints: [],
             defaultGrade: 1,
             penalty: 0.1,
+            essayEnabled: false,
+            essayText: '',
+            essayGrade: 0,
+            essayAttachments: 1,
         };
         this.previewValues = {};
     }
@@ -128,6 +132,13 @@ export default class StateManager {
             this.data.hints.splice(index, 1);
             this.notify();
         }
+    }
+
+    // --- Essay ---
+
+    updateEssay(key, val) {
+        this.data[key] = val;
+        this.notify();
     }
 
     // --- Images ---
@@ -324,6 +335,10 @@ export default class StateManager {
         if (!this.data.parts) this.data.parts = [];
         if (!this.data.hints) this.data.hints = [];
         if (this.data.generalFeedback === undefined) this.data.generalFeedback = '';
+        if (this.data.essayEnabled === undefined) this.data.essayEnabled = false;
+        if (this.data.essayText === undefined) this.data.essayText = '';
+        if (this.data.essayGrade === undefined) this.data.essayGrade = 0;
+        if (this.data.essayAttachments === undefined) this.data.essayAttachments = 1;
     }
 
     /** Normalize imported data to current structure */
@@ -333,6 +348,10 @@ export default class StateManager {
         if (!data.parts) data.parts = [];
         if (!data.hints) data.hints = [];
         if (data.generalFeedback === undefined) data.generalFeedback = '';
+        if (data.essayEnabled === undefined) data.essayEnabled = false;
+        if (data.essayText === undefined) data.essayText = '';
+        if (data.essayGrade === undefined) data.essayGrade = 0;
+        if (data.essayAttachments === undefined) data.essayAttachments = 1;
 
         // Clean variables
         data.variables.forEach(v => {

@@ -29,6 +29,11 @@ export default class UIManager {
             toolbar: document.getElementById('toolbar-vars'),
             feedbackEditor: document.getElementById('feedback-editor'),
             hintsEditor: document.getElementById('hints-editor'),
+            essayEnabled: document.getElementById('essay-enabled'),
+            essaySettings: document.getElementById('essay-settings'),
+            essayText: document.getElementById('essay-text'),
+            essayGrade: document.getElementById('essay-grade'),
+            essayAttachments: document.getElementById('essay-attachments'),
         };
     }
 
@@ -37,6 +42,7 @@ export default class UIManager {
         this._initGeneralEvents();
         this._initToolbarEvents();
         this._initImageEvents();
+        this._initEssayEvents();
     }
 
     render(data, previewValues) {
@@ -88,6 +94,9 @@ export default class UIManager {
             onRemove: (idx) => this.state.removeHint(idx),
         });
 
+        // Essay companion section
+        this._renderEssay(data);
+
         renderPreview(this.els.previewBox, this.els.liveVars, this.els.validationBox, data, previewValues);
     }
 
@@ -131,6 +140,47 @@ export default class UIManager {
         this.state.updatePart(partIdx, 'graphPreset', presetKey);
         this.state.updatePart(partIdx, 'graphCode', presetGraphCode);
         this.state.updatePart(partIdx, 'gradingCode', presetGradingCode);
+    }
+
+    _renderEssay(data) {
+        if (this.els.essayEnabled) {
+            this.els.essayEnabled.checked = !!data.essayEnabled;
+        }
+        if (this.els.essaySettings) {
+            this.els.essaySettings.classList.toggle('hidden', !data.essayEnabled);
+        }
+        if (this.els.essayText && this.els.essayText !== document.activeElement) {
+            this.els.essayText.value = data.essayText || '';
+        }
+        if (this.els.essayGrade && this.els.essayGrade !== document.activeElement) {
+            this.els.essayGrade.value = data.essayGrade ?? 0;
+        }
+        if (this.els.essayAttachments && this.els.essayAttachments !== document.activeElement) {
+            this.els.essayAttachments.value = data.essayAttachments ?? 1;
+        }
+    }
+
+    _initEssayEvents() {
+        if (this.els.essayEnabled) {
+            this.els.essayEnabled.addEventListener('change', () => {
+                this.state.updateEssay('essayEnabled', this.els.essayEnabled.checked);
+            });
+        }
+        if (this.els.essayText) {
+            this.els.essayText.addEventListener('input', () => {
+                this.state.updateEssay('essayText', this.els.essayText.value);
+            });
+        }
+        if (this.els.essayGrade) {
+            this.els.essayGrade.addEventListener('change', () => {
+                this.state.updateEssay('essayGrade', parseFloat(this.els.essayGrade.value) || 0);
+            });
+        }
+        if (this.els.essayAttachments) {
+            this.els.essayAttachments.addEventListener('change', () => {
+                this.state.updateEssay('essayAttachments', parseInt(this.els.essayAttachments.value) || 1);
+            });
+        }
     }
 
     _initMathJaxCheck() {

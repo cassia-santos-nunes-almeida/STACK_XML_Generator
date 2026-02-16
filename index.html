@@ -87,6 +87,39 @@
                 </div>
             </div>
 
+            <!-- Essay Companion Question -->
+            <div class="card" id="essay-section">
+                <div class="card-header">
+                    <h2>Companion Essay Question</h2>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="essay-enabled">
+                        <span>Include image-upload essay</span>
+                    </label>
+                </div>
+                <div id="essay-settings" class="hidden">
+                    <div class="form-group">
+                        <label>Essay Prompt Text
+                            <span class="tooltip" title="Auto-generated from question name if left empty. Customise as needed.">?</span>
+                        </label>
+                        <textarea id="essay-text" rows="3" placeholder="Leave blank for auto-generated text"></textarea>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Grade (marks)
+                                <span class="tooltip" title="Default 0 — set higher if you want to grade the upload.">?</span>
+                            </label>
+                            <input type="number" id="essay-grade" min="0" step="1" value="0">
+                        </div>
+                        <div class="form-group">
+                            <label>Max Attachments
+                                <span class="tooltip" title="How many files the student can upload.">?</span>
+                            </label>
+                            <input type="number" id="essay-attachments" min="1" max="20" step="1" value="1">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- 2. Parts (Inputs) - Reordered to be before Variables -->
             <div class="card">
                 <div class="card-header">

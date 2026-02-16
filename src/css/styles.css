@@ -449,6 +449,19 @@ button, .btn {
 
 .hidden { display: none; }
 
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+.toggle-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
 .notification {
     position: fixed;
     top: 70px;
