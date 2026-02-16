@@ -4,6 +4,7 @@ import { generateQuestionHeader } from './question-header.js';
 import { generateQuestionVariables } from './question-variables.js';
 import { generateInput } from './inputs/input-factory.js';
 import { generatePRT } from './prts/prt-factory.js';
+import { generateEssayQuestion } from './essay-generator.js';
 
 /**
  * Generates complete STACK question XML for Moodle import.
@@ -45,9 +46,15 @@ export function generateStackXML(data) {
         xml += generatePRT(p, idx, allParts);
     });
 
-    // 7. Close question
+    // 7. Close STACK question
     xml += `
-  </question>
+  </question>`;
+
+    // 8. Optional companion essay question (image upload)
+    xml += generateEssayQuestion(data);
+
+    // 9. Close quiz wrapper
+    xml += `
 </quiz>`;
 
     return xml;
