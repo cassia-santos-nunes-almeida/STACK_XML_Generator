@@ -370,6 +370,34 @@ button, .btn {
     border-radius: 6px;
 }
 .preview-input input { max-width: 200px; }
+
+/* Matrix preview grid */
+.preview-matrix { margin: 8px 0; }
+.matrix-grid { border-collapse: collapse; margin: 4px 0; }
+.matrix-grid td { padding: 2px; }
+.matrix-cell {
+    width: 50px;
+    text-align: center;
+    font-family: monospace;
+    font-size: 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 4px;
+    background: #f9fafb;
+}
+.matrix-answer-hint { display: block; margin-top: 4px; color: var(--text-light); font-size: 0.8rem; }
+
+/* Notes/reasoning preview */
+.preview-notes { margin: 8px 0; }
+.preview-notes textarea {
+    font-family: inherit;
+    font-size: 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 8px;
+    background: #fffbeb;
+}
+.warning-badge { color: var(--warning, #d97706); font-size: 0.8rem; font-weight: 500; }
 .preview-feedback, .preview-hints { margin-top: 12px; font-size: 0.85rem; }
 .preview-feedback summary, .preview-hints summary { cursor: pointer; color: var(--primary); }
 
