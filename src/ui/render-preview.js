@@ -49,14 +49,28 @@ export function renderPreview(previewBox, liveVarsEl, validationBox, data, previ
             });
             partsHtml += '</div>';
         } else if (p.type === 'jsxgraph') {
+            const isVector = p.graphPreset === 'vectorDraw';
+            const vectorInfo = isVector && p.answer && previewValues[p.answer] !== undefined
+                ? `<br><small>Expected answer: <code>${escapeHtml(String(previewValues[p.answer]))}</code></small>` : '';
             partsHtml += `<div class="preview-graph-placeholder">
-                <strong>JSXGraph Interactive Area</strong><br>
-                <small>Students will interact with the graph here. Preview available in Moodle.</small>
+                <strong>JSXGraph Interactive Area</strong>${isVector ? ' (Vector Drawing)' : ''}<br>
+                <small>Students will interact with the graph here. Preview available in Moodle.</small>${vectorInfo}
             </div>`;
         } else if (p.type === 'matrix') {
-            partsHtml += '<div class="preview-input"><input type="text" disabled placeholder="matrix([[1,2],[3,4]])"></div>';
+            partsHtml += renderMatrixPreview(p, previewValues);
+        } else if (p.type === 'notes') {
+            const boxRows = p.notesBoxSize || 6;
+            const hint = p.notesSyntaxHint ? escapeHtml(p.notesSyntaxHint) : 'Explain your reasoning...';
+            const autoLabel = p.notesAutoCredit !== false
+                ? '<span class="correct-badge" title="Full marks awarded for any response">auto-credit</span>'
+                : '<span class="warning-badge" title="Teacher will grade manually">manual grading</span>';
+            partsHtml += `<div class="preview-notes">
+                <textarea disabled rows="${boxRows}" placeholder="${hint}" style="width:100%;resize:vertical;"></textarea>
+                <small>${autoLabel}</small>
+                ${p.notesRequireImage ? '<br><small>Students are also asked to upload handwritten working.</small>' : ''}
+            </div>`;
         } else {
-            const placeholder = p.type === 'units' ? 'e.g., 5.2 m/s' : p.type === 'string' ? 'Type answer...' : 'Numerical answer';
+            const placeholder = p.type === 'units' ? 'e.g., 5.2 m/s' : p.type === 'string' ? 'Type answer...' : p.type === 'algebraic' ? 'Algebraic expression' : 'Numerical answer';
             partsHtml += `<div class="preview-input"><input type="text" disabled placeholder="${placeholder}"></div>`;
         }
 
@@ -94,6 +108,56 @@ export function renderPreview(previewBox, liveVarsEl, validationBox, data, previ
     if (window.MathJax && window.MathJax.typesetPromise) {
         window.MathJax.typesetPromise([previewBox]).catch(() => {});
     }
+}
+
+/**
+ * Renders a matrix preview as a grid of input cells.
+ * Attempts to parse the answer variable value to determine matrix dimensions.
+ */
+function renderMatrixPreview(part, previewValues) {
+    const ansVal = part.answer && previewValues[part.answer] !== undefined
+        ? String(previewValues[part.answer]) : '';
+
+    // Try to parse matrix dimensions from expressions like "matrix([a11, a12], [a21, a22])"
+    // or substituted values like "matrix([(3), (2)], [(1), (4)])"
+    const rowMatches = ansVal.match(/\[([^\[\]]+)\]/g);
+    let rows = 2, cols = 2;
+    let cellValues = null;
+
+    if (rowMatches && rowMatches.length > 0) {
+        rows = rowMatches.length;
+        // Count columns from first row
+        const firstRowItems = rowMatches[0].replace(/[\[\]]/g, '').split(',');
+        cols = firstRowItems.length;
+
+        // Try to extract actual numeric values for display
+        cellValues = rowMatches.map(row => {
+            return row.replace(/[\[\]]/g, '').split(',').map(v => {
+                const trimmed = v.trim().replace(/^\(|\)$/g, '');
+                const num = parseFloat(trimmed);
+                return isNaN(num) ? trimmed : String(num);
+            });
+        });
+    }
+
+    let html = '<div class="preview-matrix">';
+    html += '<table class="matrix-grid"><tbody>';
+    for (let r = 0; r < rows; r++) {
+        html += '<tr>';
+        for (let c = 0; c < cols; c++) {
+            const val = cellValues && cellValues[r] && cellValues[r][c] !== undefined
+                ? escapeHtml(cellValues[r][c]) : '';
+            html += `<td><input type="text" disabled value="${val}" class="matrix-cell" size="${part.matrixBoxSize || 5}"></td>`;
+        }
+        html += '</tr>';
+    }
+    html += '</tbody></table>';
+
+    if (ansVal) {
+        html += `<small class="matrix-answer-hint">Expected: <code>${escapeHtml(ansVal)}</code></small>`;
+    }
+    html += '</div>';
+    return html;
 }
 
 /**
