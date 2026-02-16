@@ -7,22 +7,16 @@ Build randomised maths and engineering questions with variables, multiple input 
 ## Features
 
 - **7 input types** — Numerical, Algebraic, Units, Multiple Choice, Matrix, Text/String, Interactive Graph (JSXGraph)
+- **Notes/Reasoning parts** — Free-text explanation boxes with optional handwritten working upload (image attachments), supporting both auto-credit and manual teacher grading
 - **Maxima variables** — Define randomised parameters with `rand()`, `rand_with_step()`, expressions, and computed answers
 - **Grading pipeline** — Wide/tight tolerance, significant figures check, power-of-10 detection with configurable penalties
-- **Live preview** — See variable substitution and MathJax-rendered maths as you type
+- **Live preview** — See variable substitution and MathJax-rendered maths as you type, with validation warnings
 - **JSXGraph support** — Point placement, function sketching, and vector drawing presets with server-side Maxima grading
 - **Import/Export** — Save as JSON for editing later, or download Moodle-ready XML; import existing STACK XML files back into the editor
-- **Templates** — Pre-built question templates for common engineering/physics/maths scenarios
+- **Templates** — Pre-built question templates for common engineering, physics, and maths scenarios
 - **Images** — Drag-and-drop image upload, base64-embedded in the XML
 - **Hints & Feedback** — General feedback (worked solutions), per-part custom feedback, multi-attempt hints
-
-## Live Demo
-
-Visit the GitHub Pages deployment:
-
-```
-https://<your-username>.github.io/STACK_XML_Generator/
-```
+- **Part prerequisites** — Require students to answer earlier parts correctly before unlocking later ones
 
 ## Run Locally
 
@@ -35,8 +29,11 @@ npm install
 # Start dev server (http://localhost:3000)
 npm run dev
 
-# Run tests
+# Run tests (160+ tests)
 npm test
+
+# Watch mode
+npm run test:watch
 
 # Build for production
 npm run build
@@ -52,7 +49,7 @@ This repository includes a GitHub Actions workflow that automatically builds and
 2. Under **Build and deployment**, set **Source** to **GitHub Actions**
 3. Push to `main` — the workflow at `.github/workflows/deploy.yml` will build and deploy automatically
 
-> **Important:** The `base` path in `vite.config.ts` is set to `/STACK_XML_Generator/`. If you rename the repository, update this value to match.
+> **Note:** The `base` path in `vite.config.ts` is set to `/STACK_XML_Generator/`. If you rename the repository, update this value to match.
 
 ## Project Structure
 
@@ -83,7 +80,7 @@ src/
     render-variables.js   Variable editor rows
     render-toolbar.js     Formatting and variable-insert toolbar
     render-general.js     Images, feedback editor, hints
-  tests/                  Vitest test suite (120+ tests)
+  tests/                  Vitest test suite (160+ tests)
 ```
 
 ## Usage
@@ -94,6 +91,14 @@ src/
 4. **Add parts** — choose input type, set the answer variable, configure grading tolerances
 5. **Preview** — check the live preview panel on the right; click "Generate Sample Values" to re-roll randoms
 6. **Export** — click "Download Moodle XML" and import the file into Moodle via the question bank
+
+### Notes on Image Upload Parts
+
+When using the **Notes/Reasoning** input type with image upload enabled, keep in mind:
+
+- Students will be asked to photograph or scan their handwritten working and attach it
+- **Moodle configuration required:** You must enable "Allow attachments" in your Moodle quiz settings for the file upload area to appear
+- Uploaded images and written explanations are **not auto-marked** — the teacher must review and grade them manually
 
 ## License
 
