@@ -235,4 +235,253 @@ feedback_msg: sconcat(
         hints: ['Start from the origin (0,0) and work through each time interval.'],
         images: [],
     },
+
+    jsxgraph_sketch: {
+        name: 'Interactive: Function Sketch',
+        questionText: 'Sketch the graph of the function \\(y = f(x)\\) described below by clicking on the graph to place control points. A smooth curve will be drawn through your points.<br><br>The function has the following values:<br>\\(f({@x1@}) = {@y1@}\\), \\(f({@x2@}) = {@y2@}\\), \\(f({@x3@}) = {@y3@}\\), \\(f({@x4@}) = {@y4@}\\), \\(f({@x5@}) = {@y5@}\\).<br><small>Click to place 5 control points, then a spline will connect them.</small>',
+        variables: [
+            { name: 'x1', type: 'algebraic', value: '0' },
+            { name: 'x2', type: 'algebraic', value: '2' },
+            { name: 'x3', type: 'algebraic', value: '4' },
+            { name: 'x4', type: 'algebraic', value: '6' },
+            { name: 'x5', type: 'algebraic', value: '8' },
+            { name: 'y1', type: 'rand', value: 'rand(3)' },
+            { name: 'y2', type: 'rand', value: 'rand(5)+3' },
+            { name: 'y3', type: 'rand', value: 'rand(5)+5' },
+            { name: 'y4', type: 'rand', value: 'rand(5)+2' },
+            { name: 'y5', type: 'rand', value: 'rand(3)' },
+            { name: 'expected_y', type: 'algebraic', value: '[y1, y2, y3, y4, y5]' },
+            { name: 'ans1', type: 'algebraic', value: 'expected_y' },
+        ],
+        parts: [
+            {
+                id: 1,
+                type: 'jsxgraph',
+                text: 'Place 5 control points on the graph at the x-values given above:',
+                answer: 'ans1',
+                grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
+                options: [],
+                graphPreset: 'functionSketch',
+                graphMaxPoints: 5,
+                graphTolerance: 3,
+                graphCode: `var board = JXG.JSXGraph.initBoard(divid, {
+    boundingbox: [-2, 12, 12, -2],
+    axis: true, showNavigation: true, showCopyright: false, grid: true
+});
+
+var points = [];
+var curve = null;
+var stateInput = document.getElementById(ans1Ref);
+
+function serializePoints() {
+    if (points.length === 0) {
+        stateInput.value = '[]';
+    } else {
+        var parts = [];
+        for (var i = 0; i < points.length; i++) {
+            var px = (Math.round(points[i].X() * 2) / 2).toFixed(1);
+            var py = (Math.round(points[i].Y() * 2) / 2).toFixed(1);
+            parts.push('[' + px + ',' + py + ']');
+        }
+        stateInput.value = '[' + parts.join(',') + ']';
+    }
+    stateInput.dispatchEvent(new Event('change'));
+}
+
+function getMouseCoords(e) {
+    var cPos = board.getCoordsTopLeftCorner(e),
+        absPos = JXG.getPosition(e),
+        dx = absPos[0] - cPos[0],
+        dy = absPos[1] - cPos[1];
+    return new JXG.Coords(JXG.COORDS_BY_SCREEN, [dx, dy], board);
+}
+
+function redrawCurve() {
+    if (curve) board.removeObject(curve);
+    if (points.length > 1) {
+        curve = board.create('spline', points, {strokeColor: '#ef4444', strokeWidth: 2});
+    }
+}
+
+function addSketchPoint(x, y) {
+    var p = board.create('point', [x, y], {
+        size: 3, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
+    });
+    p.on('drag', function() {
+        redrawCurve();
+        serializePoints();
+    });
+    points.push(p);
+    redrawCurve();
+    return p;
+}
+
+/* Restore state from saved answer on page reload */
+if (stateInput.value && stateInput.value !== '' && stateInput.value !== '[]') {
+    var matches = stateInput.value.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var nums = matches[i].match(/(-?[\\d.]+)/g);
+            if (nums && nums.length >= 2) addSketchPoint(parseFloat(nums[0]), parseFloat(nums[1]));
+        }
+        board.update();
+    }
+}
+
+board.on('down', function(e) {
+    var canCreate = true, coords, el;
+
+    if (e[JXG.touchProperty]) return;
+
+    coords = getMouseCoords(e);
+
+    for (el in board.objects) {
+        if (JXG.isPoint(board.objects[el]) && board.objects[el].hasPoint(coords.scrCoords[1], coords.scrCoords[2])) {
+            canCreate = false;
+            break;
+        }
+    }
+
+    if (!canCreate) return;
+
+    var x = Math.round(coords.usrCoords[1] * 2) / 2;
+    var y = Math.round(coords.usrCoords[2] * 2) / 2;
+    addSketchPoint(x, y);
+    serializePoints();
+});`,
+                gradingCode: `/* Function Sketch Grading — Auto-generated */
+/* IMPORTANT: Define 'expected_y' in Question Variables as a list of Y-values:
+   expected_y: [0, 2, 4, 3, 1];
+   These correspond to the Y-value at each student control point. */
+
+/* Convert student answer from matrix to list */
+student_raw: ans1;
+student_pts: if matrixp(student_raw) then args(student_raw) else student_raw;
+
+tolerance: 3;
+
+/* Compare student Y-values to expected values */
+student_count: length(student_pts);
+num_expected: length(expected_y);
+pt_checks: makelist(
+    if is(i <= student_count) and is(abs(student_pts[i][2] - expected_y[i]) < tolerance) then 1 else 0,
+    i, 1, num_expected
+);
+
+num_correct: apply("+", pt_checks);
+all_correct: is(num_correct >= floor(0.8 * num_expected));
+
+/* Build detailed feedback */
+feedback_parts: makelist(
+    sconcat(
+        "<tr><td>", i, "</td>",
+        "<td>", string(expected_y[i]), "</td>",
+        "<td>", if is(i <= student_count) then string(student_pts[i][2]) else "missing", "</td>",
+        "<td>", if is(pt_checks[i] = 1) then "&#10004;" else "&#10008;", "</td></tr>"
+    ),
+    i, 1, num_expected
+);
+
+feedback_msg: sconcat(
+    "<strong>", string(num_correct), "/", string(num_expected), " points matched</strong> (need 80%)",
+    "<table border='1' cellpadding='4' style='border-collapse:collapse;margin-top:8px'>",
+    "<tr><th>#</th><th>Expected Y</th><th>Your Y</th><th>Result</th></tr>",
+    simplode(feedback_parts, ""),
+    "</table>"
+);`,
+                feedback: {
+                    correct: 'Correct! Your sketch matches the expected function shape.',
+                    incorrect: 'Some of your control points do not match the expected Y-values. Check the function values given in the question.',
+                },
+            },
+        ],
+        generalFeedback: 'The function passes through the points:<br>\\(({@x1@}, {@y1@})\\), \\(({@x2@}, {@y2@})\\), \\(({@x3@}, {@y3@})\\), \\(({@x4@}, {@y4@})\\), \\(({@x5@}, {@y5@})\\).<br>Place your control points at these coordinates and the spline will approximate the correct curve.',
+        hints: ['Start from the leftmost point and work to the right.', 'Check the Y-value at each given X-coordinate carefully.'],
+        images: [],
+    },
+
+    jsxgraph_vector: {
+        name: 'Interactive: Vector Drawing',
+        questionText: 'Draw the vector \\(\\vec{v} = ({@vx@}, {@vy@})\\) on the coordinate plane below.<br>Drag the start point (blue) and end point (red) so that the vector has the correct components.<br><small>The vector components are: \\(\\Delta x = {@vx@}\\), \\(\\Delta y = {@vy@}\\).</small>',
+        variables: [
+            { name: 'vx', type: 'rand', value: 'rand(7)-3' },
+            { name: 'vy', type: 'rand', value: 'rand(7)-3' },
+            { name: 'expected_vector', type: 'algebraic', value: '[vx, vy]' },
+            { name: 'ans1', type: 'algebraic', value: '[0, 0, vx, vy]' },
+        ],
+        parts: [
+            {
+                id: 1,
+                type: 'jsxgraph',
+                text: 'Drag the points to draw the vector with the correct components:',
+                answer: 'ans1',
+                grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
+                options: [],
+                graphPreset: 'vectorDraw',
+                graphMaxPoints: 4,
+                graphTolerance: 2,
+                graphCode: `var board = JXG.JSXGraph.initBoard(divid, {
+    boundingbox: [-10, 10, 10, -10],
+    axis: true, showNavigation: true, showCopyright: false, grid: true
+});
+
+var startPt = board.create('point', [0, 0], {
+    name: 'Start', size: 4, strokeColor: '#2563eb', fillColor: '#2563eb'
+});
+var endPt = board.create('point', [3, 4], {
+    name: 'End', size: 4, strokeColor: '#ef4444', fillColor: '#ef4444'
+});
+
+board.create('arrow', [startPt, endPt], {strokeWidth: 3, strokeColor: '#10b981'});
+
+/* Use STACK binding API — serialize as flat list [startX, startY, endX, endY] */
+stack_jxg.custom_bind(ans1Ref, function() {
+    return '[' + startPt.X().toFixed(1) + ',' + startPt.Y().toFixed(1) + ',' +
+                 endPt.X().toFixed(1) + ',' + endPt.Y().toFixed(1) + ']';
+}, function(data) {
+    if (!data || data === '' || data === '[]') return;
+    var nums = data.match(/(-?[\\d.]+)/g);
+    if (nums && nums.length >= 4) {
+        startPt.moveTo([parseFloat(nums[0]), parseFloat(nums[1])]);
+        endPt.moveTo([parseFloat(nums[2]), parseFloat(nums[3])]);
+    }
+    board.update();
+}, [startPt, endPt]);`,
+                gradingCode: `/* Vector Drawing Grading — Auto-generated */
+/* IMPORTANT: Define 'expected_vector' in Question Variables as [dx, dy]:
+   expected_vector: [3, 4]; */
+
+tolerance: 2;
+
+/* Student answer is a flat list [startX, startY, endX, endY] */
+dx_student: ans1[3] - ans1[1];
+dy_student: ans1[4] - ans1[2];
+
+dx_correct: expected_vector[1];
+dy_correct: expected_vector[2];
+
+dx_ok: is(abs(dx_student - dx_correct) < tolerance);
+dy_ok: is(abs(dy_student - dy_correct) < tolerance);
+all_correct: dx_ok and dy_ok;
+
+/* Build detailed feedback */
+feedback_msg: sconcat(
+    "<table border='1' cellpadding='4' style='border-collapse:collapse'>",
+    "<tr><th></th><th>Your vector</th><th>Expected</th><th>Result</th></tr>",
+    "<tr><td>dx</td><td>", string(dx_student), "</td><td>", string(dx_correct), "</td>",
+    "<td>", if dx_ok then "&#10004;" else "&#10008;", "</td></tr>",
+    "<tr><td>dy</td><td>", string(dy_student), "</td><td>", string(dy_correct), "</td>",
+    "<td>", if dy_ok then "&#10004;" else "&#10008;", "</td></tr>",
+    "</table>"
+);`,
+                feedback: {
+                    correct: 'Correct! Your vector has the right components.',
+                    incorrect: 'The vector components do not match. Remember: \\(\\Delta x = \\text{end}_x - \\text{start}_x\\) and \\(\\Delta y = \\text{end}_y - \\text{start}_y\\).',
+                },
+            },
+        ],
+        generalFeedback: 'The vector \\(\\vec{v} = ({@vx@}, {@vy@})\\) means:<br>\\(\\Delta x = {@vx@}\\) (horizontal component)<br>\\(\\Delta y = {@vy@}\\) (vertical component).<br>For example, starting at the origin \\((0,0)\\), the end point should be at \\(({@vx@}, {@vy@})\\).',
+        hints: ['The vector components are the differences: dx = end_x - start_x, dy = end_y - start_y.', 'You can place the start point anywhere — only the direction and magnitude matter.'],
+        images: [],
+    },
 };
