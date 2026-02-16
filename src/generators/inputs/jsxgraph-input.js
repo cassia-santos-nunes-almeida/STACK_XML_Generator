@@ -26,6 +26,6 @@ export function generateJSXGraphInput(part) {
       <checkanswertype>0</checkanswertype>
       <mustverify>0</mustverify>
       <showvalidation>0</showvalidation>
-      <options></options>
+      <options>hideanswer</options>
     </input>`;
 }

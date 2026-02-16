@@ -3,6 +3,7 @@ import { generateAlgebraicPRT } from '../../generators/prts/algebraic-prt.js';
 import { generateMatrixPRT } from '../../generators/prts/matrix-prt.js';
 import { generateStringPRT } from '../../generators/prts/string-prt.js';
 import { generateJSXGraphPRT, GRAPH_GRADING_TEMPLATES } from '../../generators/prts/jsxgraph-prt.js';
+import { generatePresetGraphCode } from '../../generators/graph-presets.js';
 
 describe('Algebraic PRT', () => {
     it('uses AlgEquiv test', () => {
@@ -96,6 +97,16 @@ describe('GRAPH_GRADING_TEMPLATES', () => {
         expect(code).toContain('best_dist');
     });
 
+    it('pointPlacement tracks actual match pairs for feedback', () => {
+        const code = GRAPH_GRADING_TEMPLATES.pointPlacement('ans1', 5, 5);
+        // Must track which student index was matched to each expected point
+        expect(code).toContain('match_pair');
+        expect(code).toContain('match_pair[ei]: best_si');
+        // Feedback table must use match_pair for correct lookup, not re-scan
+        expect(code).toContain('match_pair[i] > 0');
+        expect(code).toContain('student_pts[match_pair[i]]');
+    });
+
     it('pointPlacement generates feedback table with matched points', () => {
         const code = GRAPH_GRADING_TEMPLATES.pointPlacement('ans1', 3, 10);
         expect(code).toContain('then 1 else 0');
@@ -116,5 +127,49 @@ describe('GRAPH_GRADING_TEMPLATES', () => {
         const code = GRAPH_GRADING_TEMPLATES.vectorDraw('ans1', 2);
         expect(code).not.toContain('apply("and"');
         expect(code).toContain('all_correct');
+    });
+});
+
+describe('generatePresetGraphCode', () => {
+    it('pointPlacement uses direct input management instead of custom_bind', () => {
+        const code = generatePresetGraphCode('pointPlacement', 'ans1', 5);
+        // Must use direct input management for reliable serialization
+        expect(code).toContain('document.getElementById(ans1Ref)');
+        expect(code).toContain('serializePoints');
+        expect(code).toContain('stateInput.value');
+        expect(code).toContain("stateInput.dispatchEvent(new Event('change'))");
+        // Must NOT call custom_bind which fails with dynamically created objects
+        expect(code).not.toContain('stack_jxg.custom_bind');
+    });
+
+    it('pointPlacement calls serializePoints on click, drag, and reset', () => {
+        const code = generatePresetGraphCode('pointPlacement', 'ans1', 5);
+        // After adding a point via click
+        expect(code).toContain('addPoint(x, y);\n    serializePoints();');
+        // After drag
+        expect(code).toContain('serializePoints();');
+        // After reset
+        const resetSection = code.substring(code.indexOf('Reset'));
+        expect(resetSection).toContain('serializePoints();');
+    });
+
+    it('pointPlacement restores state on page reload', () => {
+        const code = generatePresetGraphCode('pointPlacement', 'ans1', 5);
+        expect(code).toContain('stateInput.value');
+        expect(code).toContain('addPoint(parseFloat');
+    });
+
+    it('functionSketch uses direct input management', () => {
+        const code = generatePresetGraphCode('functionSketch', 'ans1', 5);
+        expect(code).toContain('document.getElementById(ans1Ref)');
+        expect(code).toContain('serializePoints');
+        expect(code).not.toContain('stack_jxg.custom_bind');
+    });
+
+    it('pointPlacement respects maxPoints parameter', () => {
+        const code3 = generatePresetGraphCode('pointPlacement', 'ans1', 3);
+        expect(code3).toContain('studentPoints.length >= 3');
+        const code7 = generatePresetGraphCode('pointPlacement', 'ans1', 7);
+        expect(code7).toContain('studentPoints.length >= 7');
     });
 });

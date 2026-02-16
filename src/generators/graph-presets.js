@@ -100,6 +100,8 @@ tolerance: ${tolerance || 5};
    This avoids order-dependency — students don't need to place points in a specific order. */
 matched_expected: makelist(false, i, 1, ${numPoints});
 matched_student: makelist(false, i, 1, student_count);
+/* Track actual match pairing: which student index was matched to each expected point */
+match_pair: makelist(0, i, 1, ${numPoints});
 
 /* For each expected point, find the closest unmatched student point */
 match_results: block([],
@@ -117,7 +119,8 @@ match_results: block([],
             ),
             if is(best_si > 0) and is(best_dist < tolerance) then (
                 matched_expected[ei]: true,
-                matched_student[best_si]: true
+                matched_student[best_si]: true,
+                match_pair[ei]: best_si
             )
         )
     ),
@@ -129,22 +132,15 @@ pt_checks: makelist(if matched_expected[i] then 1 else 0, i, 1, ${numPoints});
 num_correct: apply("+", pt_checks);
 all_correct: correct_count and is(num_correct = ${numPoints});
 
-/* Build detailed feedback table showing which points matched */
+/* Build detailed feedback table showing which points matched.
+   Uses match_pair to look up the actual paired student point for each expected point. */
 feedback_parts: makelist(
     sconcat(
         "<tr><td>", i, "</td>",
         "<td>(", string(correct_points[i][1]), ", ", string(correct_points[i][2]), ")</td>",
         "<td>",
-        if matched_expected[i] then
-            block([si, found],
-                found: "?",
-                for si: 1 thru student_count do (
-                    if matched_student[si] then
-                        if is(sqrt((student_pts[si][1] - correct_points[i][1])^2 + (student_pts[si][2] - correct_points[i][2])^2) < tolerance) then
-                            found: sconcat("(", string(student_pts[si][1]), ", ", string(student_pts[si][2]), ")")
-                ),
-                found
-            )
+        if is(match_pair[i] > 0) then
+            sconcat("(", string(student_pts[match_pair[i]][1]), ", ", string(student_pts[match_pair[i]][2]), ")")
         else "no match",
         "</td>",
         "<td>", if is(pt_checks[i] = 1) then "&#10004;" else "&#10008;", "</td></tr>"
@@ -264,6 +260,25 @@ board.create('text', [-3, 65, 'f(t)'], {fontSize: 14});
 
 var studentPoints = [];
 var segments = [];
+/* Direct reference to the hidden input for reliable state management.
+   This avoids issues with custom_bind not tracking dynamically created objects. */
+var stateInput = document.getElementById(${refVar});
+
+/* Serialize current points to Maxima list format and update the hidden input.
+   Called on every state change (add, drag, reset) to keep the input in sync. */
+function serializePoints() {
+    if (studentPoints.length === 0) {
+        stateInput.value = '[]';
+    } else {
+        var parts = [];
+        for (var i = 0; i < studentPoints.length; i++) {
+            parts.push('[' + Math.round(studentPoints[i].X()) + ',' + Math.round(studentPoints[i].Y()) + ']');
+        }
+        stateInput.value = '[' + parts.join(',') + ']';
+    }
+    /* Dispatch change event so STACK picks up the updated value */
+    stateInput.dispatchEvent(new Event('change'));
+}
 
 function getMouseCoords(e) {
     var cPos = board.getCoordsTopLeftCorner(e),
@@ -283,6 +298,7 @@ function addPoint(x, y) {
     p.on('drag', function() {
         p.setName('(' + Math.round(p.X()) + ',' + Math.round(p.Y()) + ')');
         board.update();
+        serializePoints();
     });
     studentPoints.push(p);
     if (studentPoints.length > 1) {
@@ -292,6 +308,18 @@ function addPoint(x, y) {
         ));
     }
     return p;
+}
+
+/* Restore state from saved answer on page reload */
+if (stateInput.value && stateInput.value !== '' && stateInput.value !== '[]') {
+    var matches = stateInput.value.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
+    if (matches) {
+        for (var i = 0; i < matches.length && i < ${maxPts}; i++) {
+            var nums = matches[i].match(/(-?[\\d.]+)/g);
+            if (nums && nums.length >= 2) addPoint(parseFloat(nums[0]), parseFloat(nums[1]));
+        }
+        board.update();
+    }
 }
 
 board.on('down', function(e) {
@@ -313,32 +341,8 @@ board.on('down', function(e) {
     x = Math.round(coords.usrCoords[1]);
     y = Math.round(coords.usrCoords[2]);
     addPoint(x, y);
+    serializePoints();
 });
-
-/* Use STACK binding API — serializer writes Maxima list, deserializer restores points */
-stack_jxg.custom_bind(${refVar}, function() {
-    if (studentPoints.length === 0) return '[]';
-    var parts = [];
-    for (var i = 0; i < studentPoints.length; i++) {
-        parts.push('[' + Math.round(studentPoints[i].X()) + ',' + Math.round(studentPoints[i].Y()) + ']');
-    }
-    return '[' + parts.join(',') + ']';
-}, function(data) {
-    /* Deserialize: restore points from saved answer on page reload */
-    if (!data || data === '[]' || data === '') return;
-    var matches = data.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
-    if (!matches) return;
-    /* Clear existing points */
-    for (var i = segments.length - 1; i >= 0; i--) board.removeObject(segments[i]);
-    for (var i = studentPoints.length - 1; i >= 0; i--) board.removeObject(studentPoints[i]);
-    studentPoints = [];
-    segments = [];
-    for (var i = 0; i < matches.length && i < ${maxPts}; i++) {
-        var nums = matches[i].match(/(-?[\\d.]+)/g);
-        if (nums && nums.length >= 2) addPoint(parseFloat(nums[0]), parseFloat(nums[1]));
-    }
-    board.update();
-}, studentPoints);
 
 board.create('button', [5, 60, 'Reset', function() {
     for (var i = segments.length - 1; i >= 0; i--) board.removeObject(segments[i]);
@@ -346,6 +350,7 @@ board.create('button', [5, 60, 'Reset', function() {
     studentPoints = [];
     segments = [];
     board.update();
+    serializePoints();
 }]);`;
 
         case 'functionSketch':
@@ -356,6 +361,22 @@ board.create('button', [5, 60, 'Reset', function() {
 
 var points = [];
 var curve = null;
+var stateInput = document.getElementById(${refVar});
+
+function serializePoints() {
+    if (points.length === 0) {
+        stateInput.value = '[]';
+    } else {
+        var parts = [];
+        for (var i = 0; i < points.length; i++) {
+            var px = (Math.round(points[i].X() * 2) / 2).toFixed(1);
+            var py = (Math.round(points[i].Y() * 2) / 2).toFixed(1);
+            parts.push('[' + px + ',' + py + ']');
+        }
+        stateInput.value = '[' + parts.join(',') + ']';
+    }
+    stateInput.dispatchEvent(new Event('change'));
+}
 
 function getMouseCoords(e) {
     var cPos = board.getCoordsTopLeftCorner(e),
@@ -376,10 +397,25 @@ function addSketchPoint(x, y) {
     var p = board.create('point', [x, y], {
         size: 3, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
     });
-    p.on('drag', function() { redrawCurve(); });
+    p.on('drag', function() {
+        redrawCurve();
+        serializePoints();
+    });
     points.push(p);
     redrawCurve();
     return p;
+}
+
+/* Restore state from saved answer on page reload */
+if (stateInput.value && stateInput.value !== '' && stateInput.value !== '[]') {
+    var matches = stateInput.value.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var nums = matches[i].match(/(-?[\\d.]+)/g);
+            if (nums && nums.length >= 2) addSketchPoint(parseFloat(nums[0]), parseFloat(nums[1]));
+        }
+        board.update();
+    }
 }
 
 board.on('down', function(e) {
@@ -401,32 +437,8 @@ board.on('down', function(e) {
     var x = Math.round(coords.usrCoords[1] * 2) / 2;
     var y = Math.round(coords.usrCoords[2] * 2) / 2;
     addSketchPoint(x, y);
-});
-
-/* Use STACK binding API */
-stack_jxg.custom_bind(${refVar}, function() {
-    if (points.length === 0) return '[]';
-    var parts = [];
-    for (var i = 0; i < points.length; i++) {
-        var px = (Math.round(points[i].X() * 2) / 2).toFixed(1);
-        var py = (Math.round(points[i].Y() * 2) / 2).toFixed(1);
-        parts.push('[' + px + ',' + py + ']');
-    }
-    return '[' + parts.join(',') + ']';
-}, function(data) {
-    if (!data || data === '[]' || data === '') return;
-    var matches = data.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
-    if (!matches) return;
-    for (var i = points.length - 1; i >= 0; i--) board.removeObject(points[i]);
-    if (curve) board.removeObject(curve);
-    points = [];
-    curve = null;
-    for (var i = 0; i < matches.length; i++) {
-        var nums = matches[i].match(/(-?[\\d.]+)/g);
-        if (nums && nums.length >= 2) addSketchPoint(parseFloat(nums[0]), parseFloat(nums[1]));
-    }
-    board.update();
-}, points);`;
+    serializePoints();
+});`;
 
         case 'vectorDraw':
             return `var board = JXG.JSXGraph.initBoard(divid, {

@@ -167,6 +167,11 @@ describe('JSXGraph Input', () => {
         const xml = generateJSXGraphInput(part);
         expect(xml).toContain('<strictsyntax>0</strictsyntax>');
     });
+
+    it('hides teacher answer with hideanswer option', () => {
+        const xml = generateJSXGraphInput(part);
+        expect(xml).toContain('<options>hideanswer</options>');
+    });
 });
 
 describe('Input Factory', () => {
