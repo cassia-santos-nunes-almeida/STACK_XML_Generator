@@ -67,7 +67,7 @@ export function renderPreview(previewBox, liveVarsEl, validationBox, data, previ
             partsHtml += `<div class="preview-notes">
                 <textarea disabled rows="${boxRows}" placeholder="${hint}" style="width:100%;resize:vertical;"></textarea>
                 <small>${autoLabel}</small>
-                ${p.notesRequireImage ? '<br><small>Students are also asked to upload handwritten working.</small>' : ''}
+                ${p.notesRequireImage ? '<br><small>Students are also asked to upload handwritten working.</small><br><small><em>Uploaded images and text will need to be graded manually by the teacher.</em></small>' : ''}
             </div>`;
         } else {
             const placeholder = p.type === 'units' ? 'e.g., 5.2 m/s' : p.type === 'string' ? 'Type answer...' : p.type === 'algebraic' ? 'Algebraic expression' : 'Numerical answer';
@@ -205,6 +205,15 @@ function validateForPreview(data, previewValues) {
             });
         }
     });
+
+    // Warn about Moodle attachment settings when image upload is requested
+    const hasImageUpload = (data.parts || []).some(p => p.type === 'notes' && p.notesRequireImage);
+    if (hasImageUpload) {
+        warnings.push({
+            level: 'warning',
+            message: 'Image upload requested: Remember to enable "Allow attachments" in your Moodle quiz settings, otherwise students will not see the file upload area.',
+        });
+    }
 
     // Check for preview errors
     Object.entries(previewValues).forEach(([name, val]) => {

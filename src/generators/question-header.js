@@ -37,7 +37,8 @@ ${p.graphCode || ''}
             partContent += `<div>[[input:${p.answer}]]</div>`;
             if (p.notesRequireImage) {
                 partContent += `<div style="margin-top:8px;padding:10px;background:#eff6ff;border:1px solid #3b82f6;border-radius:4px;">
-<strong>Show your working:</strong> Please also photograph or scan your handwritten calculations and attach them using the file upload area below the question. Clear, legible working helps your teacher understand your reasoning and provide better feedback.</div>`;
+<strong>Show your working:</strong> Please also photograph or scan your handwritten calculations and attach them using the file upload area below the question. Clear, legible working helps your teacher understand your reasoning and provide better feedback.
+<br><small><em>Note: Your uploaded image and written explanation will be reviewed and graded by your teacher. This part is not auto-marked.</em></small></div>`;
             }
         } else {
             partContent += `<div>[[input:${p.answer}]]</div>`;
