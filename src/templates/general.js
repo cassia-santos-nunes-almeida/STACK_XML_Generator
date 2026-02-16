@@ -74,6 +74,20 @@ board.create('text', [-3, 65, 'f(t)'], {fontSize: 14});
 
 var studentPoints = [];
 var segments = [];
+var stateInput = document.getElementById(ans1Ref);
+
+function serializePoints() {
+    if (studentPoints.length === 0) {
+        stateInput.value = '[]';
+    } else {
+        var parts = [];
+        for (var i = 0; i < studentPoints.length; i++) {
+            parts.push('[' + Math.round(studentPoints[i].X()) + ',' + Math.round(studentPoints[i].Y()) + ']');
+        }
+        stateInput.value = '[' + parts.join(',') + ']';
+    }
+    stateInput.dispatchEvent(new Event('change'));
+}
 
 function getMouseCoords(e) {
     var cPos = board.getCoordsTopLeftCorner(e),
@@ -92,6 +106,7 @@ function addPoint(x, y) {
     p.on('drag', function() {
         p.setName('(' + Math.round(p.X()) + ',' + Math.round(p.Y()) + ')');
         board.update();
+        serializePoints();
     });
     studentPoints.push(p);
     if (studentPoints.length > 1) {
@@ -101,6 +116,18 @@ function addPoint(x, y) {
         ));
     }
     return p;
+}
+
+/* Restore state from saved answer on page reload */
+if (stateInput.value && stateInput.value !== '' && stateInput.value !== '[]') {
+    var matches = stateInput.value.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
+    if (matches) {
+        for (var i = 0; i < matches.length && i < 5; i++) {
+            var nums = matches[i].match(/(-?[\\d.]+)/g);
+            if (nums && nums.length >= 2) addPoint(parseFloat(nums[0]), parseFloat(nums[1]));
+        }
+        board.update();
+    }
 }
 
 board.on('down', function(e) {
@@ -122,30 +149,8 @@ board.on('down', function(e) {
     x = Math.round(coords.usrCoords[1]);
     y = Math.round(coords.usrCoords[2]);
     addPoint(x, y);
+    serializePoints();
 });
-
-/* Use STACK binding API for proper state persistence */
-stack_jxg.custom_bind(ans1Ref, function() {
-    if (studentPoints.length === 0) return '[]';
-    var parts = [];
-    for (var i = 0; i < studentPoints.length; i++) {
-        parts.push('[' + Math.round(studentPoints[i].X()) + ',' + Math.round(studentPoints[i].Y()) + ']');
-    }
-    return '[' + parts.join(',') + ']';
-}, function(data) {
-    if (!data || data === '[]' || data === '') return;
-    var matches = data.match(/\\[(-?[\\d.]+),\\s*(-?[\\d.]+)\\]/g);
-    if (!matches) return;
-    for (var i = segments.length - 1; i >= 0; i--) board.removeObject(segments[i]);
-    for (var i = studentPoints.length - 1; i >= 0; i--) board.removeObject(studentPoints[i]);
-    studentPoints = [];
-    segments = [];
-    for (var i = 0; i < matches.length && i < 5; i++) {
-        var nums = matches[i].match(/(-?[\\d.]+)/g);
-        if (nums && nums.length >= 2) addPoint(parseFloat(nums[0]), parseFloat(nums[1]));
-    }
-    board.update();
-}, studentPoints);
 
 board.create('button', [5, 60, 'Reset', function() {
     for (var i = segments.length - 1; i >= 0; i--) board.removeObject(segments[i]);
@@ -153,6 +158,7 @@ board.create('button', [5, 60, 'Reset', function() {
     studentPoints = [];
     segments = [];
     board.update();
+    serializePoints();
 }]);`,
                 gradingCode: `/* Convert student answer from matrix to list (Maxima parses [[a,b]] as matrix) */
 student_raw: ans1;
@@ -168,6 +174,7 @@ tolerance: 5;
 /* Nearest-point matching (order-independent) */
 matched_expected: makelist(false, i, 1, 5);
 matched_student: makelist(false, i, 1, student_count);
+match_pair: makelist(0, i, 1, 5);
 
 match_results: block([],
     for ei: 1 thru 5 do (
@@ -184,7 +191,8 @@ match_results: block([],
             ),
             if is(best_si > 0) and is(best_dist < tolerance) then (
                 matched_expected[ei]: true,
-                matched_student[best_si]: true
+                matched_student[best_si]: true,
+                match_pair[ei]: best_si
             )
         )
     ),
@@ -193,7 +201,30 @@ match_results: block([],
 
 pt_checks: makelist(if matched_expected[i] then 1 else 0, i, 1, 5);
 num_correct: apply("+", pt_checks);
-all_correct: correct_count and is(num_correct = 5);`,
+all_correct: correct_count and is(num_correct = 5);
+
+/* Build detailed feedback table showing which points matched */
+feedback_parts: makelist(
+    sconcat(
+        "<tr><td>", i, "</td>",
+        "<td>(", string(correct_points[i][1]), ", ", string(correct_points[i][2]), ")</td>",
+        "<td>",
+        if is(match_pair[i] > 0) then
+            sconcat("(", string(student_pts[match_pair[i]][1]), ", ", string(student_pts[match_pair[i]][2]), ")")
+        else "no match",
+        "</td>",
+        "<td>", if is(pt_checks[i] = 1) then "&#10004;" else "&#10008;", "</td></tr>"
+    ),
+    i, 1, 5
+);
+
+feedback_msg: sconcat(
+    "<strong>", string(num_correct), " / 5 points correct</strong>",
+    "<table border='1' cellpadding='4' style='border-collapse:collapse;margin-top:8px'>",
+    "<tr><th>#</th><th>Expected</th><th>Your closest</th><th>Result</th></tr>",
+    simplode(feedback_parts, ""),
+    "</table>"
+);`,
                 feedback: {
                     correct: 'Correct! All points are in the right positions.',
                     incorrect: 'Some points are not in the correct positions. Check each key point of the function.',
