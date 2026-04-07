@@ -3,11 +3,11 @@
 
 /**
  * Returns the default student instruction text for the companion question.
- * @param {string} questionName - The parent STACK question name
+ * @param {string} parentTitle - The parent STACK question title
  * @returns {string}
  */
-export function defaultEssayText(questionName) {
-    const name = questionName || 'this question';
+export function defaultCompanionText(parentTitle) {
+    const name = parentTitle || 'this question';
     return `<p>Take a clear photo or scan of your handwritten calculations and reasoning for <b>${name}</b>. Upload it here immediately after submitting your numerical answer above.</p>
 
 <p>Make sure your working shows:</p>
@@ -29,11 +29,11 @@ export function defaultEssayText(questionName) {
 
 /**
  * Generates grader info content for the companion question.
- * @param {string} questionName - The parent STACK question name
+ * @param {string} parentName - The parent STACK question name
  * @returns {string}
  */
-function graderInfoContent(questionName) {
-    const name = questionName || 'the parent question';
+function graderInfoContent(parentName) {
+    const name = parentName || 'the parent question';
     return `<h4>Manual Grading Notes \u2014 ${escapeXml(name)}</h4>
 
 <p>This companion question collects handwritten working for <b>${escapeXml(name)}</b>. When reviewing submissions, check:</p>
@@ -49,24 +49,27 @@ function graderInfoContent(questionName) {
 }
 
 /**
- * Generates a Moodle Essay question XML block.
+ * Generates a companion Moodle Essay question XML string.
  * This is a standard Moodle essay (not STACK) appended after the STACK question
  * inside the same <quiz> wrapper so both import together.
  *
  * Field names verified against real Moodle 4.5 Essay XML export.
  *
- * @param {object} data - Full question data object
- * @returns {string} Essay question XML, or empty string if essay is disabled
+ * @param {string} parentName - Parent question name, used to construct companion name
+ * @param {string} parentTitle - Parent question title, used in question text
+ * @param {number} [gradeValue=0] - Default grade for the companion question
+ * @param {object} [options] - Additional options
+ * @param {string} [options.customText=''] - Custom question text (overrides default)
+ * @param {number} [options.attachments=1] - Number of allowed attachments
+ * @returns {string} Complete Moodle Essay question XML string
  */
-export function generateEssayQuestion(data) {
-    if (!data.essayEnabled) return '';
+export function generateCompanionNotesQuestion(parentName, parentTitle, gradeValue = 0, { customText = '', attachments = 1 } = {}) {
+    const name = (parentName || 'Question') + '_handwritten_notes';
+    const text = customText || defaultCompanionText(parentTitle || parentName);
+    const grade = gradeValue ?? 0;
+    const attachmentCount = attachments ?? 1;
 
-    const name = (data.name || 'Question') + '_handwritten_notes';
-    const text = data.essayText || defaultEssayText(data.name);
-    const grade = data.essayGrade ?? 0;
-    const attachments = data.essayAttachments ?? 1;
-
-    return `
+    const xml = `
   <question type="essay">
     <name>
       <text>${escapeXml(name)}</text>
@@ -86,17 +89,33 @@ export function generateEssayQuestion(data) {
     <responsefieldlines>5</responsefieldlines>
     <minwordlimit></minwordlimit>
     <maxwordlimit></maxwordlimit>
-    <attachments>${attachments}</attachments>
+    <attachments>${attachmentCount}</attachments>
     <attachmentsrequired>1</attachmentsrequired>
     <maxbytes>0</maxbytes>
     <filetypeslist>.pdf,.jpg,.jpeg,.png</filetypeslist>
     <graderinfo format="html">
-      <text><![CDATA[${graderInfoContent(data.name)}]]></text>
+      <text><![CDATA[${graderInfoContent(parentName)}]]></text>
     </graderinfo>
     <responsetemplate format="html">
       <text></text>
     </responsetemplate>
   </question>`;
+
+    // Validate XML well-formedness if DOMParser is available (browser environment)
+    if (typeof DOMParser !== 'undefined') {
+        try {
+            const doc = new DOMParser().parseFromString(xml, 'application/xml');
+            const parseError = doc.querySelector('parsererror');
+            if (parseError) {
+                throw new Error('Generated companion question XML is not well-formed: ' + parseError.textContent);
+            }
+        } catch (e) {
+            if (e.message.startsWith('Generated companion')) throw e;
+            // DOMParser not fully functional — skip validation
+        }
+    }
+
+    return xml;
 }
 
 function escapeXml(str) {

@@ -29,11 +29,11 @@ export default class UIManager {
             toolbar: document.getElementById('toolbar-vars'),
             feedbackEditor: document.getElementById('feedback-editor'),
             hintsEditor: document.getElementById('hints-editor'),
-            essayEnabled: document.getElementById('essay-enabled'),
-            essaySettings: document.getElementById('essay-settings'),
-            essayText: document.getElementById('essay-text'),
-            essayGrade: document.getElementById('essay-grade'),
-            essayAttachments: document.getElementById('essay-attachments'),
+            examMode: document.getElementById('exam-mode'),
+            examSettings: document.getElementById('exam-settings'),
+            companionText: document.getElementById('companion-text'),
+            companionGrade: document.getElementById('companion-grade'),
+            companionAttachments: document.getElementById('companion-attachments'),
         };
     }
 
@@ -42,7 +42,7 @@ export default class UIManager {
         this._initGeneralEvents();
         this._initToolbarEvents();
         this._initImageEvents();
-        this._initEssayEvents();
+        this._initExamModeEvents();
     }
 
     render(data, previewValues) {
@@ -94,8 +94,8 @@ export default class UIManager {
             onRemove: (idx) => this.state.removeHint(idx),
         });
 
-        // Essay companion section
-        this._renderEssay(data);
+        // Exam mode companion section
+        this._renderExamMode(data);
 
         renderPreview(this.els.previewBox, this.els.liveVars, this.els.validationBox, data, previewValues);
     }
@@ -142,43 +142,43 @@ export default class UIManager {
         this.state.updatePart(partIdx, 'gradingCode', presetGradingCode);
     }
 
-    _renderEssay(data) {
-        if (this.els.essayEnabled) {
-            this.els.essayEnabled.checked = !!data.essayEnabled;
+    _renderExamMode(data) {
+        if (this.els.examMode) {
+            this.els.examMode.checked = !!data.examMode;
         }
-        if (this.els.essaySettings) {
-            this.els.essaySettings.classList.toggle('hidden', !data.essayEnabled);
+        if (this.els.examSettings) {
+            this.els.examSettings.classList.toggle('hidden', !data.examMode);
         }
-        if (this.els.essayText && this.els.essayText !== document.activeElement) {
-            this.els.essayText.value = data.essayText || '';
+        if (this.els.companionText && this.els.companionText !== document.activeElement) {
+            this.els.companionText.value = data.companionText || '';
         }
-        if (this.els.essayGrade && this.els.essayGrade !== document.activeElement) {
-            this.els.essayGrade.value = data.essayGrade ?? 0;
+        if (this.els.companionGrade && this.els.companionGrade !== document.activeElement) {
+            this.els.companionGrade.value = data.companionGrade ?? 0;
         }
-        if (this.els.essayAttachments && this.els.essayAttachments !== document.activeElement) {
-            this.els.essayAttachments.value = data.essayAttachments ?? 1;
+        if (this.els.companionAttachments && this.els.companionAttachments !== document.activeElement) {
+            this.els.companionAttachments.value = data.companionAttachments ?? 1;
         }
     }
 
-    _initEssayEvents() {
-        if (this.els.essayEnabled) {
-            this.els.essayEnabled.addEventListener('change', () => {
-                this.state.updateEssay('essayEnabled', this.els.essayEnabled.checked);
+    _initExamModeEvents() {
+        if (this.els.examMode) {
+            this.els.examMode.addEventListener('change', () => {
+                this.state.updateExamMode('examMode', this.els.examMode.checked);
             });
         }
-        if (this.els.essayText) {
-            this.els.essayText.addEventListener('input', () => {
-                this.state.updateEssay('essayText', this.els.essayText.value);
+        if (this.els.companionText) {
+            this.els.companionText.addEventListener('input', () => {
+                this.state.updateExamMode('companionText', this.els.companionText.value);
             });
         }
-        if (this.els.essayGrade) {
-            this.els.essayGrade.addEventListener('change', () => {
-                this.state.updateEssay('essayGrade', parseFloat(this.els.essayGrade.value) || 0);
+        if (this.els.companionGrade) {
+            this.els.companionGrade.addEventListener('change', () => {
+                this.state.updateExamMode('companionGrade', parseFloat(this.els.companionGrade.value) || 0);
             });
         }
-        if (this.els.essayAttachments) {
-            this.els.essayAttachments.addEventListener('change', () => {
-                this.state.updateEssay('essayAttachments', parseInt(this.els.essayAttachments.value) || 1);
+        if (this.els.companionAttachments) {
+            this.els.companionAttachments.addEventListener('change', () => {
+                this.state.updateExamMode('companionAttachments', parseInt(this.els.companionAttachments.value) || 1);
             });
         }
     }

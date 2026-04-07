@@ -126,29 +126,29 @@
                 <div id="hints-editor" style="margin-top:15px;"></div>
             </div>
 
-            <!-- 5. Image Upload Companion -->
+            <!-- 5. Exam Mode -->
             <div class="card">
-                <h2>5. Image Upload Companion</h2>
+                <h2>5. Exam Mode</h2>
                 <div class="form-group">
                     <label>
-                        <input type="checkbox" id="essay-enabled">
-                        <strong>Generate companion handwritten notes question</strong>
+                        <input type="checkbox" id="exam-mode">
+                        <strong>Exam mode — generate companion handwritten notes question</strong>
                         <span class="tooltip" title="Adds a Moodle Essay question after the STACK question where students upload photos of their handwritten working. The companion question imports alongside the STACK question in Moodle.">?</span>
                     </label>
                 </div>
-                <div id="essay-settings" class="hidden">
+                <div id="exam-settings" class="hidden">
                     <div class="form-group">
                         <label>Prompt text (shown to students)</label>
-                        <textarea id="essay-text" rows="3" placeholder="Upload your working, diagrams, or supporting files..."></textarea>
+                        <textarea id="companion-text" rows="3" placeholder="Upload your working, diagrams, or supporting files..."></textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Grade <span class="tooltip" title="Default marks for the companion question (0 = ungraded, teacher reviews manually)">?</span></label>
-                            <input type="number" id="essay-grade" value="0" min="0" step="0.5">
+                            <label>Companion question grade (default: 0) <span class="tooltip" title="Default marks for the companion question (0 = ungraded, teacher reviews manually)">?</span></label>
+                            <input type="number" id="companion-grade" value="0" min="0" step="0.5">
                         </div>
                         <div class="form-group">
                             <label>Max attachments <span class="tooltip" title="Number of file uploads allowed">?</span></label>
-                            <input type="number" id="essay-attachments" value="1" min="1" max="10">
+                            <input type="number" id="companion-attachments" value="1" min="1" max="10">
                         </div>
                     </div>
                 </div>

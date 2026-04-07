@@ -25,12 +25,12 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 - Observer pattern for state-to-UI updates
 - Factory pattern for input/PRT type dispatch
 
-## Companion Question (Essay/Image Upload)
+## Exam Mode / Companion Handwritten Notes Question
 
-- State fields: `essayEnabled` (boolean), `essayGrade` (number, default 0), `essayAttachments` (number, default 1)
-- Generator: `src/generators/essay-generator.js` — `generateEssayQuestion(data)` returns Moodle Essay question XML or empty string
+- State fields: `examMode` (boolean), `companionGrade` (number, default 0), `companionAttachments` (number, default 1), `companionText` (string, custom prompt)
+- Generator: `src/generators/companion-question.js` — `generateCompanionNotesQuestion(parentName, parentTitle, gradeValue, options)` returns Moodle Essay question XML
 - Essay XML field names and structure sourced from a real Moodle 4.5 export (not documentation)
-- When `essayEnabled` is true, download filename uses `_with_notes.xml` suffix
+- When `examMode` is true, download filename uses `_with_notes.xml` suffix
 - Companion question name uses `{parentName}_handwritten_notes` suffix
 
 ## JSXGraph Conventions

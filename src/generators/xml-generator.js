@@ -4,7 +4,7 @@ import { generateQuestionHeader } from './question-header.js';
 import { generateQuestionVariables } from './question-variables.js';
 import { generateInput } from './inputs/input-factory.js';
 import { generatePRT } from './prts/prt-factory.js';
-import { generateEssayQuestion } from './essay-generator.js';
+import { generateCompanionNotesQuestion } from './companion-question.js';
 
 /**
  * Generates complete STACK question XML for Moodle import.
@@ -50,8 +50,15 @@ export function generateStackXML(data) {
     xml += `
   </question>`;
 
-    // 8. Optional companion essay question (image upload)
-    xml += generateEssayQuestion(data);
+    // 8. Optional companion handwritten notes question (exam mode)
+    if (data.examMode) {
+        xml += generateCompanionNotesQuestion(
+            data.name,
+            data.name,
+            data.companionGrade,
+            { customText: data.companionText, attachments: data.companionAttachments }
+        );
+    }
 
     // 9. Close quiz wrapper
     xml += `

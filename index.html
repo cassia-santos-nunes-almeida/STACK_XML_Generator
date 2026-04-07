@@ -87,34 +87,34 @@
                 </div>
             </div>
 
-            <!-- Essay Companion Question -->
-            <div class="card" id="essay-section">
+            <!-- Exam Mode -->
+            <div class="card" id="exam-section">
                 <div class="card-header">
-                    <h2>Companion Essay Question</h2>
+                    <h2>Exam Mode</h2>
                     <label class="toggle-label">
-                        <input type="checkbox" id="essay-enabled">
-                        <span>Include image-upload essay</span>
+                        <input type="checkbox" id="exam-mode">
+                        <span>Exam mode — generate companion handwritten notes question</span>
                     </label>
                 </div>
-                <div id="essay-settings" class="hidden">
+                <div id="exam-settings" class="hidden">
                     <div class="form-group">
-                        <label>Essay Prompt Text
+                        <label>Prompt text (shown to students)
                             <span class="tooltip" title="Auto-generated from question name if left empty. Customise as needed.">?</span>
                         </label>
-                        <textarea id="essay-text" rows="3" placeholder="Leave blank for auto-generated text"></textarea>
+                        <textarea id="companion-text" rows="3" placeholder="Leave blank for auto-generated text"></textarea>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
-                            <label>Grade (marks)
+                            <label>Companion question grade (default: 0)
                                 <span class="tooltip" title="Default 0 — set higher if you want to grade the upload.">?</span>
                             </label>
-                            <input type="number" id="essay-grade" min="0" step="1" value="0">
+                            <input type="number" id="companion-grade" min="0" step="1" value="0">
                         </div>
                         <div class="form-group">
                             <label>Max Attachments
                                 <span class="tooltip" title="How many files the student can upload.">?</span>
                             </label>
-                            <input type="number" id="essay-attachments" min="1" max="20" step="1" value="1">
+                            <input type="number" id="companion-attachments" min="1" max="20" step="1" value="1">
                         </div>
                     </div>
                 </div>

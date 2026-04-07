@@ -1,4 +1,4 @@
-# Session 2a — JSXGraph Conventions + Essay System Update
+# Session 2a — JSXGraph Conventions + Exam Mode Feature
 
 **Date:** 2026-04-07
 **Rollback points:**
@@ -28,36 +28,49 @@
 1. **Fixed P-STACK-21** in `src/generators/graph-presets.js`:
    `snapToGrid: true` → `snapSizeX: 1, snapSizeY: 1` in pointPlacement preset.
 
-### Action B — Essay System Update (Modified Scope)
+### Action B — Exam Mode / Companion Handwritten Notes Question
 
-Instead of creating a parallel companion-question system, extended the existing
-essay generator to meet Session 2a requirements:
+Implemented the companion question system and then renamed from "essay" naming
+to "exam mode" naming for consistency with the Session 2a plan:
 
-1. **Fixed missing HTML** — added essay UI elements (essay-enabled, essay-settings,
-   essay-text, essay-grade, essay-attachments) to `src/index.html`.
+1. **Created `src/generators/companion-question.js`** with
+   `generateCompanionNotesQuestion(parentName, parentTitle, gradeValue, options)`.
+   Function signature matches the plan. Includes XML well-formedness validation
+   via DOMParser when available (browser environment).
 
-2. **Updated `essay-generator.js`** with field names verified against real Moodle
-   4.5 Essay XML export:
-   - Name format: `{name}_handwritten_notes` (was `{name} - Image Upload`)
-   - `attachmentsrequired`: 1 (was 0)
-   - `filetypeslist`: `.pdf,.jpg,.jpeg,.png` (was `image/*,.pdf`)
-   - `responseformat`: `noinline` (was `noinlineeditor`)
-   - `responsefieldlines`: 5 (was 3)
-   - Added `<maxbytes>0</maxbytes>`
-   - Added student instruction text with teacher setup reminder
-   - Added grader info referencing parent question
+2. **State fields** in `src/core/state.js`:
+   - `examMode: false` — boolean toggle (was `essayEnabled`)
+   - `companionGrade: 0` — grade value (was `essayGrade`)
+   - `companionText: ''` — custom prompt text (was `essayText`)
+   - `companionAttachments: 1` — attachment count (was `essayAttachments`)
+   - Method: `updateExamMode(key, val)` (was `updateEssay`)
 
-3. **Updated `app.js`** — download filename uses `_with_notes.xml` when
-   `essayEnabled` is true.
+3. **UI** in `src/ui/ui-manager.js`: "Exam mode" section with checkbox
+   and companion grade input. Methods: `_renderExamMode`, `_initExamModeEvents`.
 
-4. **Updated essay tests** — 30 tests covering all new field values,
-   teacher reminder, grader info, attachmentsrequired, maxbytes, companion
-   name format, integration with different input types.
+4. **HTML** in `src/index.html`: Section "5. Exam Mode" with element IDs
+   `exam-mode`, `exam-settings`, `companion-text`, `companion-grade`,
+   `companion-attachments`.
+
+5. **Download filename** in `src/ui/app.js`: uses `_with_notes.xml` suffix
+   when `examMode` is true.
+
+6. **Orchestrator** in `src/generators/xml-generator.js`: imports from
+   `companion-question.js`, conditionally appends companion question when
+   `data.examMode` is true.
+
+7. **Tests** in `src/tests/generators/companion-question.test.js`: 30+ tests
+   covering all field values, teacher reminder, grader info, integration with
+   different input types, XML structure, grade configuration.
+
+8. **Deleted old files**: `essay-generator.js` and `essay-generator.test.js`
+   removed. All references updated throughout codebase.
 
 ### Documentation Updates
 
-- `CLAUDE.md` — added companion question fields, JSXGraph conventions
-  file locations and cross-reference guidance.
+- `CLAUDE.md` — updated companion question section with new field names,
+  module path, and function signature.
+- `SESSION.md` — updated to reflect rename and current state.
 
 ## Deferred to Session 2b
 
@@ -80,6 +93,6 @@ essay generator to meet Session 2a requirements:
 - Node.js/npm not available in the current terminal environment
 - Tests must be verified via `npm test` before pushing (CI or local)
 - All test files are syntactically valid vitest tests
-- 15 existing essay tests updated + 15 new tests added = 30 essay tests
+- 30+ companion question tests in `companion-question.test.js`
 - Pre-existing test count: 160+
 - Expected total after this session: 175+

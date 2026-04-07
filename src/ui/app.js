@@ -135,7 +135,7 @@ function initApp() {
 
         const xml = generateStackXML(state.data);
         const baseName = state.data.name || 'question';
-        const suffix = state.data.essayEnabled ? '_with_notes' : '';
+        const suffix = state.data.examMode ? '_with_notes' : '';
         downloadFile(xml, baseName + suffix + '.xml', 'application/xml');
         showNotification('XML exported successfully.', 'success');
     });

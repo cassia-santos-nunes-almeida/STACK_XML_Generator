@@ -18,10 +18,10 @@ export default class StateManager {
             hints: [],
             defaultGrade: 1,
             penalty: 0.1,
-            essayEnabled: false,
-            essayText: '',
-            essayGrade: 0,
-            essayAttachments: 1,
+            examMode: false,
+            companionText: '',
+            companionGrade: 0,
+            companionAttachments: 1,
         };
         this.previewValues = {};
     }
@@ -134,9 +134,9 @@ export default class StateManager {
         }
     }
 
-    // --- Essay ---
+    // --- Exam Mode / Companion Question ---
 
-    updateEssay(key, val) {
+    updateExamMode(key, val) {
         this.data[key] = val;
         this.notify();
     }
@@ -335,10 +335,10 @@ export default class StateManager {
         if (!this.data.parts) this.data.parts = [];
         if (!this.data.hints) this.data.hints = [];
         if (this.data.generalFeedback === undefined) this.data.generalFeedback = '';
-        if (this.data.essayEnabled === undefined) this.data.essayEnabled = false;
-        if (this.data.essayText === undefined) this.data.essayText = '';
-        if (this.data.essayGrade === undefined) this.data.essayGrade = 0;
-        if (this.data.essayAttachments === undefined) this.data.essayAttachments = 1;
+        if (this.data.examMode === undefined) this.data.examMode = false;
+        if (this.data.companionText === undefined) this.data.companionText = '';
+        if (this.data.companionGrade === undefined) this.data.companionGrade = 0;
+        if (this.data.companionAttachments === undefined) this.data.companionAttachments = 1;
     }
 
     /** Normalize imported data to current structure */
@@ -348,10 +348,10 @@ export default class StateManager {
         if (!data.parts) data.parts = [];
         if (!data.hints) data.hints = [];
         if (data.generalFeedback === undefined) data.generalFeedback = '';
-        if (data.essayEnabled === undefined) data.essayEnabled = false;
-        if (data.essayText === undefined) data.essayText = '';
-        if (data.essayGrade === undefined) data.essayGrade = 0;
-        if (data.essayAttachments === undefined) data.essayAttachments = 1;
+        if (data.examMode === undefined) data.examMode = false;
+        if (data.companionText === undefined) data.companionText = '';
+        if (data.companionGrade === undefined) data.companionGrade = 0;
+        if (data.companionAttachments === undefined) data.companionAttachments = 1;
 
         // Clean variables
         data.variables.forEach(v => {
