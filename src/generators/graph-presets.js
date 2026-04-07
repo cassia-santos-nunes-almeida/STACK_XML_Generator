@@ -293,7 +293,7 @@ function addPoint(x, y) {
     var p = board.create('point', [x, y], {
         name: '(' + Math.round(x) + ',' + Math.round(y) + ')',
         size: 4, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb',
-        snapToGrid: true
+        snapSizeX: 1, snapSizeY: 1
     });
     p.on('drag', function() {
         p.setName('(' + Math.round(p.X()) + ',' + Math.round(p.Y()) + ')');
