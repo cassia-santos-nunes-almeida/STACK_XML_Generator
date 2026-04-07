@@ -45,7 +45,9 @@ function graderInfoContent(parentName) {
   <li><strong>Correct final answer with units:</strong> Does the handwritten answer match their submitted numerical answer?</li>
 </ul>
 
-<p><em>Compare with the student's submitted answer in ${escapeXml(name)} to check consistency.</em></p>`;
+<p><em>Compare with the student's submitted answer in ${escapeXml(name)} to check consistency.</em></p>
+
+<p><strong>Setup reminder:</strong> This question requires "Allow attachments" to be set to 1 or more in Moodle quiz settings \u2192 Files and uploads. If students report they cannot upload files, check this setting first.</p>`;
 }
 
 /**

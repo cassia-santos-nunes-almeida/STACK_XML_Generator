@@ -12,6 +12,7 @@ Build randomised maths and engineering questions with variables, multiple input 
 - **Grading pipeline** — Wide/tight tolerance, significant figures check, power-of-10 detection with configurable penalties
 - **Live preview** — See variable substitution and MathJax-rendered maths as you type, with validation warnings
 - **JSXGraph support** — Point placement, function sketching, and vector drawing presets with server-side Maxima grading
+- **Exam mode** — Generates a companion Moodle Essay question for handwritten working alongside each calculation or explanation question. The companion question requires file upload (photo or scan of written work) and is manually graded by the teacher.
 - **Import/Export** — Save as JSON for editing later, or download Moodle-ready XML; import existing STACK XML files back into the editor
 - **Templates** — Pre-built question templates for common engineering, physics, and maths scenarios
 - **Images** — Drag-and-drop image upload, base64-embedded in the XML
@@ -29,7 +30,7 @@ npm install
 # Start dev server (http://localhost:3000)
 npm run dev
 
-# Run tests (160+ tests)
+# Run tests (175+ tests)
 npm test
 
 # Watch mode
@@ -91,6 +92,21 @@ src/
 4. **Add parts** — choose input type, set the answer variable, configure grading tolerances
 5. **Preview** — check the live preview panel on the right; click "Generate Sample Values" to re-roll randoms
 6. **Export** — click "Download Moodle XML" and import the file into Moodle via the question bank
+
+### Exam Mode
+
+When writing questions for supervised exams where students must show their handwritten working:
+
+1. **Enable:** Check "Exam mode" in the generator UI (section 5) before exporting
+2. **What it generates:** A Moodle Essay question appended to the same XML file immediately after the parent STACK question. The companion question is named `[question_name]_handwritten_notes`, has a default grade of 0 (configurable), and requires at least one file attachment
+3. **Accepted file types:** JPEG, PNG, PDF
+4. **Exported filename:** `[question_name]_with_notes.xml` (distinguishes from standard exports)
+
+**REQUIRED teacher setup before running the quiz:**
+
+> In Moodle quiz settings → **Files and uploads** → set **"Allow attachments"** to 1 or more. Without this setting, students cannot upload files even though the Essay question appears. The companion question also contains a visible reminder in its question text that the teacher must delete after completing setup.
+
+**Manual grading:** Companion questions are not auto-graded. The teacher reviews uploaded working through Moodle's manual grading interface after the quiz. The grader info panel shows what to check (correct method, intermediate steps, diagrams, final answer with units).
 
 ### Notes on Image Upload Parts
 

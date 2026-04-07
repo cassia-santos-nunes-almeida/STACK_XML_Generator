@@ -365,23 +365,25 @@ Formalized from the Session 2a gap analysis.
   coordinates even when sub-integer precision needed
 - **Status:** Fixed in Session 2a. Point placement preset now uses
   `snapSizeX: 1, snapSizeY: 1`.
-- **Remaining action:** Teachers needing non-integer snap (e.g., 0.25 V
-  steps) must edit the generated code after export.
+- **Requires manual edit after export:** Teachers needing non-integer
+  snap (e.g., 0.25 V steps) must change `snapSizeX`/`snapSizeY` values
+  in the generated JS code.
 
 ### P-STACK-19: Manual binding in pointPlacement and functionSketch
 - **Severity:** Minor — works correctly but misses automatic state
   restore guarantees of `custom_bind`
-- **Status:** Documented as post-export recommendation. Not a bug —
-  `custom_bind` cannot track dynamically created objects. The presets
-  include manual restore code that handles page reload.
-- **Remaining action:** None required. Teachers may optionally refactor
-  to sync-anchor pattern for production exams.
+- **Status:** By design. Not a bug — `custom_bind` cannot track
+  dynamically created objects. The presets include manual restore code
+  that handles page reload.
+- **Requires manual edit after export:** For production exams where
+  page-reload recovery is mission-critical, refactor to the sync-anchor
+  pattern described in the companion authoring conventions file.
 
 ### CAS variable injection not automated
 - **Severity:** Minor — teacher must manually add `{#var#}` references
 - **Status:** By design. The generator inserts `graphCode` verbatim.
-- **Remaining action:** Document in checklist (done in §7 via companion
-  file reference).
+- **Requires manual edit after export:** To use randomized values in
+  graph code, replace hardcoded numbers with `{#varName#}` syntax.
 
 ---
 

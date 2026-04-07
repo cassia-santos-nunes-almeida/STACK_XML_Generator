@@ -6,7 +6,7 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 
 - `npm run dev` — Start Vite dev server
 - `npm run build` — Production build to dist/
-- `npm run test` — Run full test suite (Vitest, 120+ tests)
+- `npm run test` — Run full test suite (Vitest, 175+ tests)
 - `npm run test:watch` — Watch mode
 
 ## Architecture
