@@ -24,3 +24,17 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 - No framework — vanilla DOM manipulation
 - Observer pattern for state-to-UI updates
 - Factory pattern for input/PRT type dispatch
+
+## Companion Question (Essay/Image Upload)
+
+- State fields: `essayEnabled` (boolean), `essayGrade` (number, default 0), `essayAttachments` (number, default 1)
+- Generator: `src/generators/essay-generator.js` — `generateEssayQuestion(data)` returns Moodle Essay question XML or empty string
+- Essay XML field names and structure sourced from a real Moodle 4.5 export (not documentation)
+- When `essayEnabled` is true, download filename uses `_with_notes.xml` suffix
+- Companion question name uses `{parentName}_handwritten_notes` suffix
+
+## JSXGraph Conventions
+
+- Generator presets documented in `docs/jsxgraph-conventions.md` (generator implementation focus)
+- STACK authoring conventions in EM-AC-STACK-Assessments repo at `.claude/skill/stack-xml-generator/references/jsxgraph-conventions.md`
+- The two files have different scopes — read the §0 header in each to understand which to consult
