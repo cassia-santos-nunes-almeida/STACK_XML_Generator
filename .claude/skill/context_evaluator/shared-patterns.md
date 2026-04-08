@@ -72,6 +72,12 @@ the project-specific rule wins.
 **Scope:** All sessions, all skills.
 **First seen:** Self-learning loop design, April 2026.
 
+### P-EXEC-04 — Route by heading name, never by section number
+**Pattern:** Context-evaluator SKILL.md referenced "§4 Session Open" and "§5 Session Close" but different project CLAUDE.md files had different section numbering. The routing silently pointed to the wrong section.
+**Rule:** When a skill routes to a protocol in CLAUDE.md, always search by heading name (e.g., "Session Open", "Session Boundary Protocol"), never by section number (§4, §5). List multiple heading patterns if projects use different naming conventions.
+**Scope:** All routing skills, all SKILL.md files.
+**First seen:** Skill centralization review, April 2026.
+
 ---
 
 ## Template for New Entries
