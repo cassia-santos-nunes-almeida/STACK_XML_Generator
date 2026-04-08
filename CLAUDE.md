@@ -33,6 +33,19 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 - When `examMode` is true, download filename uses `_with_notes.xml` suffix
 - Companion question name uses `{parentName}_handwritten_notes` suffix
 
+## Session Protocol
+
+### Session Open
+1. Read `.claude/skill/context_evaluator/SESSION.md` — current status
+2. Read `.claude/skill/context_evaluator/context.md` — stable project facts
+3. Read `.claude/skill/context_evaluator/shared-patterns.md` — cross-project rules
+4. Read `.claude/skill/context_evaluator/personal-preferences.md` — communication style
+
+### Session Close
+When asked to "wrap up" or "close session":
+1. Update `SESSION.md` — completed tasks, next steps, blockers
+2. Note any correction candidates for shared-patterns.md
+
 ## JSXGraph Conventions
 
 - Generator presets documented in `docs/jsxgraph-conventions.md` (generator implementation focus)
