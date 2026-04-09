@@ -78,6 +78,12 @@ the project-specific rule wins.
 **Scope:** All routing skills, all SKILL.md files.
 **First seen:** Skill centralization review, April 2026.
 
+### P-EXEC-05 — Never modify synced skills locally
+**Pattern:** A synced skill file (in `.claude/skill/`) was edited directly in a project repo instead of in the canonical source (my-claude-skills). The local change was overwritten on next session start by sync-to-projects.sh.
+**Rule:** Before modifying any file in `.claude/skill/`, check if it's a synced skill by running `bash my-claude-skills/scripts/check-impact.sh <skill-name>`. If synced: edit the canonical source in `my-claude-skills/core/` or `my-claude-skills/personal/`, run `check-impact.sh` to see affected projects, then run `sync-to-projects.sh` to propagate. Only project-specific files (context.md, decisions-log.md, PATTERNS.md, SESSION.md) should be edited locally.
+**Scope:** All projects with synced skills.
+**First seen:** Lab Modules onboarding, April 2026.
+
 ---
 
 ## Template for New Entries
