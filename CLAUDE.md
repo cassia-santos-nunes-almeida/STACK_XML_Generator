@@ -33,18 +33,42 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 - When `examMode` is true, download filename uses `_with_notes.xml` suffix
 - Companion question name uses `{parentName}_handwritten_notes` suffix
 
-## Session Protocol
+## Skills
 
-### Session Open
-1. Read `.claude/skill/context_evaluator/SESSION.md` — current status
-2. Read `.claude/skill/context_evaluator/context.md` — stable project facts
-3. Read `.claude/skill/context_evaluator/shared-patterns.md` — cross-project rules
-4. Read `.claude/skill/context_evaluator/personal-preferences.md` — communication style
+| Skill | Purpose | Location |
+|-------|---------|----------|
+| context-evaluator | Session lifecycle, context loading, correction capture | `.claude/skill/context_evaluator/SKILL.md` |
 
-### Session Close
-When asked to "wrap up" or "close session":
-1. Update `SESSION.md` — completed tasks, next steps, blockers
-2. Note any correction candidates for shared-patterns.md
+## Reference
+
+| Topic | File |
+|-------|------|
+| Architecture, tech stack, constraints | `.claude/skill/context_evaluator/context.md` |
+| Current session state, pending tasks, blockers | `.claude/skill/context_evaluator/SESSION.md` |
+| Communication and coding preferences | `.claude/skill/context_evaluator/personal-preferences.md` |
+| Cross-project rules (synced from my-claude-skills) | `.claude/skill/context_evaluator/shared-patterns.md` |
+
+## Session Boundary Protocol
+
+At **session end**, run context_evaluator close protocol: write SESSION.md, capture patterns.
+
+At **session start**, context_evaluator loads local files automatically.
+
+## Task Decomposition
+
+Before starting any non-trivial task, assess scope:
+- If a task has 3+ deliverables, 2+ files, or 2+ skills -- decompose into subtasks with dependency map before starting.
+- Present the subtask list and proposed execution order before starting work.
+- Report at each boundary: what was completed, what comes next, any blockers.
+
+## Self-Verification
+
+Before returning any output:
+1. **Goal analysis** -- State explicit and implicit goals.
+2. **Assumption audit** -- List inferences not directly stated in input.
+3. **Gap identification** -- What is missing, ambiguous, or likely to fall short?
+4. **End-to-end self-test** -- Test against all stated goals. Run tests.
+5. **Pattern check** -- Check shared-patterns.md. If output would trigger a known pattern, apply the fix automatically.
 
 ## JSXGraph Conventions
 
