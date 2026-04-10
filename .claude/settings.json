@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "timeout 45 bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/sync-to-projects.sh STACK_XML_Generator 2>&1 || echo '[SYNC WARNING] Skill sync failed or timed out. Skills may be outdated. Run manually: bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/sync-to-projects.sh STACK_XML_Generator'"
+            "command": "bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/sync-to-projects.sh STACK_XML_Generator 2>&1 || echo '[SYNC WARNING] Skill sync failed or timed out. Skills may be outdated. Run manually: bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/sync-to-projects.sh STACK_XML_Generator'"
           },
           {
             "type": "command",
