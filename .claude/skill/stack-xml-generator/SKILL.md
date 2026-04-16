@@ -5,7 +5,9 @@ description: >
   Maxima CAS code, building PRT grading trees, setting up randomization,
   creating MCQ questions, building exam question banks, adding JSXGraph
   interactive elements, "create a question", "generate XML", "STACK
-  question", "randomized assessment", "PRT validation".
+  question", "randomized assessment", "PRT validation". If a
+  course-specific notation-conventions skill is available, load it first
+  to pick variable names that match the textbook students are reading.
 ---
 
 # STACK XML Generator
@@ -27,6 +29,43 @@ produces well-structured XML ready for Moodle import.
   (exams) or `Q{N}_{TopicDescription}.xml` (practice)
 - Each variant is a separate `<question>` element with its own STACK
   variables, PRTs, and feedback
+
+## Before Generating
+
+If a course-specific notation-conventions skill is installed, read its
+SKILL.md first. Use it to pick:
+
+- Variable names that match the textbook students are reading.
+- Maxima-safe ASCII versions of those names (some Greek letters and
+  hatted symbols need ASCII substitutes inside Maxima code, and some
+  letters collide with STACK reserved names — e.g. bare `A` is risky;
+  use `Axs` for a cross-sectional area variable).
+- The conventions that skill enforces for sign, polarity, and symbol
+  choice.
+
+Variable names chosen here propagate into the question XML, the Maxima
+`<questionvariables>`, the PRT feedback strings, and the answer-note
+identifiers. Pick once, use consistently.
+
+If no such skill is installed, use sensible defaults from the question
+context.
+
+### Tag Name Requirement (hard rule)
+
+Every name element in the XML uses the **full `<name>` tag**, never the
+short `<n>` form. This applies to:
+
+- Question name: `<name><text>Q_descriptive_name</text></name>`
+- Input name: `<name>ans1</name>`
+- PRT name: `<name>prt1</name>`
+- Node name: `<name>0</name>`, `<name>1</name>`, ...
+- `<testinput><name>...</name>` and `<expected><name>...</name>`
+  inside any `<qtest>` block
+
+Some STACK exports use `<n>` as a shorthand. Your target Moodle rejects
+it and fails import. Always emit `<name>` in full. The
+stack-question-validator Tier 1 check enforces this — fix at generation
+time to avoid re-runs.
 
 ---
 
@@ -54,6 +93,15 @@ Type-specific hint text:
 | Expression (function of t) | `Use <code>exp(...)</code>, <code>sin(...)</code>, <code>cos(...)</code>, and <code>t</code>.` Include a complete example. |
 | Complex roots (with j) | `For complex roots use <code>j</code> for the imaginary unit, e.g. <code>-2800+9600*j</code>` |
 | Notes / essay | Content hint about what to address |
+
+**Magnitude-vs-leak trade-off.** For numerical hints, "adapt to expected
+magnitude" means match the *format* (plain decimal vs scientific
+notation), not the *value*. Pick an example one or two orders of
+magnitude outside the actual answer distribution — close enough that
+the format cue is obvious, far enough that a student cannot copy-paste
+the example as a guess. Example: if real answers range `5e4` to `4e5`,
+use `1.23e4` or `12300` in the hint, not `3.2e5`. This is a Tier 3
+security check (P-STACK-12) in stack-question-validator.
 
 ### Progressive Hints
 
@@ -275,6 +323,23 @@ iframes** with critical implications for input binding and DOM access.
 For hidden input configuration, serialization format, grading
 patterns, and worked examples, see
 `references/jsxgraph-conventions.md`.
+
+---
+
+## After Generating
+
+Before returning XML to the user, read the
+`stack-question-validator/SKILL.md` skill file and apply every tier to
+the generated output.
+
+- Tier 1–4 failures: fix silently and re-validate. Do not ask the user
+  whether to fix — these block structure, grading, security, or Moodle
+  import.
+- Tier 5 (Quality): report as advisories; user decides.
+
+This is not optional. The validator is a separate skill because
+generation and validation are separate concerns, but every generation
+ends with a validation pass.
 
 ---
 

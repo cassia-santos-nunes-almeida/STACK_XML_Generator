@@ -33,7 +33,7 @@ or "is similar to one that already passed." Every question gets validated.
 
 | Check | What to verify |
 |-------|---------------|
-| `<name>` tag | Full descriptive name, never abbreviated (P-STACK-01) |
+| `<name>` tag | Full `<name>` tag (not the `<n>` shorthand) AND descriptive content, not abbreviated like `Q1` (P-STACK-01). Applies to question, input, PRT, node, testinput, and expected names. Moodle rejects the short form and fails import. |
 | `<questionvariables>` | Maxima code present, `simp:false` where needed |
 | All `<input>` blocks | `insertstars` = 1 for algebraic inputs (P-STACK-10) |
 | `<specificfeedback>` | No `{@ansN@}` references (P-STACK-03) |
@@ -60,7 +60,24 @@ or "is similar to one that already passed." Every question gets validated.
 | No base64 in exams | Exam XMLs use text placeholders, not embedded images (P-STACK-15) |
 | Unit hints | Unit-checked inputs do not hint the correct unit (P-STACK-22) |
 
-### Tier 4 — Pedagogical Quality (should pass)
+### Tier 4 — Question Tests / `<qtest>` (must pass)
+
+Moodle import fails fatally when `<qtest>` blocks are malformed. The typical symptom is a PHP `substr() expects parameter 1 to be string, array given` error — the question never gets created in Moodle and the import aborts.
+
+| Check | What to verify |
+|-------|---------------|
+| Allowed children only | Every direct child of `<qtest>` is one of `<testcase>`, `<description>`, `<testinput>`, `<expected>` (the verified set). Flag any other element as suspect — it is likely invented (`<notes>`, `<tags>`, `<feedback>`, extra metadata). If a real STACK export contradicts this list, update the reference doc rather than silence the check. |
+| No `<text>` wrapping | No element inside `<qtest>` wraps its content in `<text>`. Critical for `<expectedanswernote>` — wrapping it in `<text>` causes the `substr()` import error. Also applies to `<description>`, `<testinput><name>`, `<testinput><value>`, `<expected><name>`, `<expectedscore>`, `<expectedpenalty>`. |
+| Answer note match | Every `<expectedanswernote>` matches exactly one `<trueanswernote>` or `<falseanswernote>` value defined in the referenced PRT. |
+| Answer note well-formed | Non-empty; contains no `;` or `|`; does not depend on random variables; multi-node notes joined with `-` (e.g. `prt1-0-T-1-F`). |
+| `<expected><name>` valid | References an existing `<prt>` by name. |
+| `<testinput><name>` valid | References an existing `<input>` by name. |
+| `<testcase>` numbering | Integer, sequential within the question, unique. |
+| `<expectedpenalty>` form | Empty tag `<expectedpenalty/>` when the matched PRT branch has no penalty; decimal otherwise. Not a stringified expression. |
+
+See `references/stack-xml-conventions.md` "Question Tests (`<qtest>`)" section for the verified schema.
+
+### Tier 5 — Pedagogical Quality (should pass)
 
 | Check | What to verify |
 |-------|---------------|
@@ -97,7 +114,10 @@ After validation, report results:
 **Tier 3 (Security):** PASS / FAIL
 - [list any failures]
 
-**Tier 4 (Quality):** PASS / ADVISORY
+**Tier 4 (Question Tests / qtest):** PASS / FAIL / N/A
+- [list any failures]
+
+**Tier 5 (Quality):** PASS / ADVISORY
 - [list any advisories]
 
 **JSXGraph:** PASS / FAIL / N/A
@@ -106,9 +126,9 @@ After validation, report results:
 
 ## Failure Handling
 
-- **Tier 1–3 failures:** Fix the issue before delivering. Do not ask the user
-  whether to fix — just fix it and re-validate.
-- **Tier 4 advisories:** Report to the user. They decide whether to address.
+- **Tier 1–4 failures:** Fix the issue before delivering. Do not ask the user
+  whether to fix — just fix it and re-validate. Tier 4 failures block Moodle import.
+- **Tier 5 advisories:** Report to the user. They decide whether to address.
 - **After fixing:** Re-run the full validation. Report the updated results.
 
 ## Rationalization Table

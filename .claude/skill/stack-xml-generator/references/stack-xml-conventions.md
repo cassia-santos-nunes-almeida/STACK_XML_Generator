@@ -263,6 +263,82 @@ ta_imag: imagpart(correct_root);
 </prt>
 ```
 
+## Question Tests (`<qtest>`)
+
+Question tests are author-side regression checks. Each `<qtest>` block feeds a set of input values through the PRTs and asserts the expected score, penalty, and answer note. Moodle runs these on demand from the question edit page.
+
+Schema verified against real STACK exports (e.g. `samplequestions/stacklibrary/Features/MCQ_example_Remainder-Theorem-T-F.xml` in `maths/moodle-qtype_stack`).
+
+### Verified structure
+
+```xml
+<qtest>
+  <testcase>1</testcase>
+  <description>Test case assuming the teacher's input gets full marks.</description>
+  <testinput>
+    <name>ans1</name>
+    <value>mcq_correct(statements)</value>
+  </testinput>
+  <expected>
+    <name>prt1</name>
+    <expectedscore>1.0000000</expectedscore>
+    <expectedpenalty>0.0000000</expectedpenalty>
+    <expectedanswernote>prt1-0-T</expectedanswernote>
+  </expected>
+</qtest>
+```
+
+### Element wrapping rules
+
+Every element inside `<qtest>` takes **plain text directly** — none of them are wrapped in `<text>`. This differs from most other STACK elements (`<questiontext>`, `<generalfeedback>`, `<name>`, `<truefeedback>`, etc.) which do use `<text>` wrappers.
+
+| Element | Content | Wrap in `<text>`? |
+|---------|---------|-------------------|
+| `<testcase>` | Integer, sequential (1, 2, 3, ...) | No |
+| `<description>` | Plain text, single line | No |
+| `<testinput><name>` | Input name (e.g. `ans1`) | No |
+| `<testinput><value>` | Maxima expression (value to feed the input) | No |
+| `<expected><name>` | PRT name (e.g. `prt1`) | No |
+| `<expected><expectedscore>` | Decimal (e.g. `1.0000000`) | No |
+| `<expected><expectedpenalty>` | Decimal, or empty `<expectedpenalty/>` | No |
+| `<expected><expectedanswernote>` | Answer note string (e.g. `prt1-0-T`) | No |
+
+### Pitfall: `<expectedanswernote>` wrapped in `<text>`
+
+Wrapping `<expectedanswernote>` content in `<text>` causes a **fatal PHP error on Moodle import**:
+
+```
+substr() expects parameter 1 to be string, array given
+```
+
+The importer calls `substr()` directly on the child node's string content. When the value is wrapped in a `<text>` element, the import parser hands `substr()` a structured node instead of a scalar string, and the call dies before the question is saved.
+
+**Wrong:**
+```xml
+<expectedanswernote><text>prt1-0-T</text></expectedanswernote>
+```
+
+**Right:**
+```xml
+<expectedanswernote>prt1-0-T</expectedanswernote>
+```
+
+The same applies to every other element inside `<qtest>`. A question XML that imports fine when `<qtest>` blocks are stripped, but fails with a `substr()` error when they are present, is almost always caused by `<text>` wrapping inside `<qtest>`.
+
+### Answer note string rules
+
+`<expectedanswernote>` must match exactly one of the `<trueanswernote>` or `<falseanswernote>` values defined in the PRT nodes. Specifically:
+
+- Must be non-empty.
+- Must not contain `;` or `|` (STACK uses these as internal separators).
+- Must not depend on random variables — the answer note is a static identifier, not a rendered string.
+- For multi-node PRTs, join note segments with `-` (e.g. `prt1-0-T-1-F`) matching the traversal order.
+- `<expectedpenalty>` may be empty (`<expectedpenalty/>`) when no penalty applies; do not write `0` if the PRT node itself has an empty `<truepenalty>`/`<falsepenalty>`.
+
+### Allowed children
+
+The four elements above (`<testcase>`, `<description>`, `<testinput>`, `<expected>`) are the direct children observed in verified STACK exports. Do not invent new children (e.g. `<notes>`, `<tags>`, `<feedback>`, extra metadata) — they will either be silently dropped or break the importer. If a `<qtest>` in a real export shows a child not listed here, treat that export as the source of truth and update this reference.
+
 ## Partial Credit Scoring Pattern
 
 Typical partial credit tiers:

@@ -50,6 +50,44 @@ the project-specific rule wins.
 **Scope:** NotebookLM integration.
 **First seen:** Environment discovery.
 
+### P-ENV-04 — Node.js / npm not installed
+**Pattern:** Sessions attempted `npm install`, `npm test`, or `node <script>` and failed mid-workflow because the environment has no Node runtime.
+**Rule:** Do not attempt any `npm` or `node` command in this environment. If a skill or script requires Node, report the blocker to the user immediately and propose alternatives (syntax-check by reading, ask user to run it locally, or rewrite in PowerShell/Python).
+**Scope:** All sessions, all skills.
+**First seen:** /insights audit, April 2026.
+
+### P-ENV-05 — Sub-agent Write calls fail on UNC paths
+**Pattern:** Sub-agents delegated Write/Edit tool calls on UNC paths (`Z:\...`, `//maa1...`) failed with permission errors, forcing the main agent to abandon parallelization.
+**Rule:** Do not delegate file writes to sub-agents on this UNC-path setup. Main agent performs Write/Edit directly. Sub-agents are fine for read/analyze/research — restrict to those roles.
+**Scope:** All sessions using sub-agents.
+**First seen:** /insights audit, April 2026.
+
+### P-ENV-06 — Hook environment has limited PATH
+**Pattern:** SessionStart/Stop hook scripts failed because `python3` and `node` were not on PATH during hook execution, even when available elsewhere.
+**Rule:** Hook scripts must only use tools guaranteed to be on PATH during hook execution — Git Bash builtins, `git`, `cp`, `mkdir`, `bash`. Never add hooks that shell out to `python3`, `node`, or other interpreters. If hook logic needs more, keep the hook minimal and trigger richer logic from within the session.
+**Scope:** All `.claude/settings.json` hook definitions.
+**First seen:** /insights audit, April 2026.
+
+---
+
+## Testing (P-TEST)
+
+### P-TEST-01 — Behavioural tests gate completion claims
+**Pattern:** Claude repeatedly declared work complete based on static checks alone (frontmatter valid, files exist, grep clean) and missed real bugs — JSON reformatting errors, broken cross-references, unverified paths, regressions in other features. The user had to ask "did you test?" before actual verification happened.
+**Rule:** Before claiming any task "done" or "verified": (1) run behavioural tests, not just static checks; (2) explicitly list what was tested with format "Tested: [X, Y, Z]. Not tested: [A, B] because [reason]"; (3) for JSON/XML files, validate via PowerShell — `pwsh -NoProfile -Command "Get-Content <file> \| ConvertFrom-Json \| Out-Null"` for JSON, `pwsh -NoProfile -Command "[xml](Get-Content <file> -Raw) \| Out-Null"` for XML (non-zero exit = invalid); (4) for visual outputs (diagrams, slides, .docx), view the rendered file before claiming correctness; (5) for multi-file or multi-repo changes, spawn a verification sub-agent to audit coverage before declaring complete. `jq` and `xmllint` are NOT installed here — do not prescribe them.
+**Scope:** All sessions, all skills.
+**First seen:** /insights audit, April 2026.
+
+---
+
+## Session Close (P-CLOSE)
+
+### P-CLOSE-01 — Session close hygiene
+**Pattern:** Sessions ended with Claude claiming complete while (a) uncommitted changes remained in other touched repos, (b) gaps between what the user asked for and what actually shipped went unflagged, (c) a single `git push` was assumed to cover multi-repo changes, or (d) the working tree was left dirty without explanation.
+**Rule:** When the user says "close / commit / push the session" (or equivalent): (1) run `git status` across every repo touched this session, not just the primary one; (2) stage and commit via the `commit-commands:commit` or `commit-commands:commit-push-pr` skill — never skip hooks unless explicitly asked; (3) self-audit before declaring done — list what the user originally asked for vs. what actually shipped and flag any gap (untested branches, deferred fixes, missing syncs), do not suppress gaps; (4) for multi-repo changes, confirm push succeeded on each repo individually; (5) end with the working tree clean OR knowingly dirty — if files are intentionally left uncommitted, say so with a reason.
+**Scope:** All sessions.
+**First seen:** /insights audit, April 2026.
+
 ---
 
 ## Execution (P-EXEC)
@@ -97,7 +135,7 @@ the project-specific rule wins.
 ```
 
 To add a new entry:
-1. Pick the correct category (MSG, ENV, EXEC) or create a new one.
+1. Pick the correct category (MSG, ENV, TEST, CLOSE, EXEC) or create a new one.
 2. Use the next available number in that category.
 3. Fill in all four fields. Be concrete — avoid vague language.
 4. Never renumber existing entries. If an entry is retired, mark it `[RETIRED]`.
