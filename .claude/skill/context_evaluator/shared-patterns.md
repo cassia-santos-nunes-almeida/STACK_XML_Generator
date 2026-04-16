@@ -80,6 +80,16 @@ the project-specific rule wins.
 
 ---
 
+## Writing Quality (P-WRITE)
+
+### P-WRITE-01 — Run stop-slop on all human-facing prose
+**Pattern:** Skills produce prose for human readers (paper sections, messages, student-facing summaries, teaching content, Notion pages, STACK question stems and feedback, handover drafts, reading-list entries, school/parent messages) and ship with AI-tells ("delve", "leverage", "it's worth noting", "crucial", hedge-everywhere patterns, uniform sentence rhythm). stop-slop was integrated into eer-paper-writing and message-coach but missed in other prose-producing skills; even in the integrated ones it ran silently, so skipping it left no signal. Same failure mode as "did you test?" — verification claimed without evidence.
+**Rule:** Before delivering any human-facing prose output, run `stop-slop` with the appropriate cluster profile (academic-human / academic-formal for papers, professional-message / informal-message for messages, or the closest match for other contexts — see stop-slop SKILL.md context-profiles.md for the full tolerance matrix). The pass is **cosmetic only** — must never alter meaning, remove content, add new ideas, weaken a deliberate claim, or override voice rules. After running it, **always surface a one-line signal**: either `[stop-slop: clean]` if nothing was changed, `[stop-slop: N edits applied]` with a short summary if edits were made, or `[stop-slop: N tells left intentionally — <reason>]` if pattern hits were kept on purpose. Never run silently with no signal — that makes the pass unverifiable, which is exactly the /insights friction pattern this rule exists to close.
+**Scope:** All skills producing human-facing text — eer-paper-writing, message-coach, handover, recommended-reading-list, em-ca-textbook-conventions (teaching prose only), stack-xml-generator (question stems + feedback text), wilma-processing, all notion-* skills. Does NOT apply to internal/machine-facing output (SESSION.md, PATTERNS.md, decisions-log.md, git commit messages, bash scripts, XML/JSON/YAML syntax) — those have their own review patterns.
+**First seen:** Writing-skills audit, 2026-04-16.
+
+---
+
 ## Session Close (P-CLOSE)
 
 ### P-CLOSE-01 — Session close hygiene
@@ -135,7 +145,7 @@ the project-specific rule wins.
 ```
 
 To add a new entry:
-1. Pick the correct category (MSG, ENV, TEST, CLOSE, EXEC) or create a new one.
+1. Pick the correct category (MSG, ENV, TEST, WRITE, CLOSE, EXEC) or create a new one.
 2. Use the next available number in that category.
 3. Fill in all four fields. Be concrete — avoid vague language.
 4. Never renumber existing entries. If an entry is retired, mark it `[RETIRED]`.
