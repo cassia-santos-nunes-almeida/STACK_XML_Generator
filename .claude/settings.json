@@ -35,6 +35,15 @@
             "if": "Write(.claude/skill/**)|Edit(.claude/skill/**)"
           }
         ]
+      },
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/validate-structured-file.sh"
+          }
+        ]
       }
     ]
   }
