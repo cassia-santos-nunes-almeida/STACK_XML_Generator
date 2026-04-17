@@ -1,4 +1,6 @@
 // Validation utilities for STACK question data
+import { lintStopSlop } from './stop-slop-lint.js';
+
 
 /**
  * Validates that all {@var@} references in text have corresponding variable definitions.
@@ -244,6 +246,16 @@ export function validateQuestionData(data) {
         if (exprErr) {
             issues.push({ level: 'warning', message: `Variable "${v.name}": ${exprErr}` });
         }
+    });
+
+    // Stop-slop lint on student-facing prose (P-WRITE-01)
+    const slopFindings = lintStopSlop(data);
+    slopFindings.forEach(f => {
+        const matchText = f.matches.map(m => `"${m}"`).join(', ');
+        issues.push({
+            level: 'warning',
+            message: `[stop-slop] ${f.field}: ${matchText} — try: ${f.suggest}`,
+        });
     });
 
     return issues;
