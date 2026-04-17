@@ -109,6 +109,12 @@ describe('Radio Input', () => {
         expect(varDef).toContain('["Apple", false]');
         expect(varDef).toContain('["Banana", true]');
     });
+
+    it('wraps option list in random_permutation() so options shuffle per variant', () => {
+        const varDef = generateRadioVariable(part);
+        expect(varDef).toMatch(/ta_ans1:\s*random_permutation\(\[/);
+        expect(varDef.trim()).toMatch(/\]\)$/);
+    });
 });
 
 describe('Matrix Input', () => {
