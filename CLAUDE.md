@@ -9,6 +9,16 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 - `npm run test` — Run full test suite (Vitest, 175+ tests)
 - `npm run test:watch` — Watch mode
 
+## Git Hooks (one-time setup)
+
+Activate tracked hooks per clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+`pre-commit` rejects commits that include files synced from `my-claude-skills` (enforces **P-EXEC-05**). Detection uses the manifest at `my-claude-skills/scripts/sync-config.json`. See [.githooks/README.md](.githooks/README.md).
+
 ## Architecture
 
 - `src/core/` — State management (observer pattern), constants, validators

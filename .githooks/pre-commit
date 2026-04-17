@@ -1,0 +1,100 @@
+#!/bin/bash
+# Pre-commit hook — block edits to files synced from my-claude-skills (P-EXEC-05).
+#
+# Activation (one-time per clone):
+#   git config core.hooksPath .githooks
+#
+# Detection: reads my-claude-skills/scripts/sync-config.json and rejects any
+# staged file whose path matches an entry in this project's `syncFiles[]` list.
+#
+# Escape hatch: git commit --no-verify (standard git).
+
+set -eu
+
+PROJECT_NAME="STACK_XML_Generator"
+CONFIG="//maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/sync-config.json"
+
+# Collect staged files (Added / Copied / Modified / Renamed)
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+if [ -z "$STAGED" ]; then
+    exit 0
+fi
+
+# --- Primary path: manifest-driven check via Python ---
+
+PYTHON=""
+WIN_USER="${USER:-${USERNAME:-$(whoami)}}"
+for candidate in python python3 \
+    "/c/Users/$WIN_USER/AppData/Local/Programs/Python/Python313/python.exe" \
+    "/c/Users/$WIN_USER/AppData/Local/Programs/Python/Python312/python.exe" \
+    "/c/Users/$WIN_USER/AppData/Local/Programs/Python/Python311/python.exe"; do
+    if command -v "$candidate" >/dev/null 2>&1; then
+        PYTHON="$candidate"
+        break
+    fi
+done
+
+if [ -n "$PYTHON" ] && [ -f "$CONFIG" ]; then
+    BLOCKED=$("$PYTHON" - "$CONFIG" "$PROJECT_NAME" "$STAGED" <<'PYEOF'
+import json, sys
+config_path, project, staged_raw = sys.argv[1], sys.argv[2], sys.argv[3]
+staged = [s.strip() for s in staged_raw.splitlines() if s.strip()]
+
+try:
+    with open(config_path) as f:
+        config = json.load(f)
+except Exception:
+    sys.exit(0)
+
+proj = config.get('projects', {}).get(project, {})
+synced = set()
+for sk_name, sk in proj.get('skills', {}).items():
+    target = sk.get('targetName', sk_name)
+    for rel in sk.get('syncFiles', []):
+        synced.add(f'.claude/skill/{target}/{rel}')
+
+sp_target = proj.get('sharedPatterns', {}).get('target', '')
+if sp_target:
+    synced.add(sp_target.replace('\\', '/').lstrip('/'))
+
+for p in staged:
+    norm = p.replace('\\', '/')
+    if norm in synced:
+        print(norm)
+PYEOF
+)
+    if [ -n "$BLOCKED" ]; then
+        echo ""
+        echo "[pre-commit] BLOCKED — these files are synced from my-claude-skills and cannot be committed locally (P-EXEC-05):"
+        echo ""
+        echo "$BLOCKED" | sed 's/^/  - /'
+        echo ""
+        echo "To make these changes permanent:"
+        echo "  1. Edit the canonical source in //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/"
+        echo "  2. Run: bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/sync-to-projects.sh"
+        echo ""
+        echo "To override (not recommended): git commit --no-verify"
+        exit 1
+    fi
+    exit 0
+fi
+
+# --- Fallback path: Python or sync-config.json unreachable ---
+# Blanket-block any .md file under .claude/skill/ — safer than no protection.
+
+FALLBACK_BLOCKED=$(echo "$STAGED" | grep -E '^\.claude/skill/.*\.md$' || true)
+if [ -n "$FALLBACK_BLOCKED" ]; then
+    echo ""
+    echo "[pre-commit] BLOCKED (fallback mode — sync manifest unreachable) — .claude/skill/*.md files staged:"
+    echo ""
+    echo "$FALLBACK_BLOCKED" | sed 's/^/  - /'
+    echo ""
+    echo "The sync manifest at $CONFIG could not be read."
+    echo "Without it, this hook cannot tell synced files from project-local ones, so it blocks all of them."
+    echo ""
+    echo "To resolve: ensure my-claude-skills is cloned at the expected path, or override with:"
+    echo "  git commit --no-verify"
+    exit 1
+fi
+
+exit 0
