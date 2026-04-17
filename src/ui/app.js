@@ -111,7 +111,19 @@ function initApp() {
     });
 
     // Export XML
-    document.getElementById('btn-export-xml')?.addEventListener('click', () => {
+    document.getElementById('btn-export-xml')?.addEventListener('click', async () => {
+        // Test-gate: in dev, confirm export when tests haven't passed (P-TEST-01)
+        const testStatus = await checkTestStatus();
+        if (!testStatus.ok) {
+            const msg =
+                testStatus.reason === 'not-run'
+                    ? 'Tests have not run yet this session. Run `npm run test` before exporting.\n\nExport anyway?'
+                    : testStatus.reason === 'fail'
+                    ? `${testStatus.failed} test(s) failing as of ${testStatus.timestamp}.\n\nExport anyway?`
+                    : 'Could not verify test status (reading /test-status.json failed).\n\nExport anyway?';
+            if (!confirm(msg)) return;
+        }
+
         // Validate first
         const issues = validateQuestionData(state.data);
         const errors = issues.filter(i => i.level === 'error');
@@ -163,6 +175,27 @@ function downloadFile(content, filename, mimeType) {
     a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
+}
+
+/**
+ * Reads /test-status.json written by the custom Vitest reporter.
+ * Returns { ok: true, timestamp? } when tests have passed, or
+ * { ok: false, reason: 'not-run' | 'fail' | 'error', ... } otherwise.
+ * Production builds short-circuit to ok — the gate is dev-only (P-TEST-01).
+ */
+async function checkTestStatus() {
+    if (!import.meta.env.DEV) return { ok: true };
+    try {
+        const res = await fetch('/test-status.json', { cache: 'no-store' });
+        if (!res.ok) return { ok: false, reason: 'not-run' };
+        const data = await res.json();
+        if (data.status !== 'pass') {
+            return { ok: false, reason: 'fail', failed: data.failed, timestamp: data.timestamp };
+        }
+        return { ok: true, timestamp: data.timestamp };
+    } catch {
+        return { ok: false, reason: 'error' };
+    }
 }
 
 function showNotification(message, type = 'info') {

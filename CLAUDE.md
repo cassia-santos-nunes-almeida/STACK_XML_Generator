@@ -9,6 +9,8 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 - `npm run test` — Run full test suite (Vitest, 175+ tests)
 - `npm run test:watch` — Watch mode
 
+**Pre-export test gate (P-TEST-01):** In dev, the XML export button confirms before downloading when tests haven't passed in the current session. A custom Vitest reporter writes `src/public/test-status.json` after each run; the UI reads it via `fetch('/test-status.json')`. Keep `npm run test:watch` running in a side terminal to silence the prompt. The gate is dev-only — production builds skip it via `import.meta.env.DEV`.
+
 ## Git Hooks (one-time setup)
 
 Activate tracked hooks per clone:
