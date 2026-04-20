@@ -68,6 +68,63 @@ the project-specific rule wins.
 **Scope:** All `.claude/settings.json` hook definitions.
 **First seen:** /insights audit, April 2026.
 
+### P-ENV-07 — `dvisvgm` silently fails on UNC-path output destinations
+**Pattern:** `dvisvgm --pdf input.pdf -o output.svg` reports success ("1 of 1 page converted in 0.09 seconds") on stdout but does NOT actually create the output SVG when the destination path is on a `\\maa1\home\...` UNC share. Stderr contains `"failed to write output to <path>"` and the exit code is non-zero, but wrapper scripts that only check stdout (like `render_circuitikz.py`) propagate the misleading success message. Caught when 4 reluctance diagrams appeared to render but were absent from the filesystem. **Recurrence (2026-04-20):** even with the tempdir-and-copy workaround in place, `v3_toroid_reluctance.svg` silently failed to write on TWO separate render batches in the same session. The wrapper reported success both times; only manual filesystem inspection caught it. Root cause on recurrence: the destination-side `cp` itself can intermittently fail on UNC shares without a non-zero exit code.
+**Rule:** When compiling LaTeX → SVG via `dvisvgm` on UNC-mounted workstations:
+1. Compile in a local tempdir, then `cp` the finished SVG to the UNC destination.
+2. <HARD-GATE> After the `cp`, verify the destination file (a) exists and (b) has an mtime within the last 60 seconds. If either check fails, treat the render as silently-failed and retry (once); on a second failure, raise a loud error. Do NOT rely on exit codes alone.
+
+Pattern:
+```bash
+TMPDIR=$(mktemp -d)
+cd "$TMPDIR"
+cp "$UNC_DIR/file.tex" ./
+pdflatex file.tex && dvisvgm --pdf file.pdf -o file.svg --no-fonts
+cp file.svg "$UNC_DIR/"
+# mtime verification — fail loudly if the destination wasn't refreshed
+python -c "import sys, os, time; p=r'$UNC_DIR/file.svg'; \
+  age=time.time()-os.path.getmtime(p) if os.path.exists(p) else 9e9; \
+  sys.exit(0 if age<60 else (print(f'SILENT FAIL: {p} not fresh (age={age:.0f}s)', file=sys.stderr) or 1))"
+```
+In Python wrappers (`render_circuitikz.py` and similar), after the final `shutil.copyfile`, add:
+```python
+from pathlib import Path
+import time
+p = Path(dest_svg_path)
+if not p.exists() or (time.time() - p.stat().st_mtime) > 60:
+    raise RuntimeError(f"P-ENV-07: destination {p} did not refresh; silent cp/dvisvgm fail.")
+```
+Consider patching `render_circuitikz.py` and similar helpers to apply this workaround automatically when the destination path begins with `\\` or `//`. Scope says "UNC-home workstations" — non-UNC environments treat this as inert.
+**Scope:** All LaTeX-to-SVG compilation workflows on UNC-home workstations.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-16 (Batch 2 A4 reluctance diagrams silently failed to write). Strengthened 2026-04-20 after recurrence on V3 toroid SVG across two render batches.
+
+### P-ENV-10 — Windows UNC short alias vs FQDN are distinct SMB connections with separate caches
+**Pattern:** `\\maa1\home\...` (short NetBIOS alias) and `\\maa1.cc.lut.fi\home\...` (FQDN) resolve to the same physical share server, but Windows treats them as two distinct SMB connections with independent client-side caches and, in some configurations, independent authentication sessions. Files written through one path may not appear immediately (or at all) through the other. Discovered when `sync-to-projects.sh` (configured with FQDN `basePath`) reported "up to date" and wrote new content to the FQDN path, while the active Claude Code session — operating from `Z:\...` mapped to the short alias `\\maa1\home` — continued to see the old file. The sync's SHA-256 hash check was cross-alias and genuinely matched on the FQDN side, so no "UPDATE" was reported for the Z:-visible copies.
+**Rule:** Pick ONE SMB alias form for the project and stick with it across `sync-config.json` `basePath`, drive mappings, and any scripts that compute canonical paths. On this workstation the `Z:` drive maps to `\\maa1\home`, so configs and scripts must use the `//maa1/home/...` form (short alias). If a config or script must reference the FQDN for an external reason, after any write to an FQDN path, either (a) force a separate write to the corresponding short-alias path, or (b) explicitly verify the short-alias copy via `stat` / `diff` before trusting sync reports.
+**Diagnostic for future sessions:** if `sync-to-projects.sh` reports "up to date" but `grep` on a known-new string finds 0 hits in the synced copy, suspect alias mismatch. `pwsh -NoProfile -Command "(Get-PSDrive Z).DisplayRoot"` reveals what the Z: drive points to; compare with `basePath` in `sync-config.json`.
+**Scope:** All Windows workstations using mapped UNC drives + Python/bash scripts that reference UNC paths.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-20 (priorities 4+5 upstream sync — wrote P-ENV-07/09 updates to FQDN path, Z:-visible copies stayed stale until manual `cp` within Z: mount).
+
+### P-ENV-09 — UNC paths trigger hardcoded "suspicious Windows path" permission prompt
+**Pattern:** When the working directory is a UNC path (`\\maa1.cc.lut.fi\home\...` or equivalent), Claude Code's Edit/Write tools trigger a hardcoded "suspicious Windows path" permission prompt on every file edit. This prompt is NOT overridable via `.claude/settings.local.json` — neither `"defaultMode": "bypassPermissions"` nor explicit `Edit(file=...)` / `Write(file=...)` allow rules suppress it. Each edit requires manual "Allow once" click, making multi-file sessions unworkable. Discovered mid-commit on EM-AC-STACK-Assessments after several failed Edits and repeated "Allow once" clicks before root-causing.
+**Rule:** Do not run Claude Code sessions directly from a UNC path. Drive-map the UNC share to a drive letter first, then launch Claude Code with the mapped drive — the mapped path resolves to the same UNC physical location but bypasses the suspicious-path heuristic. PowerShell one-liner (run once, `-Persist` keeps it across reboots for the current user):
+```powershell
+New-PSDrive -Name Z -PSProvider FileSystem -Root "\\maa1.cc.lut.fi\home\z116447" -Persist
+```
+Alternative via `net use` (works from cmd.exe too):
+```cmd
+net use Z: \\maa1.cc.lut.fi\home\z116447 /persistent:yes
+```
+After mapping, open the project from the mapped path (`Z:\Documents\GitHub\...`), never the UNC form. If "suspicious Windows path" prompts appear mid-session, stop, close Claude Code, drive-map, and reopen — do not power through with manual approvals (it compounds fatigue and the prompt fires on every single Edit).
+**Scope:** All Claude Code sessions on Windows with UNC-backed home directories (LUT `\\maa1\home`, any AD-mapped user share).
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-18 (Batch 4 — discovered mid-commit sequence). Upstreamed from project-local `PATTERNS.md` candidate 2026-04-20.
+
+### P-ENV-08 — `settings.local.json` `defaultMode` changes need session restart + UI opt-in
+**Pattern:** Editing `.claude/settings.local.json` to add `"defaultMode": "bypassPermissions"` (or to expand the `allow` list) does NOT take effect mid-session. The permissions harness reads the file only at session start, and the bypass mode additionally requires the user to opt in via Shift+Tab or `/permissions`. Sessions that edit this file and then attempt commands expecting the new permission hit silent denial.
+**Rule:** When changing `defaultMode` or the `allow`/`ask`/`deny` lists in `.claude/settings.local.json`, either: (a) restart the session and ask the user to re-enter the mode via Shift+Tab or `/permissions`, or (b) add the allow rules via the `/permissions` slash-command UI which writes and activates them in one step. Do not assume edits take effect automatically. Document the restart requirement when prescribing settings changes.
+**Scope:** All sessions editing `.claude/settings.local.json` or `.claude/settings.json` permissions blocks.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-18 (Batch 4 — bypassPermissions added mid-session, required Shift+Tab to activate).
+
 ---
 
 ## Testing (P-TEST)
@@ -128,9 +185,15 @@ the project-specific rule wins.
 
 ### P-EXEC-05 — Never modify synced skills locally
 **Pattern:** A synced skill file (in `.claude/skill/`) was edited directly in a project repo instead of in the canonical source (my-claude-skills). The local change was overwritten on next session start by sync-to-projects.sh.
-**Rule:** Before modifying any file in `.claude/skill/`, check if it's a synced skill by running `bash my-claude-skills/scripts/check-impact.sh <skill-name>`. If synced: edit the canonical source in `my-claude-skills/core/` or `my-claude-skills/personal/`, run `check-impact.sh` to see affected projects, then run `sync-to-projects.sh` to propagate. Only project-specific files (context.md, decisions-log.md, PATTERNS.md, SESSION.md) should be edited locally.
+**Rule:** Before modifying any file in `.claude/skill/`, check if it's a synced skill by running `bash my-claude-skills/scripts/check-impact.sh <skill-name>`. If synced: edit the canonical source in `my-claude-skills/core/` or `my-claude-skills/personal/`, run `check-impact.sh` to see affected projects, then run `sync-to-projects.sh` to propagate. Only project-specific files (context.md, decisions-log.md, PATTERNS.md, SESSION.md) should be edited locally. This rule also covers `patterns/shared-patterns.md` — cross-project patterns must be edited in `my-claude-skills/patterns/shared-patterns.md` and then synced, never in the project-local copy.
 **Scope:** All projects with synced skills.
 **First seen:** Lab Modules onboarding, April 2026.
+
+### P-EXEC-06 — Don't chain `cd "path" && cmd` under prefix-matched Bash allow rules
+**Pattern:** When `.claude/settings.local.json` has an allow rule like `Bash(python *)` (prefix match), running a compound command such as `cd "/some/path" && python script.py` fails to match: the harness compares the full command string (starting with `cd ...`) against the prefix, not the individual segments after `&&`. The user sees an unexpected permission prompt even though the inner command is allowed.
+**Rule:** Either: (a) grant the prefix of the full invocation (e.g., add `Bash(cd *)` or the exact compound form), or (b) avoid `cd && cmd` — pass the working-directory as an argument (`python /path/to/script.py`), use absolute paths throughout, or set `cwd` via a dedicated mechanism. When prescribing Bash commands in skill docs, default to absolute-path forms over `cd && cmd` compounds to minimize permission-prompt noise.
+**Scope:** All sessions using `.claude/settings.local.json` prefix allow rules.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-18 (Batch 4 — repeated permission prompts on `cd "..." && python ...` despite `Bash(python *)` being allowed).
 
 ---
 
