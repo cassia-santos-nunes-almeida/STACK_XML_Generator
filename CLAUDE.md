@@ -2,6 +2,14 @@
 
 Browser-based tool for building STACK (System for Teaching and Assessment using a Computer algebra Kernel) question XML files importable into Moodle 4.5.
 
+## Operating Rules
+
+* **Before claiming done:** run behavioural tests, not static-only. Actually run Vitest, load the browser UI, export a sample XML and parse it. State explicitly: `Tested: [X]. Not tested: [Y] because [Z].` See **P-TEST-01**.
+* **Environment:** Windows UNC home via `Z:\`. Python is `python` not `python3` (**P-ENV-01**). Sub-agents are read-only on UNC — main agent performs writes (**P-ENV-05**). Always work from `Z:\`, never `\\maa1\...` (**P-ENV-09**). Short alias vs FQDN are distinct SMB caches (**P-ENV-10**).
+* **Hooks:** limited PATH — no Python/Node interpreters in hook scripts (**P-ENV-06**).
+* **Settings changes:** `.claude/settings.local.json` edits need session restart + Shift+Tab opt-in (**P-ENV-08**).
+* Full rules: `.claude/skill/context_evaluator/shared-patterns.md`.
+
 ## Build & Test
 
 - `npm run dev` — Start Vite dev server
