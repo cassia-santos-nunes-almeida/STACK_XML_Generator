@@ -119,7 +119,21 @@ bash my-claude-skills/scripts/sync-to-projects.sh --dry-run
 
 ### Step 4 — Self-audit BEFORE handing off
 
-Produce a short audit in this exact shape:
+First, run the ZIP freshness check (skip if the change touched only
+`patterns/shared-patterns.md` and no skill source folder):
+
+```bash
+bash my-claude-skills/scripts/check-zip-freshness.sh
+```
+
+Default mode is WARN-ONLY: it prints `STALE` / `MISSING` per skill but
+exits 0. Stale ZIPs are common during active dev. If the change ships
+to claude.ai uploads (i.e., the user will pull a fresh `.skill` from
+`dist/`), rebuild affected ZIPs via `scripts/build-skills.sh <path>`
+and re-run until clean. Use `--strict` to fail on any problem (CI /
+pre-release contexts).
+
+Then produce a short audit in this exact shape:
 
 ```
 Canonical changes:
@@ -130,6 +144,9 @@ Projects synced:
 
 Verification:
 - <ProjectName>: all N verified  |  <ProjectName>: FAIL — <reason>
+
+ZIP freshness:
+- 0 stale, 0 missing  |  N stale (rebuilt — list)  |  N stale (deferred — reason)
 
 Gaps:
 - <ProjectName>: <skipped, reason>
