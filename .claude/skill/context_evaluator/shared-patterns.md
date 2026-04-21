@@ -38,11 +38,17 @@ the project-specific rule wins.
 **Scope:** All CLI Python invocations.
 **First seen:** Environment setup.
 
-### P-ENV-02 — [RETIRED 2026-04-20] Google Drive search unreliable for .pptx
-Retired: no active skill consumer. Revive here if the pattern recurs.
+### P-ENV-02 — Google Drive search unreliable for .pptx
+**Pattern:** Google Drive search returned incomplete or no results when searching for `.pptx` files by name or content.
+**Rule:** Do not rely on Google Drive search to locate `.pptx` files. Instead, navigate the folder hierarchy manually or use known file paths. If search is required, try multiple query variations and verify results.
+**Scope:** Google Drive file retrieval.
+**First seen:** Environment discovery.
 
-### P-ENV-03 — [MOVED 2026-04-20] NotebookLM auth tokens expire
-Rule relocated to `personal/notebooklm-guide/SKILL.md` (Auth Recovery section — "Proactive auth check for long sessions"). Domain-specific, not cross-project.
+### P-ENV-03 — NotebookLM auth tokens expire
+**Pattern:** NotebookLM authentication tokens expired mid-session, causing silent failures in API calls.
+**Rule:** Assume NotebookLM auth tokens may expire at any time. Check for auth errors before retrying content operations. Re-authenticate proactively if a session runs long.
+**Scope:** NotebookLM integration.
+**First seen:** Environment discovery.
 
 ### P-ENV-04 — Node.js / npm not installed
 **Pattern:** Sessions attempted `npm install`, `npm test`, or `node <script>` and failed mid-workflow because the environment has no Node runtime.
@@ -62,14 +68,45 @@ Rule relocated to `personal/notebooklm-guide/SKILL.md` (Auth Recovery section �
 **Scope:** All `.claude/settings.json` hook definitions.
 **First seen:** /insights audit, April 2026.
 
-### P-ENV-07 — [MOVED 2026-04-20] `dvisvgm` silently fails on UNC-path output destinations
-Rule relocated to `EM-AC-STACK-Assessments/PATTERNS.md` as `P-DIAG-11`. Domain-specific (LaTeX→SVG on UNC), not cross-project. Other repos that grow LaTeX-compile workflows on UNC can re-elevate it here at that point.
+### P-ENV-07 — `dvisvgm` silently fails on UNC-path output destinations
+**Pattern:** `dvisvgm --pdf input.pdf -o output.svg` reports success ("1 of 1 page converted in 0.09 seconds") on stdout but does NOT actually create the output SVG when the destination path is on a `\\maa1\home\...` UNC share. Stderr contains `"failed to write output to <path>"` and the exit code is non-zero, but wrapper scripts that only check stdout (like `render_circuitikz.py`) propagate the misleading success message. Caught when 4 reluctance diagrams appeared to render but were absent from the filesystem. **Recurrence (2026-04-20):** even with the tempdir-and-copy workaround in place, `v3_toroid_reluctance.svg` silently failed to write on TWO separate render batches in the same session. The wrapper reported success both times; only manual filesystem inspection caught it. Root cause on recurrence: the destination-side `cp` itself can intermittently fail on UNC shares without a non-zero exit code.
+**Rule:** When compiling LaTeX → SVG via `dvisvgm` on UNC-mounted workstations:
+1. Compile in a local tempdir, then `cp` the finished SVG to the UNC destination.
+2. <HARD-GATE> After the `cp`, verify the destination file (a) exists and (b) has an mtime within the last 60 seconds. If either check fails, treat the render as silently-failed and retry (once); on a second failure, raise a loud error. Do NOT rely on exit codes alone.
 
-### P-ENV-08 — `settings.local.json` `defaultMode` changes need session restart + UI opt-in
-**Pattern:** Editing `.claude/settings.local.json` to add `"defaultMode": "bypassPermissions"` (or to expand the `allow` list) does NOT take effect mid-session. The permissions harness reads the file only at session start, and the bypass mode additionally requires the user to opt in via Shift+Tab or `/permissions`. Sessions that edit this file and then attempt commands expecting the new permission hit silent denial.
-**Rule:** When changing `defaultMode` or the `allow`/`ask`/`deny` lists in `.claude/settings.local.json`, either: (a) restart the session and ask the user to re-enter the mode via Shift+Tab or `/permissions`, or (b) add the allow rules via the `/permissions` slash-command UI which writes and activates them in one step. Do not assume edits take effect automatically. Document the restart requirement when prescribing settings changes.
-**Scope:** All sessions editing `.claude/settings.local.json` or `.claude/settings.json` permissions blocks.
-**First seen:** EM-AC-STACK-Assessments Session 2026-04-18 (Batch 4 — bypassPermissions added mid-session, required Shift+Tab to activate).
+Pattern:
+```bash
+TMPDIR=$(mktemp -d)
+cd "$TMPDIR"
+cp "$UNC_DIR/file.tex" ./
+pdflatex file.tex && dvisvgm --pdf file.pdf -o file.svg --no-fonts
+cp file.svg "$UNC_DIR/"
+# mtime verification — fail loudly if the destination wasn't refreshed
+python -c "import sys, os, time; p=r'$UNC_DIR/file.svg'; \
+  age=time.time()-os.path.getmtime(p) if os.path.exists(p) else 9e9; \
+  sys.exit(0 if age<60 else (print(f'SILENT FAIL: {p} not fresh (age={age:.0f}s)', file=sys.stderr) or 1))"
+```
+In Python wrappers (`render_circuitikz.py` and similar), after the final `shutil.copyfile`, add:
+```python
+from pathlib import Path
+import time
+p = Path(dest_svg_path)
+if not p.exists() or (time.time() - p.stat().st_mtime) > 60:
+    raise RuntimeError(f"P-ENV-07: destination {p} did not refresh; silent cp/dvisvgm fail.")
+```
+Consider patching `render_circuitikz.py` and similar helpers to apply this workaround automatically when the destination path begins with `\\` or `//`. Scope says "UNC-home workstations" — non-UNC environments treat this as inert.
+**Scope:** All LaTeX-to-SVG compilation workflows on UNC-home workstations.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-16 (Batch 2 A4 reluctance diagrams silently failed to write). Strengthened 2026-04-20 after recurrence on V3 toroid SVG across two render batches.
+
+### P-ENV-10 — Windows UNC short alias vs FQDN are distinct SMB connections with separate caches
+**Pattern:** `\\maa1\home\...` (short NetBIOS alias) and `\\maa1.cc.lut.fi\home\...` (FQDN) resolve to the same physical share server, but Windows treats them as two distinct SMB connections with independent client-side caches and, in some configurations, independent authentication sessions. Files written through one path may not appear immediately (or at all) through the other. Discovered when `sync-to-projects.sh` (configured with FQDN `basePath`) reported "up to date" and wrote new content to the FQDN path, while the active Claude Code session — operating from `Z:\...` mapped to the short alias `\\maa1\home` — continued to see the old file. The sync's SHA-256 hash check was cross-alias and genuinely matched on the FQDN side, so no "UPDATE" was reported for the Z:-visible copies.
+**Rule:** Pick ONE SMB alias form for the project and stick with it across `sync-config.json` `basePath`, drive mappings, and any scripts that compute canonical paths. On this workstation the `Z:` drive maps to `\\maa1\home`, so configs and scripts must use the `//maa1/home/...` form (short alias). If a config or script must reference the FQDN for an external reason, after any write to an FQDN path, either (a) force a separate write to the corresponding short-alias path, or (b) explicitly verify the short-alias copy via `stat` / `diff` before trusting sync reports.
+**HARD-GATE for Edit/Write tool calls:** <HARD-GATE> Before any `Edit` or `Write` tool invocation, inspect the `file_path` argument. If it begins with `//maa1.cc.lut.fi/`, `\\maa1.cc.lut.fi\`, or any FQDN form of the `maa1` share, REWRITE the path to the `Z:\` (or `/z/`) short-alias equivalent before calling the tool. The FQDN form is a silent-divergence source, not a silent-success target — recurred 2026-04-20 session #5 within 24h of the rule being written. Path rewrite pattern:
+  - `//maa1.cc.lut.fi/home/z116447/...` → `Z:\z116447\...` (or `/z/z116447/...` in Git Bash)
+  - `\\maa1.cc.lut.fi\home\z116447\...` → same rewrite. </HARD-GATE>
+**Diagnostic for future sessions:** if `sync-to-projects.sh` reports "up to date" but `grep` on a known-new string finds 0 hits in the synced copy, suspect alias mismatch. `pwsh -NoProfile -Command "(Get-PSDrive Z).DisplayRoot"` reveals what the Z: drive points to; compare with `basePath` in `sync-config.json`.
+**Scope:** All Windows workstations using mapped UNC drives + Python/bash scripts that reference UNC paths, and all Claude Code `Edit`/`Write` tool invocations.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-20 (priorities 4+5 upstream sync — wrote P-ENV-07/09 updates to FQDN path, Z:-visible copies stayed stale until manual `cp` within Z: mount). HARD-GATE added Session 2026-04-20 #5 after the rule fired twice in 24h via FQDN-defaulting `Edit` tool calls.
 
 ### P-ENV-09 — UNC paths trigger hardcoded "suspicious Windows path" permission prompt
 **Pattern:** When the working directory is a UNC path (`\\maa1.cc.lut.fi\home\...` or equivalent), Claude Code's Edit/Write tools trigger a hardcoded "suspicious Windows path" permission prompt on every file edit. This prompt is NOT overridable via `.claude/settings.local.json` — neither `"defaultMode": "bypassPermissions"` nor explicit `Edit(file=...)` / `Write(file=...)` allow rules suppress it. Each edit requires manual "Allow once" click, making multi-file sessions unworkable. Discovered mid-commit on EM-AC-STACK-Assessments after several failed Edits and repeated "Allow once" clicks before root-causing.
@@ -85,15 +122,11 @@ After mapping, open the project from the mapped path (`Z:\Documents\GitHub\...`)
 **Scope:** All Claude Code sessions on Windows with UNC-backed home directories (LUT `\\maa1\home`, any AD-mapped user share).
 **First seen:** EM-AC-STACK-Assessments Session 2026-04-18 (Batch 4 — discovered mid-commit sequence). Upstreamed from project-local `PATTERNS.md` candidate 2026-04-20.
 
-### P-ENV-10 — Windows UNC short alias vs FQDN are distinct SMB connections with separate caches
-**Pattern:** `\\maa1\home\...` (short NetBIOS alias) and `\\maa1.cc.lut.fi\home\...` (FQDN) resolve to the same physical share server, but Windows treats them as two distinct SMB connections with independent client-side caches and, in some configurations, independent authentication sessions. Files written through one path may not appear immediately (or at all) through the other. Discovered when `sync-to-projects.sh` (configured with FQDN `basePath`) reported "up to date" and wrote new content to the FQDN path, while the active Claude Code session — operating from `Z:\...` mapped to the short alias `\\maa1\home` — continued to see the old file. The sync's SHA-256 hash check was cross-alias and genuinely matched on the FQDN side, so no "UPDATE" was reported for the Z:-visible copies.
-**Rule:** Pick ONE SMB alias form for the project and stick with it across `sync-config.json` `basePath`, drive mappings, and any scripts that compute canonical paths. On this workstation the `Z:` drive maps to `\\maa1\home`, so configs and scripts must use the `//maa1/home/...` form (short alias). If a config or script must reference the FQDN for an external reason, after any write to an FQDN path, either (a) force a separate write to the corresponding short-alias path, or (b) explicitly verify the short-alias copy via `stat` / `diff` before trusting sync reports.
-**HARD-GATE for Edit/Write tool calls:** <HARD-GATE> Before any `Edit` or `Write` tool invocation, inspect the `file_path` argument. If it begins with `//maa1.cc.lut.fi/`, `\\maa1.cc.lut.fi\`, or any FQDN form of the `maa1` share, REWRITE the path to the `Z:\` (or `/z/`) short-alias equivalent before calling the tool. The FQDN form is a silent-divergence source, not a silent-success target — recurred 2026-04-20 session #5 within 24h of the rule being written. Path rewrite pattern:
-  - `//maa1.cc.lut.fi/home/z116447/...` → `Z:\z116447\...` (or `/z/z116447/...` in Git Bash)
-  - `\\maa1.cc.lut.fi\home\z116447\...` → same rewrite. </HARD-GATE>
-**Diagnostic for future sessions:** if `sync-to-projects.sh` reports "up to date" but `grep` on a known-new string finds 0 hits in the synced copy, suspect alias mismatch. `pwsh -NoProfile -Command "(Get-PSDrive Z).DisplayRoot"` reveals what the Z: drive points to; compare with `basePath` in `sync-config.json`.
-**Scope:** All Windows workstations using mapped UNC drives + Python/bash scripts that reference UNC paths, and all Claude Code `Edit`/`Write` tool invocations.
-**First seen:** EM-AC-STACK-Assessments Session 2026-04-20 (priorities 4+5 upstream sync — wrote P-ENV-07/09 updates to FQDN path, Z:-visible copies stayed stale until manual `cp` within Z: mount). HARD-GATE added Session 2026-04-20 #5 after the rule fired twice in 24h via FQDN-defaulting `Edit` tool calls.
+### P-ENV-08 — `settings.local.json` `defaultMode` changes need session restart + UI opt-in
+**Pattern:** Editing `.claude/settings.local.json` to add `"defaultMode": "bypassPermissions"` (or to expand the `allow` list) does NOT take effect mid-session. The permissions harness reads the file only at session start, and the bypass mode additionally requires the user to opt in via Shift+Tab or `/permissions`. Sessions that edit this file and then attempt commands expecting the new permission hit silent denial.
+**Rule:** When changing `defaultMode` or the `allow`/`ask`/`deny` lists in `.claude/settings.local.json`, either: (a) restart the session and ask the user to re-enter the mode via Shift+Tab or `/permissions`, or (b) add the allow rules via the `/permissions` slash-command UI which writes and activates them in one step. Do not assume edits take effect automatically. Document the restart requirement when prescribing settings changes.
+**Scope:** All sessions editing `.claude/settings.local.json` or `.claude/settings.json` permissions blocks.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-18 (Batch 4 — bypassPermissions added mid-session, required Shift+Tab to activate).
 
 ---
 
