@@ -46,7 +46,7 @@ each boundary — do not chain silently.
 
 Run `git status` in every repo touched this session, not just the
 primary one. If the session worked across multiple projects (for
-example, edited a canonical skill here AND ran `sync-to-projects.sh`
+example, edited a skill in the my-skills repo AND ran `sync-to-projects.sh`
 which touched project repos), each repo needs its own status check.
 
 Surface to the user a short table:

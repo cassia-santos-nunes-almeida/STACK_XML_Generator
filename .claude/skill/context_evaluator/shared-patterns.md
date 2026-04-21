@@ -187,8 +187,8 @@ After mapping, open the project from the mapped path (`Z:\Documents\GitHub\...`)
 **First seen:** Skill centralization review, April 2026.
 
 ### P-EXEC-05 — Never modify synced skills locally
-**Pattern:** A synced skill file (in `.claude/skill/`) was edited directly in a project repo instead of in the canonical source (my-claude-skills). The local change was overwritten on next session start by sync-to-projects.sh.
-**Rule:** Before modifying any file in `.claude/skill/`, check if it's a synced skill by running `bash my-claude-skills/scripts/check-impact.sh <skill-name>`. If synced: edit the canonical source in `my-claude-skills/core/` or `my-claude-skills/personal/`, run `check-impact.sh` to see affected projects, then run `sync-to-projects.sh` to propagate. Only project-specific files (context.md, decisions-log.md, PATTERNS.md, SESSION.md) should be edited locally. This rule also covers `patterns/shared-patterns.md` — cross-project patterns must be edited in `my-claude-skills/patterns/shared-patterns.md` and then synced, never in the project-local copy.
+**Pattern:** A synced skill file (in `.claude/skill/`) was edited directly in a project repo instead of in the my-skills repo (my-claude-skills). The local change was overwritten on next session start by sync-to-projects.sh.
+**Rule:** Before modifying any file in `.claude/skill/`, check if it's a synced skill by running `bash my-claude-skills/scripts/check-impact.sh <skill-name>`. If synced: edit the source in the my-skills repo under `my-claude-skills/core/` or `my-claude-skills/personal/`, run `check-impact.sh` to see affected projects, then run `sync-to-projects.sh` to propagate. Only project-specific files (context.md, decisions-log.md, PATTERNS.md, SESSION.md) should be edited locally. This rule also covers `patterns/shared-patterns.md` — cross-project patterns must be edited in `my-claude-skills/patterns/shared-patterns.md` and then synced, never in the project-local copy.
 **Scope:** All projects with synced skills.
 **First seen:** Lab Modules onboarding, April 2026.
 
@@ -198,7 +198,7 @@ After mapping, open the project from the mapped path (`Z:\Documents\GitHub\...`)
 **Scope:** All sessions using `.claude/settings.local.json` prefix allow rules.
 **First seen:** EM-AC-STACK-Assessments Session 2026-04-18 (Batch 4 — repeated permission prompts on `cd "..." && python ...` despite `Bash(python *)` being allowed).
 
-### P-EXEC-07 — Grep canonical skills before building ANY new skill
+### P-EXEC-07 — Grep the my-skills repo before building ANY new skill
 **Pattern:** `/insights` suggested two new skills on 2026-04-20: `close-session` and `propagate-skill`. Before building either, a check of `my-claude-skills/core/` revealed `close-session` was already fully implemented (5-step protocol, synced to every project). Building a parallel version would have created a second close protocol and fragmented the ecosystem — a worse outcome than the friction the recommendation was meant to solve. Saved approximately one hour of redundant work by checking first.
 **Rule:** Before implementing ANY skill recommended by `/insights`, the user, an external doc, or your own planning, ALWAYS check whether a close match already exists: `ls my-claude-skills/core/ my-claude-skills/personal/` and `grep -l "<closest-name>" my-claude-skills/**/SKILL.md`. If a close match exists, compare specs before proceeding. Two skills with overlapping charter are worse than one — they fragment invocation rules and force the user to remember which to use. When in doubt, extend the existing skill instead of creating a new one.
 **Scope:** All sessions considering new skill creation.

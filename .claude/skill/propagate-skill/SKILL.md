@@ -2,10 +2,10 @@
 name: propagate-skill
 description: >
   Use when the user asks to propagate, roll out, sync, or standardize
-  a canonical skill, config, pattern, or template change across all
+  a my-skills repo skill, config, pattern, or template change across all
   dependent project repos in the my-claude-skills ecosystem. Triggers
   on "propagate skill", "sync skill across projects", "roll out X to
-  all repos", "standardize X across repos", "push canonical change
+  all repos", "standardize X across repos", "push my-skills repo change
   out", "update all projects with", "sync the ecosystem". Codifies the
   sync-to-projects.sh workflow with a mandatory pre-sync impact check,
   post-sync re-hash + JSON/XML parse verification, and explicit
@@ -16,7 +16,7 @@ description: >
 
 # Propagate Skill
 
-Codifies how to roll a canonical change out across every dependent
+Codifies how to roll a my-skills repo change out across every dependent
 project repo in the my-claude-skills ecosystem. This skill owns
 **change + sync + verify**; it hands off dirty working trees to
 `close-session` for commit + push.
@@ -35,7 +35,7 @@ Trigger on any of:
 - "propagate skill", "propagate the change"
 - "sync skill across projects", "sync to projects"
 - "roll out X to all repos", "standardize X across repos"
-- "push the canonical change out", "update all projects with X"
+- "push the my-skills repo change out", "update all projects with X"
 - "sync the ecosystem"
 - equivalents in Portuguese or Finnish if the user code-switches
 
@@ -43,7 +43,7 @@ Trigger on any of:
 - A single-project edit — use normal `Edit` / `Write`.
 - A brand-new project — use `scripts/bootstrap-project.sh` instead.
 - A config or pattern that lives only in one project (not in the
-  canonical source).
+  source in the my-skills repo).
 
 ## Protocol
 
@@ -227,7 +227,7 @@ For a typical "improve a shared skill" session:
 
 1. User: "propagate the improved stop-slop guidance to all repos."
 2. Run `bash scripts/check-impact.sh stop-slop` → surface scope.
-3. Edit canonical source in `personal/stop-slop/`.
+3. Edit source in the my-skills repo in `personal/stop-slop/`.
 4. Run `bash scripts/sync-to-projects.sh --verify` → per-project sync
    + verification output.
 5. Produce Step 4 audit.
