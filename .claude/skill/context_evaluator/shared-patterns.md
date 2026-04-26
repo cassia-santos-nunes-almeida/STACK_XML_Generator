@@ -38,17 +38,11 @@ the project-specific rule wins.
 **Scope:** All CLI Python invocations.
 **First seen:** Environment setup.
 
-### P-ENV-02 — Google Drive search unreliable for .pptx
-**Pattern:** Google Drive search returned incomplete or no results when searching for `.pptx` files by name or content.
-**Rule:** Do not rely on Google Drive search to locate `.pptx` files. Instead, navigate the folder hierarchy manually or use known file paths. If search is required, try multiple query variations and verify results.
-**Scope:** Google Drive file retrieval.
-**First seen:** Environment discovery.
+### P-ENV-02 — [RETIRED 2026-04-20] Google Drive search unreliable for .pptx
+Retired: no active skill consumer. Revive here if the pattern recurs.
 
-### P-ENV-03 — NotebookLM auth tokens expire
-**Pattern:** NotebookLM authentication tokens expired mid-session, causing silent failures in API calls.
-**Rule:** Assume NotebookLM auth tokens may expire at any time. Check for auth errors before retrying content operations. Re-authenticate proactively if a session runs long.
-**Scope:** NotebookLM integration.
-**First seen:** Environment discovery.
+### P-ENV-03 — [MOVED 2026-04-20] NotebookLM auth tokens expire
+Rule relocated to `personal/notebooklm-guide/SKILL.md` (Auth Recovery section — "Proactive auth check for long sessions"). Domain-specific, not cross-project.
 
 ### P-ENV-04 — Node.js / npm not installed
 **Pattern:** Sessions attempted `npm install`, `npm test`, or `node <script>` and failed mid-workflow because the environment has no Node runtime.
@@ -104,9 +98,16 @@ Consider patching `render_circuitikz.py` and similar helpers to apply this worka
 **HARD-GATE for Edit/Write tool calls:** <HARD-GATE> Before any `Edit` or `Write` tool invocation, inspect the `file_path` argument. If it begins with `//maa1.cc.lut.fi/`, `\\maa1.cc.lut.fi\`, or any FQDN form of the `maa1` share, REWRITE the path to the `Z:\` (or `/z/`) short-alias equivalent before calling the tool. The FQDN form is a silent-divergence source, not a silent-success target — recurred 2026-04-20 session #5 within 24h of the rule being written. Path rewrite pattern:
   - `//maa1.cc.lut.fi/home/z116447/...` → `Z:\z116447\...` (or `/z/z116447/...` in Git Bash)
   - `\\maa1.cc.lut.fi\home\z116447\...` → same rewrite. </HARD-GATE>
-**Diagnostic for future sessions:** if `sync-to-projects.sh` reports "up to date" but `grep` on a known-new string finds 0 hits in the synced copy, suspect alias mismatch. `pwsh -NoProfile -Command "(Get-PSDrive Z).DisplayRoot"` reveals what the Z: drive points to; compare with `basePath` in `sync-config.json`.
-**Scope:** All Windows workstations using mapped UNC drives + Python/bash scripts that reference UNC paths, and all Claude Code `Edit`/`Write` tool invocations.
-**First seen:** EM-AC-STACK-Assessments Session 2026-04-20 (priorities 4+5 upstream sync — wrote P-ENV-07/09 updates to FQDN path, Z:-visible copies stayed stale until manual `cp` within Z: mount). HARD-GATE added Session 2026-04-20 #5 after the rule fired twice in 24h via FQDN-defaulting `Edit` tool calls.
+**HARD-GATE for `git add` + `git commit` (read-side divergence):** <HARD-GATE> The write-side HARD-GATE above catches where Claude WRITES files. It does NOT catch `git add`, which reads files through whichever alias the git process happens to use and can stage **stale blobs** from the non-current alias cache. The staged blob becomes the commit's content — a silent revert of prior work that `git log` shows as a happy entry. Recurred four times in one session (2026-04-22) — commits `4ca6ad2` (reverted 5 exam files) and `eb881dc` (reverted settings.json + 4 exam files) had `git add` pathspecs listing only skill files, yet silently captured stale exam-file blobs and reverted prior commits. Three required steps around every `git add`+`git commit` on a UNC workstation:
+
+1. **Pre-`git add` force-sync (multi-file commits only).** When the pending-commit set has MORE THAN ONE file, before `git add`, run `cp <Z:-path>/file //maa1.cc.lut.fi/<FQDN-path>/file` for every file in the set. This flushes the FQDN cache to match the Z: view so git stages consistent content regardless of which alias it reads through. Single-file commits skip this step (risk is minimal; cp-per-stage adds friction).
+
+2. **Post-commit sentinel verification (every commit).** After `git commit`, for every file in the commit pick a commit-specific sentinel — a distinctive phrase from the intended change (e.g., `li += 2` for a new JSXGraph loop, `Edit(exams/**)` for a new allow rule, `red!20` for an opacity fix) — and run `git show HEAD:<file> | grep -c "<sentinel>"`. If any grep returns 0, the commit silently captured stale content; go to step 3. **Do not push until every committed file passes its sentinel check.**
+
+3. **Recovery procedure (silent-revert caught post-commit, pre-push).** Run `git reset --mixed HEAD~1` to undo the bad commit locally (keeps workdir). Force-sync every file in the pending set (cp Z: → FQDN). Stage ONLY the intended files with explicit paths. Inspect `git diff --cached --stat` and confirm it matches expectations (file list + plausible insertion/deletion counts) BEFORE committing. Re-commit, re-verify via the sentinel (step 2), then push. If the bad commit was already pushed, use `git revert <sha>` (non-destructive history) instead of reset. </HARD-GATE>
+**Diagnostic for future sessions:** if `sync-to-projects.sh` reports "up to date" but `grep` on a known-new string finds 0 hits in the synced copy, suspect alias mismatch. `pwsh -NoProfile -Command "(Get-PSDrive Z).DisplayRoot"` reveals what the Z: drive points to; compare with `basePath` in `sync-config.json`. Also: if `git status` shows `MM` on files you just committed, suspect the read-side divergence described in the second HARD-GATE above — the first `M` means git's index already holds a stale blob, the second `M` means workdir is fresh; act on it before pushing.
+**Scope:** All Windows workstations using mapped UNC drives + Python/bash scripts that reference UNC paths, all Claude Code `Edit`/`Write` tool invocations, and all `git add`/`git commit` operations on UNC-backed repositories.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-20 (priorities 4+5 upstream sync — wrote P-ENV-07/09 updates to FQDN path, Z:-visible copies stayed stale until manual `cp` within Z: mount). Write-side HARD-GATE added Session 2026-04-20 #5 after the rule fired twice in 24h via FQDN-defaulting `Edit` tool calls. Read-side HARD-GATE added Session 2026-04-22 after the rule fired four times in one session via silent-revert `git add`/`git commit` sequences (commits `4ca6ad2` and `eb881dc` both captured stale blobs from pending-but-unmentioned files).
 
 ### P-ENV-09 — UNC paths trigger hardcoded "suspicious Windows path" permission prompt
 **Pattern:** When the working directory is a UNC path (`\\maa1.cc.lut.fi\home\...` or equivalent), Claude Code's Edit/Write tools trigger a hardcoded "suspicious Windows path" permission prompt on every file edit. This prompt is NOT overridable via `.claude/settings.local.json` — neither `"defaultMode": "bypassPermissions"` nor explicit `Edit(file=...)` / `Write(file=...)` allow rules suppress it. Each edit requires manual "Allow once" click, making multi-file sessions unworkable. Discovered mid-commit on EM-AC-STACK-Assessments after several failed Edits and repeated "Allow once" clicks before root-causing.
@@ -121,6 +122,16 @@ net use Z: \\maa1.cc.lut.fi\home\z116447 /persistent:yes
 After mapping, open the project from the mapped path (`Z:\Documents\GitHub\...`), never the UNC form. If "suspicious Windows path" prompts appear mid-session, stop, close Claude Code, drive-map, and reopen — do not power through with manual approvals (it compounds fatigue and the prompt fires on every single Edit).
 **Scope:** All Claude Code sessions on Windows with UNC-backed home directories (LUT `\\maa1\home`, any AD-mapped user share).
 **First seen:** EM-AC-STACK-Assessments Session 2026-04-18 (Batch 4 — discovered mid-commit sequence). Upstreamed from project-local `PATTERNS.md` candidate 2026-04-20.
+
+### P-ENV-11 — Long UNC paths need `\\?\UNC\` prefix + git `core.longpaths=true`
+**Pattern:** On Windows UNC shares, file paths longer than 260 characters (Windows MAX_PATH) silently fail or throw cryptic errors in PowerShell `Move-Item` / `Copy-Item`, in .NET `[System.IO.File]::Move` / `Copy` / `ReadAllBytes` / `OpenRead`, AND in `git add`. `Get-ChildItem` returns the FileInfo object showing the file exists, but every actual file operation errors with "does not exist" or "Filename too long". Common in Moodle-exported filenames like `exams/midterm2-week18/Versions in Moodle/questions-BL30A0350 Contact teaching, Lpr 7.1.2026-17.4.2026-Midterm 2 - Q4_2V2 TL Transient + Ulaby Bounce Diagram (…)-20260423-0249.xml` (often 260–300 chars full UNC path).
+**Rule:** Two fixes, applied together:
+1. For PowerShell/.NET file ops, use the extended-length prefix: `\\?\UNC\<server>\<share>\...`. Example that works: `[System.IO.File]::Move("\\?\UNC\maa1.cc.lut.fi\home\z116447\Documents\GitHub\<repo>\<long>.xml", "\\?\UNC\maa1.cc.lut.fi\...\dest\<long>.xml")`.
+2. For git ops, set once per repo: `git config core.longpaths=true` (local scope — does NOT get pushed). After this, `git add`/`commit`/`status` handle paths >260 chars correctly.
+
+Do NOT attempt to shorten filenames to work around this — Moodle-exported filenames (and similar generator-output filenames) are long by design and should be preserved for audit traceability.
+**Scope:** All Windows UNC file operations with long filenames. Amplified on LUT/`\\maa1.cc.lut.fi\home\z116447\...` home-drive paths where the 67-char server prefix eats into the MAX_PATH budget before the project tree even starts. The `git config core.longpaths=true` command should also go into `scripts/bootstrap-project.sh` so new projects don't hit this.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-23 (archival commit `5a08c51` — Moodle XML snapshots under `Versions in Moodle/` subfolders; both the `Move-Item` step for the stray Q4_2V2 0249 file AND the `git add -A` step on midterm2-week18 hit this).
 
 ### P-ENV-08 — `settings.local.json` `defaultMode` changes need session restart + UI opt-in
 **Pattern:** Editing `.claude/settings.local.json` to add `"defaultMode": "bypassPermissions"` (or to expand the `allow` list) does NOT take effect mid-session. The permissions harness reads the file only at session start, and the bypass mode additionally requires the user to opt in via Shift+Tab or `/permissions`. Sessions that edit this file and then attempt commands expecting the new permission hit silent denial.
@@ -209,6 +220,27 @@ After mapping, open the project from the mapped path (`Z:\Documents\GitHub\...`)
 **Rule:** For multi-step repo state mutations — `checkout`, `stash`, `cherry-pick`, `rebase`, `reset`, `merge`, `branch -d`, `clean`, `fetch --prune` — NEVER use `run_in_background=true`. Either run synchronously in the foreground OR decompose into per-step foreground calls. Background Bash is safe only for idempotent or isolated ops: a single-step commit+push, single-file read, `git log`, `git status`, test-suite runs, script execution that does not mutate git state.
 **Scope:** All sessions using Bash `run_in_background=true`.
 **First seen:** EM-AC-STACK-Assessments Session 2026-04-20 #5 (STACK_XML_Generator branch cherry-pick; background task interleaved with foreground state checks, ended in stuck cherry-pick).
+
+### P-EXEC-09 — "Discuss first" covers implementation details too, not just direction
+**Pattern:** When the user asked "please let's discuss together first and plan together" at the start of a non-trivial design task (Q4_2 time-axis redesign), Claude presented options (A/B/C + 1/2/3), got approval on the high-level direction (B+1), then silently chose an implementation detail (variant-specific ns axis vs. universal 0.5-ns grid) without asking. The user's actual preference was the universal grid. Repeated correction in the same session: "you are forgetting to ask and plan before starting to code." The "discuss" keyword had signalled a collaborative gate at the DETAIL level, but Claude treated it as gate-at-direction-only.
+**Rule:** When the user uses collaborative-discussion language — "discuss", "plan together", "let's talk this through", "what do you think", "let's figure out", "please plan first", "before you code", or any equivalent — treat it as a check-in request at TWO levels:
+1. **Direction level:** present design OPTIONS with concrete tradeoffs, recommend one if helpful, wait for approval on the high-level direction.
+2. **Implementation-detail level (the step usually skipped):** BEFORE implementing the approved direction, list every implementation detail still requiring a decision — axis granularity, default values, label formats, UI layout, tolerances, scoring weights, snap/quantize behavior, boundary handling, tie-breaking, error-handling choices — and ask about each non-trivially configurable one. A user who says "discuss" wants to review *choices*, not just direction. Skipping step 2 is the silent-default rework trigger.
+**Rationalization table:**
+| Excuse | Reality |
+|---|---|
+| "The high-level direction is enough" | Implementation details ARE design choices. The user may have opinions on each. |
+| "Most users would be fine with the default I picked" | This user explicitly asked to discuss — defaults are disallowed by that request. |
+| "Asking every detail slows things down" | Rework from one wrong detail costs more than 30 seconds of check-in. |
+| "I'll pick a sensible default and the user can push back" | The check-in exists to avoid making the user chase corrections later. |
+**Scope:** All sessions where the user invokes collaborative-discussion language before or during a non-trivial design task.
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-21 (Q4_2 refinement — implemented variant-specific ns axis without asking about universal-grid alternative). Candidate approved and promoted 2026-04-22.
+
+### P-EXEC-10 — Verify deployed vs canonical BEFORE upstreaming any manual post-import fix
+**Pattern:** During a generator refactor, Claude was about to strip a specific tag value from the generator based on a "common-pattern" rule and a SESSION.md note describing the tag as a deliberate prior decision. A 30-second grep of the deployed XMLs in `*/Versions in Moodle/*.xml` showed the user had in fact stripped that tag at Moodle-import time, superseding the SESSION.md note. Without that grep Claude would have either preserved a stale value based on outdated docs, or stripped it based on pattern-matching without confirming user intent. Both risky.
+**Rule:** Before "upstreaming" any manual post-import fix into a generator, grep the deployed artifacts (e.g. Moodle XMLs in `*/Versions in Moodle/*.xml`, or wherever the deployed exports are archived) for the specific tag/value being changed. **Deployed state is the source of truth.** SESSION.md notes, memory files, and prior session transcripts can reflect superseded decisions. If deployed and documented differ, trust deployed AND update the docs. Minimum verification: one `Grep` pattern-match across all variants before touching the generator.
+**Scope:** All generator-refactor work where the goal is "upstream the manual fixes the user made post-import". Applies to STACK, but also to any generator → import → hand-edit workflow (lecture notes, lab handouts, slides, etc.).
+**First seen:** EM-AC-STACK-Assessments Session 2026-04-23 (Q4_2 `<syntaxhint>-0.888</syntaxhint>` decision; commit `b5d00bb` context).
 
 ---
 
