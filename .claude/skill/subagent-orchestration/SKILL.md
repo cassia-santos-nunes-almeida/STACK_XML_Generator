@@ -83,6 +83,19 @@ Those phrases push synthesis onto the subagent. Synthesis is yours. Write prompt
 
 Use `isolation: "worktree"` when the subagent should work on a copy of the repo (e.g., experimental refactor, risky edit). The worktree is auto-cleaned if no changes are made; otherwise the branch and path are returned. Do not use for read-only research.
 
+## Model selection
+
+Setting `CLAUDE_CODE_SUBAGENT_MODEL=sonnet` in `~/.claude/settings.json` (under `env`) makes Sonnet the default for all sub-agents, independent of the main session's model. Sub-agents gather and execute; the main agent synthesizes — gathering rarely needs Opus-tier reasoning, so Sonnet is usually the right default.
+
+Override per `Agent` call only when the default is wrong for the specific task:
+
+- **`model: "opus"`** — `feature-dev:code-architect`, `feature-dev:code-reviewer` on security-critical code, `Plan` when architectural trade-offs decide direction.
+- **`model: "haiku"`** — `statusline-setup`, narrow mechanical greps, many parallel cheap lookups where throughput > depth.
+
+**Never downgrade** `code-architect` or `code-reviewer` — their value is the strong model; if the task doesn't need that, you don't need that agent.
+
+For cost tuning without switching models, set `effort: low|medium` in a skill or sub-agent's frontmatter. Effort reduces reasoning depth within the current model — cheaper than a full model swap for routine work.
+
 ## Cross-project scope
 
 This skill is the **canonical source of subagent policy** across every project. Rules:
