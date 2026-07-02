@@ -235,6 +235,35 @@ visible; conceptual hints are revealed progressively.
 See `references/answer-tests-and-inputs.md` §8 for the full input
 types catalog (14 types with extra options for each).
 
+### Units inputs — `units` type vs `numerical` + inline label
+
+When the answer carries a physical unit, the input type depends on the
+*kind* of unit (P-STACK-63):
+
+- **SI-derived / multiplicative units** (V, A, Ω, Wb, T, m, s, W, J,
+  Hz, F, H, …): use `<type>units</type>`. The student enters
+  `value*unit` (e.g. `47*uF`); grade with `UnitsRelative` against a
+  `stackunits(value, unit)` teacher answer. STACK validates the
+  dimension and accepts any equivalent prefix (`5*mJ` ≡ `0.005*J`).
+- **Logarithmic-ratio units** (dB, dBm, dBW, Np): use
+  `<type>numerical</type>`. STACK's units validator does **not**
+  recognise logarithmic-ratio units — a `units` input rejects a valid
+  answer at the validation step. Keep the input numerical, render the
+  unit as an inline `\(\text{dBm}\)` label beside the box, and word
+  the stem "Enter a numerical value (in dBm)…".
+
+Decision gate: *is the unit a multiplicative SI-derived unit, or a
+logarithmic ratio?* Multiplicative → `units`. Logarithmic → `numerical`.
+
+When a units input is created, retyped, or moved by a script that
+batch-edits a multi-variant pool, follow the P-STACK-64 / P-STACK-65
+checklist: element-scope every audit regex (`<input>\s*<name>X</name>`,
+never bare `<name>`), read each variant's actual `<type>` and soft-skip
+when it diverges (P-STACK-36), guard chained `.replace()` calls and
+split-rebuild tail appends against silent no-ops, and verify
+behaviourally — `ET.parse()` plus a `Read` of one rendered variant,
+never count-only.
+
 ### Forbidden Words Keywords
 
 Use `<forbidwords>` to prevent students from entering Maxima commands
