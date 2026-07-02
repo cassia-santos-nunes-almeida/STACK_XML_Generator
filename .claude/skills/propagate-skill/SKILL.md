@@ -78,7 +78,7 @@ Edit files in one of:
   Step 3 to also propagate to existing projects via their normal
   synced files).
 
-**Never edit `.claude/skill/<skill>/` copies inside project repos** —
+**Never edit `.claude/skills/<skill>/` copies inside project repos** —
 those are generated artefacts and will be overwritten on the next
 sync (P-EXEC-05). The PostToolUse hook `check-skill-edit.sh` warns if
 you try; respect the warning.
@@ -173,7 +173,7 @@ projects into a single commit (each repo is independent).
 
 ## Anti-patterns to avoid
 
-- **Editing `.claude/skill/<skill>/` in a project repo directly.** The
+- **Editing `.claude/skills/<skill>/` in a project repo directly.** The
   next sync will silently overwrite your edit (P-EXEC-05).
 - **Skipping `--verify` because "the last sync worked".** P-ENV-07
   fails intermittently and silently; a previous successful sync is

@@ -1,7 +1,7 @@
 # Shared Patterns — Cross-Project Rules
 
 These rules apply across ALL projects that use my-claude-skills.
-Synced to each project's `.claude/skill/context_evaluator/shared-patterns.md`.
+Synced to each project's `.claude/skills/context_evaluator/shared-patterns.md`.
 
 When a rule here conflicts with a project-specific PATTERNS.md entry,
 the project-specific rule wins.
@@ -198,8 +198,8 @@ Do NOT attempt to shorten filenames to work around this — Moodle-exported file
 **First seen:** Skill centralization review, April 2026.
 
 ### P-EXEC-05 — Never modify synced skills locally
-**Pattern:** A synced skill file (in `.claude/skill/`) was edited directly in a project repo instead of in the my-skills repo (my-claude-skills). The local change was overwritten on next session start by sync-to-projects.sh.
-**Rule:** Before modifying any file in `.claude/skill/`, check if it's a synced skill by running `bash my-claude-skills/scripts/check-impact.sh <skill-name>`. If synced: edit the source in the my-skills repo under `my-claude-skills/core/` or `my-claude-skills/personal/`, run `check-impact.sh` to see affected projects, then run `sync-to-projects.sh` to propagate. Only project-specific files (context.md, decisions-log.md, PATTERNS.md, SESSION.md) should be edited locally. This rule also covers `patterns/shared-patterns.md` — cross-project patterns must be edited in `my-claude-skills/patterns/shared-patterns.md` and then synced, never in the project-local copy.
+**Pattern:** A synced skill file (in `.claude/skills/`) was edited directly in a project repo instead of in the my-skills repo (my-claude-skills). The local change was overwritten on next session start by sync-to-projects.sh.
+**Rule:** Before modifying any file in `.claude/skills/`, check if it's a synced skill by running `bash my-claude-skills/scripts/check-impact.sh <skill-name>`. If synced: edit the source in the my-skills repo under `my-claude-skills/core/` or `my-claude-skills/personal/`, run `check-impact.sh` to see affected projects, then run `sync-to-projects.sh` to propagate. Only project-specific files (context.md, decisions-log.md, PATTERNS.md, SESSION.md) should be edited locally. This rule also covers `patterns/shared-patterns.md` — cross-project patterns must be edited in `my-claude-skills/patterns/shared-patterns.md` and then synced, never in the project-local copy.
 **Scope:** All projects with synced skills.
 **First seen:** Lab Modules onboarding, April 2026.
 
