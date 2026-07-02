@@ -27,6 +27,21 @@ inbox from becoming another running log.
 `my-claude-skills/LESSONS-INBOX.md` — git-tracked (reaches both machines),
 append-only for capture, edited only by promotion/rejection stamps.
 
+**Two-machine rule:** pull `my-claude-skills` before capturing. If a merge
+conflict lands on the inbox, keep BOTH entries; if two entries minted the same
+L-id, re-suffix one with the machine letter (e.g. `L-2026-07-02-03b`).
+
+**Ledger division (which capture system wins):** a *project-scoped hard
+constraint* goes to that repo's `PATTERNS.md` via context-evaluator's
+correction capture; a *cross-repo / machine / skill-scoped* lesson goes HERE.
+Never both for the same correction — pick the wider scope if in doubt.
+The remember plugin records narrative; it is never a rules ledger.
+
+**Nudge coverage:** the pending-count nudge rides the SessionStart sync hook —
+it fires in the sync-consumer repos (see `scripts/sync-config.json`) and in
+`my-claude-skills` itself; sessions started elsewhere see no nudge and rely on
+this skill's triggers.
+
 ## Entry format (rigid — 5 lines, modeled on the PATTERNS.md P-rule schema)
 
 ```markdown
@@ -51,15 +66,21 @@ append-only for capture, edited only by promotion/rejection stamps.
 
 ## Review workflow ("retro review" / "promote #N")
 
-1. List pending entries oldest-first (number, one-liner, proposed target).
+`#N` always means the **L-id** (e.g. "promote #L-2026-07-02-05" or its short
+number), never the list position.
+
+1. List pending entries oldest-first (L-id, one-liner, proposed target).
 2. For the entry being promoted: show the **exact diff** to the proposed
    target file — the real edit, not a description. Respect the target
-   file's format (P-rule table in PATTERNS.md/shared-patterns.md, prose
-   bullet in a CLAUDE.md, frontmatter/body edit in a skill).
+   file's format (P-rule block in PATTERNS.md/shared-patterns.md, prose
+   bullet in a CLAUDE.md, frontmatter/body edit in a skill). If the
+   proposed target no longer exists, re-propose a target at review time —
+   never guess.
 3. Promoted lines land in the target with a `(verified YYYY-MM-DD)` stamp.
 4. On approval: apply the edit, then stamp the inbox entry
-   `Status: promoted → <target> (YYYY-MM-DD)`.
-   On rejection: `Status: rejected — <reason> (YYYY-MM-DD)`.
+   `- **Status:** promoted → <target> (YYYY-MM-DD)`.
+   On rejection: `- **Status:** rejected — <reason> (YYYY-MM-DD)`.
+   (Keep the bolded `**Status:**` form — the nudge greps for it.)
 5. If the target is a synced skill, follow `propagate-skill` after the
    edit (sync --verify + ZIP rebuild).
 6. On request, run the **reverse pass**: flag dated claims in CLAUDE.mds

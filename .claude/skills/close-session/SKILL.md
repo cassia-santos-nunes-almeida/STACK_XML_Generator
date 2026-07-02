@@ -20,7 +20,9 @@ every time the user signals end-of-session work. Delegates git
 mechanics to the `commit-commands:commit-push-pr` skill — this skill
 is about orchestration and self-audit, not git.
 
-See also: **P-CLOSE-01** in `.claude/skills/context_evaluator/shared-patterns.md`.
+See also: **P-CLOSE-01** in `.claude/skills/context_evaluator/shared-patterns.md`
+(written when this was a 5-step protocol; this skill supersedes it on the close
+flow — Step 5 below is the 2026-07-02 addition it doesn't know about).
 
 ## When to use
 
@@ -130,9 +132,12 @@ Two continuity actions, both cheap, both every close:
    format. A lesson is a *behavior-changer* — a constraint, convention,
    or gotcha that should alter how future sessions work. Status,
    progress, and "what we did" are NOT lessons (the remember plugin
-   captures those). If the session produced no durable lesson, say
-   "No durable lessons this session" — zero is a valid count; do not
-   invent entries to fill the quota.
+   captures those). Ledger division: *project-scoped hard constraints*
+   go to that repo's PATTERNS.md via context-evaluator's correction
+   capture; *cross-repo / machine / skill-scoped* lessons go to the
+   inbox — never both for the same correction. If the session produced
+   no durable lesson, say "No durable lessons this session" — zero is a
+   valid count; do not invent entries to fill the quota.
 2. **Run `/remember`** (remember plugin) so the session narrative is
    captured for next session's injection.
 
