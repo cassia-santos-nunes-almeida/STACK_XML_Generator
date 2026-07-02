@@ -5,10 +5,8 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 ## Operating Rules
 
 * **Before claiming done:** run behavioural tests, not static-only. Actually run Vitest, load the browser UI, export a sample XML and parse it. State explicitly: `Tested: [X]. Not tested: [Y] because [Z].` See **P-TEST-01**.
-* **Environment:** Windows UNC home via `Z:\`. Python is `python` not `python3` (**P-ENV-01**). Sub-agents are read-only on UNC — main agent performs writes (**P-ENV-05**). Always work from `Z:\`, never `\\maa1\...` (**P-ENV-09**). Short alias vs FQDN are distinct SMB caches (**P-ENV-10**).
-* **Hooks:** limited PATH — no Python/Node interpreters in hook scripts (**P-ENV-06**).
-* **Settings changes:** `.claude/settings.local.json` edits need session restart + Shift+Tab opt-in (**P-ENV-08**).
-* Full rules: `.claude/skill/context_evaluator/shared-patterns.md`.
+* **Machine facts** (paths, interpreters, UNC quirks, hook PATH limits) live in the untracked `../CLAUDE.md` workspace file on each machine — this repo file is machine-neutral. Templates: `../my-claude-skills/machines/`.
+* Full cross-project rules: `.claude/skills/context_evaluator/shared-patterns.md`.
 
 ## Build & Test
 
@@ -45,16 +43,16 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 
 | Skill | Purpose | Location |
 |-------|---------|----------|
-| context-evaluator | Session lifecycle, context loading, correction capture | `.claude/skill/context_evaluator/SKILL.md` |
+| context-evaluator | Session lifecycle, context loading, correction capture | `.claude/skills/context_evaluator/SKILL.md` |
 
 ## Reference
 
 | Topic | File |
 |-------|------|
-| Architecture, tech stack, constraints | `.claude/skill/context_evaluator/context.md` |
-| Current session state, pending tasks, blockers | `.claude/skill/context_evaluator/SESSION.md` |
-| Communication and coding preferences | `.claude/skill/context_evaluator/personal-preferences.md` |
-| Cross-project rules (synced from my-claude-skills) | `.claude/skill/context_evaluator/shared-patterns.md` |
+| Architecture, tech stack, constraints | `.claude/skills/context_evaluator/context.md` |
+| Current session state, pending tasks, blockers | `.claude/skills/context_evaluator/SESSION.md` |
+| Communication and coding preferences | `.claude/skills/context_evaluator/personal-preferences.md` |
+| Cross-project rules (synced from my-claude-skills) | `.claude/skills/context_evaluator/shared-patterns.md` |
 
 ## Session Boundary Protocol
 
@@ -81,5 +79,5 @@ Before returning any output:
 ## JSXGraph Conventions
 
 - Generator presets documented in `docs/jsxgraph-conventions.md` (generator implementation focus)
-- STACK authoring conventions in EM-AC-STACK-Assessments repo at `.claude/skill/stack-xml-generator/references/jsxgraph-conventions.md`
+- STACK authoring conventions in EM-AC-STACK-Assessments repo at `.claude/skills/stack-xml-generator/references/jsxgraph-conventions.md`
 - The two files have different scopes — read the §0 header in each to understand which to consult
