@@ -69,6 +69,113 @@ time to avoid re-runs.
 
 ---
 
+## Authoring rules — hard constraints
+
+Four cross-project authoring rules apply to every STACK question. They
+are derived from comparing deployed Moodle XMLs against generator
+output and codify the patterns authors keep applying post-import.
+
+### Rule 1 — Numerical `<syntaxhint>` is always empty; format reminders live in the stem as labelled `<em>` tags
+
+For every `<input>` with `<type>numerical</type>`: emit
+`<syntaxhint></syntaxhint>`. Never populate with a numeric value —
+numeric prefills either leak answer magnitudes or silently mislead
+students into wrong magnitudes (becoming pseudo-hints).
+
+Format reminders go in the question stem as labelled `<em>` tags, with
+standardized phrases per input kind:
+
+- **unit** (numerical with unit):
+  `Format: <code>number*unit</code> — examples: <code>47*uF</code>, <code>4.2*mA</code>, <code>3.0*kg*m/s^2</code>. Use <code>*</code>, <code>/</code>, <code>^</code>.`
+- **dimensionless** (bare number):
+  `Enter a dimensionless number. Examples: <code>3.14</code>, <code>%pi/4</code>, <code>1/3</code>. Use <code>*</code>, <code>/</code>, <code>^</code> for arithmetic.`
+- **algebraic** (symbolic):
+  `Enter an algebraic expression using the variables defined above. Example: <code>2*x + y^2</code>. Use <code>*</code>, <code>/</code>, <code>^</code> for arithmetic.`
+
+Examples inside `<em>` tags must be neutral pedagogical illustrations
+(`%pi/4`, `3.14`, `1/3`, `2*x + y^2`) — never values close to any
+variant's correct answer. Range-bounding phrases like
+`between -1 and 1` are forbidden; they leak the answer domain.
+
+### Rule 2 — Open-ended essay inputs use `<type>textarea</type>` + `<boxsize>100</boxsize>`
+
+For any input collecting prose, explanation, or written work
+(`<tans>"manual-grade"</tans>` or a string-literal model answer for
+rubric grading):
+
+- `<type>textarea</type>`
+- `<boxsize>100</boxsize>`
+- `<tans>"manual-grade"</tans>` (or equivalent sentinel)
+- Companion `prt_essay` is a single-node `AlgEquiv` against
+  `"pending-manual-grade"` with `truescore=0`, so Moodle flags for
+  manual review.
+
+Never `<type>string</type>` with a small `boxsize` for open-ended work
+— Moodle renders it as a single-line field, the wrong UX for prose.
+
+### Rule 3 — Numerical PRTs emit sign-flip / ×10ⁿ / within-15% / sig-figs diagnostics
+
+Every numerical PRT must include the following four diagnostic
+behaviours. Node-layout is implementation-dependent; the principle is
+the rule, the layout is one way to implement it consistently.
+
+1. **Primary check:** `NumRelative 0.05` (or `UnitsRelative 0.05` when
+   the input has units). Full points if passes.
+2. **Sign-flip diagnostic:** if student answer is within 5% of `-ta`,
+   emit "Sign error: your answer is the negative of expected — check
+   the sign convention."
+3. **×10ⁿ diagnostic:** if `|log10(sa/ta)|` is a non-zero integer
+   within ±0.05, emit "Powers of ten: your answer differs from
+   expected by a factor of 10^n — check unit prefixes or a
+   missing/extra factor."
+4. **Within-15% partial credit:** if student answer is within 15% (but
+   outside 5%) of `ta`, award 50% with feedback "Close: within 15% of
+   expected — check your last calculation step or intermediate
+   rounding."
+5. **SigFigsStrict advisory:** weight-0 additive node. If the
+   student's answer has the wrong number of sig figs, emit
+   "Expected ~3 sig figs." — does not change score.
+
+**Physical-bounds checks** (e.g. `|Γ| ≤ 1` for reflection coefficients,
+loss ≥ 0 for attenuation, efficiency ∈ [0,1]) should be added when the
+physics dictates. Inject them into the PRT's `feedbackvariables` block
+(e.g. `sa_physical_ok: abs(sa_raw) <= 1;`) and either (a) route the
+PRT so `not sa_physical_ok` → 0% with specific feedback, or (b)
+surface the check via the combined diagnostic node.
+
+The principle stands regardless of helper or template choice — every
+numerical PRT MUST surface all four diagnostics. Hand-rolled PRTs with
+a single 5% check and no diagnostic feedback are not acceptable: they
+deny partial credit and teaching value on common student errors.
+
+### Rule 4 — Engineering-life context in question stems, never in PRTs
+
+Every new question stem opens with a 1–2 sentence engineering-life
+scenario:
+
+- **WHO:** the engineer's role or company (e.g. "a 5G base-station
+  engineer", "an offshore wind-turbine team commissioning a
+  converter")
+- **WHAT:** the system being designed, commissioned, debugged, or
+  investigated
+- **WHY:** the real-world goal (reliability, safety, cost,
+  compliance, performance)
+
+The scenario lives in `<questiontext>` only — NEVER in `<prt>`
+feedback or grading logic. PRTs grade physics, not narrative.
+
+**Example:**
+- NOT: "Compute the reflection coefficient Γ_L at the load."
+- YES: "A 5G base-station engineer commissioning a mmWave antenna
+  array needs to match a 75 Ω feeder to a 50 Ω radiator. Compute the
+  reflection coefficient Γ_L at the load."
+
+Keep the scenario culturally neutral — no idioms, no cultural
+in-jokes, no assumed-local references. The rule applies to STACK
+courses everywhere.
+
+---
+
 ## Input and Display
 
 ### Syntax Hints

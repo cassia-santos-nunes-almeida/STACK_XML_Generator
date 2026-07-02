@@ -7,7 +7,7 @@ description: >
   "end of session", "let's finish", "push everything", "we're done",
   "I'm done for the day", or any variant asking to finalise and leave
   the working tree in a consistent state. Codifies P-CLOSE-01 from
-  shared-patterns.md as an explicit 5-step protocol and delegates the
+  shared-patterns.md as an explicit 6-step protocol and delegates the
   actual git commit/push to the `commit-commands:commit-push-pr`
   skill. Use this instead of improvising a close — it prevents the
   "premature done" pattern that /insights flagged.
@@ -20,7 +20,9 @@ every time the user signals end-of-session work. Delegates git
 mechanics to the `commit-commands:commit-push-pr` skill — this skill
 is about orchestration and self-audit, not git.
 
-See also: **P-CLOSE-01** in `.claude/skill/context_evaluator/shared-patterns.md`.
+See also: **P-CLOSE-01** in `.claude/skills/context_evaluator/shared-patterns.md`
+(written when this was a 5-step protocol; this skill supersedes it on the close
+flow — Step 5 below is the 2026-07-02 addition it doesn't know about).
 
 ## When to use
 
@@ -39,14 +41,14 @@ for the full close-out.
 
 ## Protocol
 
-Run these five steps in order. Do not skip any step. Report outcome at
+Run these six steps in order. Do not skip any step. Report outcome at
 each boundary — do not chain silently.
 
 ### Step 1 — Scan all affected repos
 
 Run `git status` in every repo touched this session, not just the
 primary one. If the session worked across multiple projects (for
-example, edited a canonical skill here AND ran `sync-to-projects.sh`
+example, edited a skill in the my-skills repo AND ran `sync-to-projects.sh`
 which touched project repos), each repo needs its own status check.
 
 Surface to the user a short table:
@@ -121,7 +123,25 @@ repo committed in Step 2:
   gone), name the repo and the error. Do not silently leave a
   committed-but-unpushed repo behind.
 
-### Step 5 — End in a known state
+### Step 5 — Distill durable lessons + /remember
+
+Two continuity actions, both cheap, both every close:
+
+1. **Distill 0–3 durable lessons** from this session into
+   `my-claude-skills/LESSONS-INBOX.md` using the `retro` skill's entry
+   format. A lesson is a *behavior-changer* — a constraint, convention,
+   or gotcha that should alter how future sessions work. Status,
+   progress, and "what we did" are NOT lessons (the remember plugin
+   captures those). Ledger division: *project-scoped hard constraints*
+   go to that repo's PATTERNS.md via context-evaluator's correction
+   capture; *cross-repo / machine / skill-scoped* lessons go to the
+   inbox — never both for the same correction. If the session produced
+   no durable lesson, say "No durable lessons this session" — zero is a
+   valid count; do not invent entries to fill the quota.
+2. **Run `/remember`** (remember plugin) so the session narrative is
+   captured for next session's injection.
+
+### Step 6 — End in a known state
 
 End one of two ways, explicitly:
 
@@ -135,24 +155,28 @@ Never end silently with a dirty tree you did not acknowledge.
 ## Anti-patterns to avoid
 
 - Running `commit-commands:commit-push-pr` directly for a close
-  without running Steps 1, 3, 4, 5 — those are the value-add of this
-  skill.
+  without running Steps 1, 3, 4, 5, 6 — those are the value-add of
+  this skill.
 - Declaring "done" after Step 2 without the self-audit in Step 3.
 - Assuming one push covers multiple repos.
 - Leaving a dirty tree without a reason statement.
 - Running this skill for a single-feature mid-session commit.
+- Padding Step 5 with status masquerading as lessons — the inbox is
+  for behavior-changers only.
 
 ## Integration with other skills
 
 - `commit-commands:commit-push-pr` — delegated to in Step 2. Always.
-- `handover` — optional after Step 5. Ask the user once: "Do you want
-  me to save a handover to Notion before we close?" Do not auto-run
-  — the user may be ending abruptly and does not want the overhead.
+- `retro` — Step 5's lesson format and the review/promotion flow live
+  there; this skill only performs the capture.
 - `context-evaluator` — its Session Close protocol (PATTERNS.md write,
   SESSION.md write, correction capture) runs BEFORE this skill.
   context-evaluator handles project-state persistence; close-session
   handles git-state persistence. Both should run, in that order, on a
   full close.
+- (Notion `handover` was removed from the close flow 2026-07-02 — the
+  remember plugin owns within-machine continuity. The skill remains in
+  `core/handover/` for claude.ai-side use if explicitly requested.)
 
 ## Full close sequence, combined
 
@@ -160,5 +184,5 @@ On a "close session" trigger, the complete flow is:
 
 1. `context-evaluator` Session Close — write SESSION.md, PATTERNS.md,
    capture corrections.
-2. `close-session` (this skill) — Steps 1–5 above.
-3. `handover` FETCH-or-skip — optional, ask once.
+2. `close-session` (this skill) — Steps 1–6 above, including the
+   lesson distillation and `/remember`.
