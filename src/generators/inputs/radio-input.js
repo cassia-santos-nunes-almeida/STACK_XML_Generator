@@ -43,12 +43,16 @@ export function generateRadioInput(part) {
  * Generates the Maxima variable definition for the radio option list.
  * Returns a variable definition string to add to questionvariables.
  *
- * Format: ta_ans1: [[label1, true/false], [label2, true/false], ...]
+ * Format: ta_ans1: random_permutation([[label1, true/false], [label2, true/false], ...])
+ *
+ * The list is wrapped in random_permutation() so STACK shuffles the options on each
+ * variant — without it, students see the same order every attempt (per stack-xml-generator
+ * skill rule P-STACK-23).
  */
 export function generateRadioVariable(part) {
     const items = part.options.map(opt => {
         const escaped = opt.value.replace(/"/g, '\\"');
         return `["${escaped}", ${opt.correct ? 'true' : 'false'}]`;
     });
-    return `ta_${part.answer}: [${items.join(', ')}]`;
+    return `ta_${part.answer}: random_permutation([${items.join(', ')}])`;
 }

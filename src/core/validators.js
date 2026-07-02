@@ -1,4 +1,6 @@
 // Validation utilities for STACK question data
+import { lintStopSlop } from './stop-slop-lint.js';
+
 
 /**
  * Validates that all {@var@} references in text have corresponding variable definitions.
@@ -67,6 +69,22 @@ export function validateMaximaExpression(expr) {
         return 'Double slash is not valid in Maxima. Use single / for division.';
     }
 
+    // Scientific-notation float alongside symbolic terms — breaks AlgEquiv on symbolic constants
+    const sciMatch = trimmed.match(/\b\d+\.?\d*[eE][+-]?\d+\b/);
+    if (sciMatch) {
+        // Strip all scientific-notation floats, then check if any letters (symbolic terms) remain
+        const stripped = trimmed.replace(/\b\d+\.?\d*[eE][+-]?\d+\b/g, '0');
+        const hasSymbolic = /%[a-zA-Z]+|[a-zA-Z_][a-zA-Z0-9_]*/.test(stripped);
+        if (hasSymbolic) {
+            return `Scientific-notation float "${sciMatch[0]}" appears alongside symbolic terms. Use exact rational form (e.g. 10^-7 instead of 1e-7) so AlgEquiv works.`;
+        }
+    }
+
+    // List-vs-matrix ambiguity: [[a,b],[c,d]] parses as matrix(), not a nested list
+    if (/^\s*\[\s*\[[^\]]+\]\s*,\s*\[[^\]]+\]\s*\]\s*$/.test(trimmed)) {
+        return 'Note: Maxima parses [[...],[...]] as matrix(...), not a nested list. If you intended a list, wrap with makelist() or build it differently.';
+    }
+
     return null;
 }
 
@@ -84,6 +102,57 @@ export function validateVariableName(name) {
         return `"${name}" is a reserved word in Maxima.`;
     }
     return null;
+}
+
+/**
+ * Validates a JSXGraph part's graphCode for {@var@} usage.
+ * Inside [[jsxgraph]] blocks, {@var@} renders as LaTeX and crashes the graph with
+ * SyntaxError — the correct syntax is {#var#} for raw JS value injection.
+ * Returns array of warning objects.
+ */
+export function validateJSXGraphBlocks(part) {
+    const warnings = [];
+    if (!part || part.type !== 'jsxgraph') return warnings;
+
+    const code = part.graphCode || '';
+    const matches = code.match(/\{@([a-zA-Z_][a-zA-Z0-9_]*)@\}/g) || [];
+    for (const match of matches) {
+        const varName = match.replace(/\{@|@\}/g, '');
+        warnings.push({
+            level: 'error',
+            message: `JSXGraph graphCode uses {@${varName}@} (LaTeX) — this crashes the graph. Use {#${varName}#} for raw JS value instead.`,
+        });
+    }
+    return warnings;
+}
+
+/**
+ * Validates that a JSXGraph part's snap size is tight enough for its PRT tolerance.
+ * Skill rule: snap size should be <= PRT tolerance / 2, otherwise students
+ * may not be able to place a point within grading tolerance.
+ * Returns array of warning objects.
+ */
+export function validateSnapVsTolerance(part) {
+    const warnings = [];
+    if (!part || part.type !== 'jsxgraph') return warnings;
+
+    const tightTol = part.grading?.tightTol;
+    if (!tightTol || tightTol <= 0) return warnings;
+
+    const code = part.graphCode || '';
+    const snapRegex = /snapSize[XY]\s*:\s*([\d.]+)/g;
+    let m;
+    while ((m = snapRegex.exec(code)) !== null) {
+        const snap = parseFloat(m[1]);
+        const axis = m[0].split(':')[0].trim();
+        if (snap > tightTol / 2) {
+            warnings.push({
+                level: 'warning',
+                message: `JSXGraph ${axis} (${snap}) exceeds half of PRT tolerance (${tightTol / 2}). Students may not be able to snap close enough to the expected answer.`,
+            });
+        }
+    }
+    return warnings;
 }
 
 /**
@@ -144,6 +213,12 @@ export function validateQuestionData(data) {
             if (!part.gradingCode || !part.gradingCode.trim()) {
                 issues.push({ level: 'warning', message: `Part (${label}): Graph grading code is empty.` });
             }
+            validateJSXGraphBlocks(part).forEach(w => {
+                issues.push({ level: w.level, message: `Part (${label}): ${w.message}` });
+            });
+            validateSnapVsTolerance(part).forEach(w => {
+                issues.push({ level: w.level, message: `Part (${label}): ${w.message}` });
+            });
         }
 
         // Validate prerequisites
@@ -171,6 +246,16 @@ export function validateQuestionData(data) {
         if (exprErr) {
             issues.push({ level: 'warning', message: `Variable "${v.name}": ${exprErr}` });
         }
+    });
+
+    // Stop-slop lint on student-facing prose (P-WRITE-01)
+    const slopFindings = lintStopSlop(data);
+    slopFindings.forEach(f => {
+        const matchText = f.matches.map(m => `"${m}"`).join(', ');
+        issues.push({
+            level: 'warning',
+            message: `[stop-slop] ${f.field}: ${matchText} — try: ${f.suggest}`,
+        });
     });
 
     return issues;

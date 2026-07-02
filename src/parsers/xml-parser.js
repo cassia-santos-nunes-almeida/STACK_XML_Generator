@@ -309,7 +309,13 @@ function analyzePRT(doc, part, name, type) {
  */
 function parseRadioOptions(value) {
     try {
-        const trimmed = value.trim();
+        let trimmed = value.trim();
+
+        // Strip random_permutation(...) wrapper if present — MCQ variables are now
+        // emitted as random_permutation([[label,bool],...]) so options shuffle per variant.
+        const permMatch = trimmed.match(/^random_permutation\s*\(\s*([\s\S]*)\s*\)\s*$/);
+        if (permMatch) trimmed = permMatch[1].trim();
+
         if (!trimmed.startsWith('[')) return [];
 
         const options = [];

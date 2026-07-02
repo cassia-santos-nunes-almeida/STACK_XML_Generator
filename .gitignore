@@ -12,6 +12,10 @@ dist
 dist-ssr
 *.local
 
+# Ephemeral local state — written by the custom Vitest reporter, consumed by the UI
+# test-gate in dev. Not part of the source.
+src/public/test-status.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

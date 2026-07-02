@@ -62,6 +62,31 @@ describe('Validators', () => {
         it('detects unmatched brackets', () => {
             expect(validateMaximaExpression('[1, 2')).toContain('bracket');
         });
+
+        it('warns about scientific-notation floats alongside symbolic terms', () => {
+            expect(validateMaximaExpression('4*%pi*1e-7')).toContain('Scientific-notation');
+            expect(validateMaximaExpression('sqrt(1e-3) + x')).toContain('Scientific-notation');
+            expect(validateMaximaExpression('k*2.5E+3')).toContain('Scientific-notation');
+        });
+
+        it('accepts pure scientific-notation numerics', () => {
+            expect(validateMaximaExpression('1e-7')).toBeNull();
+            expect(validateMaximaExpression('2.5E+3')).toBeNull();
+        });
+
+        it('accepts exact rational form with symbolic constants', () => {
+            expect(validateMaximaExpression('4*%pi/10^7')).toBeNull();
+            expect(validateMaximaExpression('sqrt(2)/2')).toBeNull();
+        });
+
+        it('advises on list-vs-matrix ambiguity', () => {
+            const err = validateMaximaExpression('[[1,2],[3,4]]');
+            expect(err).toContain('matrix');
+        });
+
+        it('does not flag a single list', () => {
+            expect(validateMaximaExpression('[1,2,3]')).toBeNull();
+        });
     });
 
     describe('validateVariableName', () => {
