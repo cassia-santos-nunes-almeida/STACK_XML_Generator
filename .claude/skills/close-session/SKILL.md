@@ -176,7 +176,7 @@ Never end silently with a dirty tree you did not acknowledge.
   full close.
 - (Notion `handover` was removed from the close flow 2026-07-02 — the
   remember plugin owns within-machine continuity. The skill remains in
-  `personal/` for claude.ai-side use if explicitly requested.)
+  `core/handover/` for claude.ai-side use if explicitly requested.)
 
 ## Full close sequence, combined
 

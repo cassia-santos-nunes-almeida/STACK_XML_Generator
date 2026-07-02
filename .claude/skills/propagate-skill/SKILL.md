@@ -186,15 +186,12 @@ projects into a single commit (each repo is independent).
 - **Bundling multi-repo changes into a single "commit message"** that
   lists them all. Each repo has its own history; each gets its own
   commit.
-- **Using the FQDN basePath (`\\maa1.cc.lut.fi\home\...`) when the Z:
-  drive is mapped to the short alias (`\\maa1\home\...`) (P-ENV-10).**
-  The two are distinct SMB caches — writing via one doesn't appear via
-  the other. Confirm `sync-config.json` `basePath` matches the Z:
-  drive's `DisplayRoot`:
-
-  ```powershell
-  pwsh -NoProfile -Command "(Get-PSDrive Z).DisplayRoot"
-  ```
+- **Reintroducing a configured basePath.** Since 2026-07-02 sync paths
+  are DERIVED from the repo's own location (projects = siblings); there
+  is no `basePath` key to configure, which is what retired the whole
+  P-ENV-10 FQDN-vs-short-alias divergence class at the sync layer. If a
+  machine-absolute path ever reappears in `sync-config.json`, that is a
+  regression — remove it.
 
 ## Integration with other skills
 

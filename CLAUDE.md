@@ -12,7 +12,7 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 
 - `npm run dev` — Start Vite dev server
 - `npm run build` — Production build to dist/
-- `npm run test` — Run full test suite (Vitest, 175+ tests)
+- `npm run test` — Run full test suite (Vitest; run it for the current count)
 - `npm run test:watch` — Watch mode
 
 ## Architecture
@@ -41,8 +41,13 @@ Browser-based tool for building STACK (System for Teaching and Assessment using 
 
 ## Skills
 
+Run `ls .claude/skills/` for the live set (synced from `../my-claude-skills` —
+edit sources there, never the copies here). Key ones for this repo:
+
 | Skill | Purpose | Location |
 |-------|---------|----------|
+| stack-xml-generator | STACK XML authoring, Maxima CAS, PRT validation | `.claude/skills/stack-xml-generator/SKILL.md` |
+| stack-question-validator | Post-generation quality check | `.claude/skills/stack-question-validator/SKILL.md` |
 | context-evaluator | Session lifecycle, context loading, correction capture | `.claude/skills/context_evaluator/SKILL.md` |
 
 ## Reference
