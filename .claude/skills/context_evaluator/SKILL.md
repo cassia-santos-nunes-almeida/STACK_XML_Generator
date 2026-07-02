@@ -1,6 +1,5 @@
 ---
 name: context-evaluator
-version: 2.0.0
 description: >
   Use when: starting or ending a Claude Code session, resuming previous
   work, loading project context. Trigger phrases include:

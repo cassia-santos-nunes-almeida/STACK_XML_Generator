@@ -16,7 +16,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/sync-to-projects.sh STACK_XML_Generator 2>&1 || echo '[SYNC WARNING] Skill sync failed or timed out. Skills may be outdated. Run manually: bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/sync-to-projects.sh STACK_XML_Generator'"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/../my-claude-skills/scripts/sync-to-projects.sh\" STACK_XML_Generator 2>&1 || echo '[SYNC ERROR] Skill sync FAILED — skills may be outdated or the project is unregistered. Run manually: bash ../my-claude-skills/scripts/sync-to-projects.sh STACK_XML_Generator'"
           },
           {
             "type": "command",
@@ -31,8 +31,8 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/check-skill-edit.sh",
-            "if": "Write(.claude/skill/**)|Edit(.claude/skill/**)"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/../my-claude-skills/scripts/check-skill-edit.sh\"",
+            "if": "Write(.claude/skills/**)|Edit(.claude/skills/**)"
           }
         ]
       },
@@ -41,7 +41,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash //maa1.cc.lut.fi/home/z116447/Documents/GitHub/my-claude-skills/scripts/validate-structured-file.sh"
+            "command": "bash \"$CLAUDE_PROJECT_DIR/../my-claude-skills/scripts/validate-structured-file.sh\""
           }
         ]
       }
