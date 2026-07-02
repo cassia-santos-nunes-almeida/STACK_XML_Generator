@@ -1,0 +1,4 @@
+
+# Synced skill copies are hash-compared byte-for-byte against LF sources in
+# my-claude-skills — git must never convert their line endings (2026-07-02).
+.claude/skills/** -text
