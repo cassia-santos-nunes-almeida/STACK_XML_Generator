@@ -87,6 +87,11 @@ number), never the list position.
    older than ~90 days for re-verification. Stale instructions are worse
    than missing ones.
 
+**AskUserQuestion batches during review:** treat every batch as possibly
+partial — a silently missing or empty answer is re-asked once as its own
+single question, never interpreted as approval or rejection; if skipped
+again, the entry stays pending. (verified 2026-07-03)
+
 ## Hard rules
 
 - **Nothing auto-applies.** No promotion without the user's explicit
