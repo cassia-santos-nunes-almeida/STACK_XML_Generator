@@ -198,10 +198,10 @@ projects into a single commit (each repo is independent).
 - **`close-session`** — always follows propagate-skill when the change
   should ship. propagate-skill leaves dirty working trees; close-session
   commits, pushes, and audits them.
-- **`subagent-orchestration`** — may parallelise per-project
-  behavioural tests AFTER sync (e.g. run each project's test suite in
-  parallel). Do NOT delegate file writes to sub-agents on UNC paths
-  (P-ENV-05); sub-agents read/analyse only.
+- **Subagents (per P-EXEC-12 in shared-patterns)** — may parallelise
+  per-project behavioural tests AFTER sync (e.g. run each project's
+  test suite in parallel). Do NOT delegate file writes to sub-agents on
+  UNC paths (P-ENV-05); sub-agents read/analyse only.
 - **`context-evaluator`** — may log new PATTERNS entries discovered
   during propagation (e.g. a verification failure that reveals an
   environment quirk). Runs at session close, after this skill.

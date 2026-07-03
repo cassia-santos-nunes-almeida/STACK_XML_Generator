@@ -254,6 +254,15 @@ Do NOT attempt to shorten filenames to work around this — Moodle-exported file
 **Scope:** All repos, all sessions performing branch or PR operations.
 **First seen:** Insights facet 2026-06 (zombie-PR closure blocked); recurred 2026-07-02 (AFK remote-branch deletion blocked). Promoted from LESSONS-INBOX L-2026-07-02-05.
 
+### P-EXEC-12 — Subagents gather and execute; synthesis stays with the main agent
+**Pattern:** Re-homed from the retired `core/subagent-orchestration` skill (ecosystem-fit audit 2026-07, decision #4) so the cross-project delegation policy keeps a canonical home. The failure modes it guards: prompts that assume the subagent shares the conversation ("based on your findings, fix it") push synthesis onto an agent that cannot see prior decisions; and subagents spawned for lookups a single Read/Grep answers.
+**Rule:** Two halves:
+1. **Delegation boundary.** Never delegate a judgment call that needs the conversation's accumulated context (user preferences, prior decisions, plan state) — the subagent cannot see the conversation. Handing a subagent a self-contained brief that YOUR synthesis produced (a plan-step implementer, an adversarial reviewer given a deliberately independent brief) is not a violation — delegating the synthesis itself is. Never write "based on your findings, implement/fix X"; after the report comes back, YOU decide, and any follow-up prompt must prove you understood (specific paths, line numbers, exactly what to do).
+2. **Prompt contract.** Every subagent prompt is self-contained: (a) goal — one sentence; (b) background — relevant paths, errors, constraints already learned; (c) the concrete task — for investigations hand over the question, not prescribed steps (steps become dead weight if the premise is wrong); for lookups the exact command; (d) output format + length cap. A subagent starts with zero context from the current conversation (it does still get CLAUDE.md/memory — don't re-paste those).
+Don't spawn at all when a known path/symbol answers via direct Read/Grep — unless the point is context isolation (keeping bulk output out of the main conversation).
+**Scope:** All repos, all sessions spawning subagents, any mechanism. On UNC-mapped setups P-ENV-05 additionally restricts subagents to read/analyze. Premise to re-verify after Claude Code upgrades: subagents still cannot see the conversation. Deliberately dropped from the retired skill (superseded by superpowers + harness docs): agent-type table, model selection, foreground/background + parallel/sequential mechanics — including "no placeholders in parallel calls" and ">3 subagents on one question → reformulate"; re-capture individually if they recur.
+**First seen:** Distilled from core/subagent-orchestration/SKILL.md at its sequenced retirement (audit decision #4, 2026-07-03). Promoted from LESSONS-INBOX L-2026-07-03-18.
+
 ---
 
 ## Template for New Entries
