@@ -175,8 +175,9 @@ Never end silently with a dirty tree you did not acknowledge.
   handles git-state persistence. Both should run, in that order, on a
   full close.
 - (Notion `handover` was removed from the close flow 2026-07-02 — the
-  remember plugin owns within-machine continuity. The skill remains in
-  `core/handover/` for claude.ai-side use if explicitly requested.)
+  remember plugin owns within-machine continuity. The skill was archived
+  to `archive/handover/` 2026-07-03 (audit decision #2); re-arm from
+  archive if ever needed.)
 
 ## Full close sequence, combined
 

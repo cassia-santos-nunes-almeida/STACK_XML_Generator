@@ -1,18 +1,18 @@
 ---
 name: context-evaluator
 description: >
-  Use when: starting or ending a Claude Code session, resuming previous
-  work, loading project context. Trigger phrases include:
+  Use when: starting a Claude Code session, resuming previous work,
+  loading project context, or running a context-file health check.
+  Trigger phrases include:
   Open — "open session", "load context", "new session", "let's start",
   "let's start the day", "where did we stop", "where were we",
   "continue from last time", "what's the status?", "pick up where
   we left off", "good morning".
-  Close — "wrap up", "close session", "let's call it a day",
-  "close the work", "finish this session", "end of session",
-  "save my progress", "update my files", "that's all for today",
-  "I'm done for now", "let's stop here".
   Health — "health check", "check my context files", "audit my files".
-  Always triggers before any other work begins.
+  Session CLOSE is owned by the close-session skill — do NOT trigger
+  this skill on close phrases ("wrap up", "close session", "I'm done
+  for now", etc.); close-session delegates the project-state writes
+  here itself.
 ---
 
 # Context Evaluator
@@ -22,7 +22,7 @@ the appropriate protocol. Search by heading name — look for
 "Session Open", "Session Boundary", or the project's build/start checklist:
 
 - **Session starting** (open session, new session, let's start, where did we stop, good morning, etc.) → find the session start protocol in CLAUDE.md (heading may be "Session Open", "Session Boundary Protocol", or a build checklist). Read the context files listed there.
-- **Session ending** (wrap up, let's call it a day, close the work, finish this session, I'm done for now, etc.) → find the session close protocol in CLAUDE.md (heading may be "Session Close" or "Session Boundary Protocol"). Write SESSION.md, check for PATTERNS candidates, offer handover.
+- **Session ending** (reached via close-session delegation — close phrases themselves trigger the close-session skill, not this one) → find the session close protocol in CLAUDE.md (heading may be "Session Close" or "Session Boundary Protocol"). Write SESSION.md, check for PATTERNS candidates.
 - **Health check** (health check, audit my files, check my context files) → run the Health Check below
 
 ## Context Files
