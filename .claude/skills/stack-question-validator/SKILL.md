@@ -1,6 +1,6 @@
 ---
 name: stack-question-validator
-version: 1.1.0
+version: 1.1.1
 description: >
   Use when: STACK XML has been generated and is ready for delivery,
   after completing a STACK question, before exporting XML, when asked
@@ -135,16 +135,17 @@ After validation, report results:
 ## Validation Report
 
 **Tier 1 (Structure):** PASS / FAIL
-- [list any failures with the P-STACK-NN reference]
+- [failures first, with the P-STACK-NN or reference-file citation; then
+  any ADVISORY/WARN items with their rationale]
 
 **Tier 2 (Grading):** PASS / FAIL
-- [list any failures]
+- [failures first; then any ADVISORY/WARN items with their rationale]
 
 **Tier 3 (Security):** PASS / FAIL
 - [list any failures]
 
 **Tier 4 (Question Tests / qtest):** PASS / FAIL / N/A
-- [list any failures]
+- [failures first; then any ADVISORY/WARN items with their rationale]
 
 **Tier 5 (Quality):** PASS / ADVISORY
 - [list any advisories]
@@ -153,6 +154,9 @@ After validation, report results:
 - [list any failures]
 
 Mode: NEW-OUTPUT / DEPLOYED
+Advisories and warnings never flip a tier's PASS/FAIL verdict;
+DEPLOYED-mode demotions report as ADVISORY under their own tier with
+the stated rationale.
 Reminder: import validates nothing — after importing, preview at least
 one variant of every question AND run the question tests / bulk-tester
 before releasing to students.
