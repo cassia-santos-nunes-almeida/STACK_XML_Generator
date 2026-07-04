@@ -144,10 +144,10 @@ answers to base SI units before comparison. Tests beginning with
 |------|---------|-------------|-------|
 | `UnitsAbsolute` | \|sans - tans\| < epsilon (base SI) | Tolerance | Converts to base units first |
 | `UnitsRelative` | \|sans - tans\| / \|tans\| <= epsilon (base SI) | Tolerance | Converts to base units first |
-| `UnitsSigFigs` | Value matches to *s* sig figs (base SI) | `s` or `[s,t]` | Same options as `NumSigFigs` |
+| `Units` | Value matches to *s* sig figs (base SI) | `s` or `[s,t]` | The sig-figs units test. Same options as `NumSigFigs`. The XML name is `Units` — **`UnitsSigFigs` is NOT a valid `<answertest>` name** (that is only the display-string suffix in the plugin's language pack). |
 | `UnitsStrictAbsolute` | \|sans - tans\| < epsilon, same units | Tolerance | No unit conversion |
 | `UnitsStrictRelative` | \|sans - tans\| / \|tans\| <= epsilon, same units | Tolerance | No unit conversion |
-| `UnitsStrictSigFigs` | Value matches, same units, *s* sig figs | `s` or `[s,t]` | No unit conversion |
+| `UnitsStrict` | Value matches, same units, *s* sig figs | `s` or `[s,t]` | No unit conversion. The XML name is `UnitsStrict` — **`UnitsStrictSigFigs` is NOT a valid `<answertest>` name.** |
 
 ### When to Use Strict vs Non-Strict
 
@@ -423,16 +423,26 @@ specifies inputs and expected outcomes:
 
 ---
 
-## §11 Test Options Quick-Reference Table
+## §11 Answer-Test Whitelist + Test Options (THE canonical list)
 
-Compact lookup: every answer test, whether it needs test_options, and
-the format.
+**Version stamp: qtype_stack v4.9.1 (plugin stamp 2025040100).** This table
+is the single source of truth for valid `<answertest>` names across the
+stack-xml-generator and stack-question-validator skills — 41 names, verified
+2026-07-05 against `stack/answertest/controller.class.php` lines 36–78 of the
+v4.9.1 tag. Re-verify against that file after any STACK plugin upgrade.
+
+**Matching is exact and case-sensitive, with NO normalization.** Do not
+"helpfully" strip an `AT` prefix before checking: the compiler prepends `AT`
+itself, so `ATNumAbsolute` in XML becomes `ATATNumAbsolute` at runtime —
+it imports fine, then throws `stack_exception` at first student use, and
+unknown names also silently drop the tolerance testoptions
+(controller.class.php:297). A name not in this table is a defect, full stop.
 
 | Test | Category | Needs options? | Options format |
 |------|----------|---------------|----------------|
 | `AlgEquiv` | Equality | No | -- |
 | `AlgEquivNouns` | Equality | No | -- |
-| `SubstEquiv` | Equality | No | -- |
+| `SubstEquiv` | Equality | Optional | Variable list |
 | `EqualComAss` | Equality | No | -- |
 | `EqualComAssRules` | Equality | Yes | Rule list |
 | `SameType` | Equality | No | -- |
@@ -459,10 +469,10 @@ the format.
 | `NumDecPlacesWrong` | Numerical | Yes | *d* (integer) |
 | `UnitsAbsolute` | Units | Yes | Tolerance |
 | `UnitsRelative` | Units | Yes | Tolerance |
-| `UnitsSigFigs` | Units | Yes | *s*, or `[s,t]` |
+| `Units` | Units | Yes | *s*, or `[s,t]` (sig-figs units test) |
 | `UnitsStrictAbsolute` | Units | Yes | Tolerance |
 | `UnitsStrictRelative` | Units | Yes | Tolerance |
-| `UnitsStrictSigFigs` | Units | Yes | *s*, or `[s,t]` |
+| `UnitsStrict` | Units | Yes | *s*, or `[s,t]` (strict sig-figs units test) |
 | `String` | String | No | -- |
 | `StringSloppy` | String | No | -- |
 | `Levenshtein` | String | Yes | Threshold (integer) |
@@ -470,6 +480,26 @@ the format.
 | `PropLogic` | Logic | No | -- |
 | `Equiv` | Reasoning | Optional | Keyword list (see §7) |
 | `EquivFirst` | Reasoning | Optional | Keyword list (see §7) |
+| `Validator` | Custom | Yes | Name of a teacher-defined Maxima validation function (rare; not house style) |
+
+### Known-invalid names — REJECT with rename hint
+
+These appear in older guides, language-pack strings, or app constants, but
+are NOT valid `<answertest>` names in v4.9.1. A validator hit on any of them
+is a hard fail; fix by renaming as shown.
+
+| Invalid name | Rename to | Origin of the confusion |
+|---|---|---|
+| `UnitsSigFigs` | `Units` | Language-pack string suffix |
+| `UnitsStrictSigFigs` | `UnitsStrict` | Language-pack string suffix |
+| `CompletedSquare` | `CompSquare` | 2019 STACK guide name |
+| `Num-GT` / `Num-GTE` | `GT` / `GTE` | 2019 STACK guide names |
+| `StrictSigFigs` | `SigFigsStrict` | 2019 STACK guide name |
+| `SloppyString` | `StringSloppy` | 2019 STACK guide name |
+| `EquivReasoning` | `Equiv` | 2019 STACK guide name |
+| `NumAbs` (also `ATNumAbs`) | `NumAbsolute` | Legacy app constant; stripping the `AT` still leaves an invalid name |
+| `RegExp` | `SRegExp` | Removed upstream; flagged by STACK's own version validation |
+| Any `AT`-prefixed form (`ATNumAbsolute`, `ATAlgEquiv`, …) | Strip the `AT` | The compiler prepends `AT`; XML must carry the bare name |
 
 ---
 

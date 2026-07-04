@@ -71,7 +71,7 @@ time to avoid re-runs.
 
 ## Authoring rules — hard constraints
 
-Four cross-project authoring rules apply to every STACK question. They
+Five cross-project authoring rules apply to every STACK question. They
 are derived from comparing deployed Moodle XMLs against generator
 output and codify the patterns authors keep applying post-import.
 
@@ -173,6 +173,214 @@ feedback or grading logic. PRTs grade physics, not narrative.
 Keep the scenario culturally neutral — no idioms, no cultural
 in-jokes, no assumed-local references. The rule applies to STACK
 courses everywhere.
+
+### Rule 5 — Always emit `<stackversion>` and every default-divergent tag
+
+Every question emits, explicitly:
+
+```xml
+<stackversion>
+  <text>2025040100</text>
+</stackversion>
+```
+
+The value MUST sit inside the `<text>` child — the importer reads
+`stackversion → text`, so a bare `<stackversion>2025040100</stackversion>`
+silently imports as version 0 and triggers legacy-question checks that
+pollute the QA surfaces (question tests, bulk-tester). The stamp constant
+and the other tags whose import defaults contradict house rules
+(`insertstars` defaults to 0, `forbidfloat` defaults to 1) live in ONE
+place: `references/stack-xml-conventions.md` "Import-Defaults Trap Table".
+Emit each of those tags explicitly on every input. The
+stack-question-validator checks `stackversion` presence and value as
+Tier 1.
+
+---
+
+## CAS-timeout resilience
+
+Under concurrent exam load, chained symbolic `<questionvariables>` plus a
+cold CAS cache push the compound CAS call over STACK's 10-second timeout
+cliff — and because the whole question evaluates in ONE `instantiate()`
+call, every PRT in the attempt fails simultaneously ("CAS failed to return
+any data due to timeout"). Four patterns prevent this. They are codified
+in `EM-AC-STACK-Assessments/PATTERNS.md` (P-STACK-59, P-STACK-60,
+P-STACK-61, P-EXEC-13) — those entries own the definitive wording and the
+full rationalization tables; this section carries the cross-project rules.
+
+### Author-side: eager-float every derived numeric (P-STACK-59)
+
+Wrap the RHS of every numeric-valued `<questionvariables>` assignment in
+`float(...)` at definition time when the RHS contains any of:
+
+1. transcendental/radical functions (`sqrt(`, `exp(`, `cos(`, `sin(`,
+   `tan(`, `log(`, inverse/hyperbolic trig, `%pi`, `%e`);
+2. the power operator `^` / `**`;
+3. any arithmetic operator combined with at least one variable reference
+   (`V_s/R_s`, `R_s1*R_a/(R_s1+R_a)`).
+
+**Exempt (do NOT wrap):** RHS already starting `float(`; the rand family
+(`rand(`, `rand_with_step(`, `rand_with_prohib(`, `rand_selection(`,
+`random_permutation(`); wrappers (`stackunits(`, `setify(`, `matrix(`,
+`args(`, `ev(`, `block(`); list/set/string literals; `if/then/else`
+conditionals (their branch assignments are handled individually); pure
+integer/rational literals; unit-alias definitions.
+
+**`is()` strip:** inside `if/then/else`, replace `is(<numeric inequality>)`
+with the bare comparison — `is(x < y)` → `(x < y)`. Do NOT strip `is()`
+when the inner expression contains `=` (symbolic equation) or
+`setequalp(`/list comparisons; those need `is()` for Boolean coercion.
+
+**Scope guard — this rule NEVER touches symbolic teacher answers.**
+Eager-floating applies to numerical tolerance and display paths only. A
+`tans` consumed by `AlgEquiv` or any symbolic/form test keeps its exact
+form (P-STACK-06 still binds); expose a floated sibling instead:
+
+```maxima
+a_exact : sqrt(L1/L2);        /* feeds AlgEquiv / symbolic nodes */
+a_val   : float(a_exact);     /* feeds NumRelative / display */
+```
+
+Apply the rule with a mechanical patcher, not by hand (reference
+implementation: `shared/scripts/patch_eager_float.py` in
+EM-AC-STACK-Assessments — the path is per-project, the rule is universal).
+
+### Site-admin: edit-then-warm sequence (P-STACK-60)
+
+<HARD-GATE> After ANY edit to a deployed STACK question, and before that
+question is reused under exam load or regraded, the site admin performs
+all three co-required steps — they are a unit, not a menu:
+
+1. **Clear the CAS dbcache** (STACK Healthcheck page → "Clear the CAS
+   cache"). Edits change the literal Maxima command strings; the dbcache
+   keys by SHA1 of those strings, so it is cold after every edit.
+2. **Rebuild the optimised Maxima image** (same page → "Create Maxima
+   Image"); confirm `maximacommandopt` starts with `timeout
+   --kill-after=10s 10s ...` and platform still reads "Linux (Optimised)"
+   — a silent build failure falls back to the slow LISP path.
+3. **Warm the dbcache via bulk question tests** (Bulk-test STACK
+   questions → the affected category). This is what re-populates the
+   cache with post-edit SHA1s — and it only works if the question ships
+   qtests (next subsection).
+</HARD-GATE>
+
+Pre-flight schedule for any exam reuse (from P-STACK-60):
+
+| Day | Owner | Action |
+|---|---|---|
+| Edit-day | Author | Apply edits; plain-text editor mode; save |
+| Edit-day | Site admin | Steps 1–3 above |
+| Day −2 | Author | Duplicate questions into the exam category; deploy seeds for every variant |
+| Day −1 | Site admin | Re-run bulk test on the post-deploy category |
+| Day −1 | Author | Preview each variant manually; confirm no timeout |
+| Exam day | Site admin | Bump `castimeout` 10 s → 15 s |
+| Exam +1 | Site admin | Reset `castimeout`; inspect the `stackmaximaerrors` table |
+
+If a regrade still times out after steps 1–3, read the
+`stackmaximaerrors` table (exact Maxima command + question/PRT per
+timeout) before attempting any further fix.
+
+### Question tests + deployed seeds — the qtest doctrine (P-STACK-61)
+
+**Why (cache-warm rationale):** the CAS dbcache keys results by SHA1 of
+the literal command string. A question with no qtests gives the bulk-test
+runner nothing to execute — its cache stays cold forever. A question with
+no `<deployedseed>` blocks hands every student a fresh random seed, so
+qtest-warmed cache entries never match what students evaluate. Both gaps
+independently re-open the timeout cliff.
+
+**Baseline for every deployed question, per variant:**
+
+- **≥2 `<qtest>` blocks** submitting valid values for every input and
+  listing `<expected>` entries for every PRT;
+- **3 `<deployedseed>` integers** (a per-repo encoding scheme such as
+  EM-AC's pool×variant×k is a recommendation, not a mandate).
+
+**The canonical qtest pair** (official STACK authoring workflow):
+
+1. **Model answer earns full marks** — feed the teacher answer through
+   every input; expect score 1.0 with the exact answer note of the
+   full-marks branch.
+2. **At least one wrong answer that targets a SPECIFIC named branch**,
+   with that branch's exact expected score AND answer note — never a
+   blind `expectedscore=0` test, which false-fails on partial-credit
+   PRTs. Derive the expected note from the PRT node graph you emitted,
+   not from a hardcoded string.
+
+Worked example against the house Rule-3 diagnostic PRT (node 0 = 5%
+primary check, node 1 = sign-flip diagnostic): the wrong-answer qtest
+feeds `-ta_val` and expects the sign-flip branch, not a generic zero:
+
+```xml
+<qtest>
+  <testcase>1</testcase>
+  <description>Model answer scores full marks.</description>
+  <testinput><name>ans1</name><value>ev(ta_val, simp)</value></testinput>
+  <expected>
+    <name>prt1</name>
+    <expectedscore>1.0000000</expectedscore>
+    <expectedpenalty>0.0000000</expectedpenalty>
+    <expectedanswernote>prt1-0-T</expectedanswernote>
+  </expected>
+</qtest>
+<qtest>
+  <testcase>2</testcase>
+  <description>Sign-flipped answer lands on the sign-flip diagnostic branch.</description>
+  <testinput><name>ans1</name><value>ev(-ta_val, simp)</value></testinput>
+  <expected>
+    <name>prt1</name>
+    <expectedscore>0.0000000</expectedscore>
+    <expectedpenalty>0.0000000</expectedpenalty>
+    <expectedanswernote>prt1-1-T</expectedanswernote>
+  </expected>
+</qtest>
+```
+
+**Recommendation:** one qtest per PRT branch (every true AND false branch
+exercised). The validator reports uncovered branches as an advisory.
+
+**Cache-warming-only vs correct-answer qtests:** `expectedscore=0` /
+empty-note qtests (e.g. from a mechanical injector like EM-AC's
+`shared/scripts/inject_qtests.py`) still warm the cache — the bulk-test
+report shows them as failures, which is acceptable for warming but adds
+no regression value. Moodle's question-test page offers a one-click
+upgrade: open the test → Run test → Save updated test fills in the real
+expected values. Prefer canonical-pair qtests for new questions; use
+warming-only injection when retrofitting a large deployed bank.
+
+**Severity rule (mirrored by the validator):** zero qtests in NEWLY
+GENERATED output = Tier-4 FAIL. Zero qtests in a pre-existing/deployed
+XML being validated = advisory carrying this cache-warm rationale — do
+not mass-fail a deployed bank; fix on next touch.
+
+### Debugging: when a fix doesn't fix, read upstream source (P-EXEC-13)
+
+If a CAS-resilience fix does not change the symptom, do NOT iterate on
+the same theory by patching adjacent author-side code. Investigate the
+root cause in the moodle-qtype_stack source directly and cite line
+numbers before concluding: `question.php`, `questiontype.php`,
+`stack/cas/cassession2.class.php`,
+`stack/cas/connector.dbcache.class.php`, `stack/maxima/assessment.mac`,
+plus the upstream issue tracker. (This is how the dbcache-cold-after-edit
+root cause was found in minutes after author-side patching had already
+"worked" once.)
+
+### Cross-project portability
+
+- The eager-float patcher path varies by project; the rule is universal.
+- The deployed-seed encoding scheme is a per-repo convention.
+- The bulk-test warm-up step depends on the Moodle site's STACK plugin
+  version and admin tooling — verify against the site's Healthcheck page.
+
+### HARD-GATE before production deployment
+
+All three author-side gates pass before any STACK question is declared
+ready for a production exam:
+
+1. Eager-float patcher dry-run reports `wrapped=0 is_stripped=0`.
+2. Qtest injector dry-run reports `qtests=0 seeds=0 skipped(has)=N`
+   (N = variant count) — i.e. every variant already ships qtests + seeds.
+3. The P-STACK-60 admin 3-step sequence has run within 24 h of exam open.
 
 ---
 
@@ -301,15 +509,44 @@ Individual commands can also be listed:
 | Complex-valued roots | 2-node PRT | Node 0 = `AlgEquiv`; Node 1 = compare `realpart()`/`imagpart()` with `NumRelative` (2%). |
 | Significant figures | `SigFigsStrict` | **Never use as a scoring gate** -- do not penalize students for sig-fig formatting. |
 
-See `references/answer-tests-and-inputs.md` for the full catalog
-(40 tests with test_options format for each).
+See `references/answer-tests-and-inputs.md` §11 for the full catalog —
+the **canonical 41-name whitelist** (v4.9.1-stamped) with test_options
+format for each. Every `<answertest>` you emit MUST be an exact,
+case-sensitive match against that table (never `AT`-prefixed, never a
+2019-guide alias like `UnitsSigFigs` or `CompletedSquare`); the
+stack-question-validator enforces this as a Tier-1 hard fail.
 
 ### PRT Rules
 
 - Never use `{@ansN@}` in `<specificfeedback>` -- STACK renders
   these as CAS variable symbols. Use `[[feedback:prtN]]` only.
-- Set `%stack_prt_stop_p: true` in feedbackvariables to bail out of
-  PRT execution without penalty when student input would cause errors.
+- **Pre-evaluate risky expressions in `<feedbackvariables>`, never
+  inline in node sans/tans.** A runtime error during node traversal
+  halts the WHOLE PRT; an error in feedbackvariables does not
+  (`[RUNTIME_FV_ERROR]`, execution continues). Pair the pre-evaluation
+  with a `%stack_prt_stop_p` guard — test the hazard before computing:
+
+  ```maxima
+  /* feedbackvariables: guard the denominator BEFORE dividing */
+  %stack_prt_stop_p : is(abs(ans1) < 1e-12);
+  sa_ratio : if %stack_prt_stop_p then 0 else float(ta_val/ans1);
+  ```
+
+  `%stack_prt_stop_p: true` bails out of PRT execution without penalty
+  when student input would cause errors.
+- **Sig-fig / decimal-place nodes use the RAW input name as sans.**
+  The five raw-input answer tests — `SigFigsStrict`, `NumSigFigs`,
+  `NumDecPlaces`, `Units`, `UnitsStrict` — need the student's literal
+  input string to preserve trailing zeros. NO wrapper or arithmetic
+  around `ansN` is safe in the sans of those nodes (`float(ans1)`,
+  `ans1*1000`, `abs(ans1)` all destroy sig-fig information). Do
+  diagnostic ratio math in feedbackvariables and test it in a separate
+  node.
+- **`quiet=1` only where bespoke feedback fully replaces the standard
+  message.** Answer tests emit their own feedback; a node with
+  `quiet=0` AND bespoke branch feedback shows the student two
+  overlapping messages. Do not set `quiet=1` question-wide — where the
+  standard message IS the feedback, keep `quiet=0` and no bespoke text.
 - Answer notes must be unique per node, non-empty, and cannot contain
   `;` or `|`. Do not make them depend on random variables.
 
@@ -361,6 +598,39 @@ Before finalizing any STACK XML, validate every PRT:
   to avoid degenerate cases
 - Numerical inputs use tolerances +/-0.01 to +/-0.5
 - Algebraic inputs are minimized in favor of numerical inputs
+- **No conditionals or loops in random generation.** `if`/`for`/`while`
+  in the randomization block is a validator warning — enumerate instead.
+  Every banned pattern has a sanctioned replacement:
+
+  | Banned pattern | Sanctioned replacement |
+  |---|---|
+  | `if` to re-roll excluded values | `rand_with_prohib(lo, hi, [excl])` — see `references/maxima-for-stack.md` §8–§9 |
+  | `if`/`while` to pick case-dependent parameter sets | Index into a curated list: `cases: [[...],[...]]; c: rand(cases);` |
+  | Loop to avoid degenerate combinations | Reparametrize so every draw is valid (e.g. draw the gap, not both endpoints) |
+
+  P-STACK-09 — every randomized variant produces a valid answer — remains
+  the binding acceptance test regardless of pattern.
+
+### Question note (mandatory when randomizing)
+
+Two variants are identical if and only if their question notes are
+identical, and the bulk-tester/reporting surfaces group attempts by note.
+Every question with `rand*` variables MUST emit a `<questionnote>`
+containing:
+
+- the **minimal set of random variables that uniquely identifies the
+  variant** (not every intermediate value), and
+- the **model answer(s)**, rounded for display so the note stays short.
+
+```xml
+<questionnote>
+  <text>R={@R@}, V={@V@} -> ta={@float(round(100*ans_correct)/100)@}</text>
+</questionnote>
+```
+
+An empty question note when `rand*` is present is a validator error; a
+note that omits discriminating variables (or balloons to paragraph
+length) is a validator warning.
 
 ### Simplification Control
 
@@ -463,6 +733,23 @@ patterns, and worked examples, see
 ---
 
 ## After Generating
+
+**Import validates nothing.** Moodle's STACK importer is a tag→field
+mapping with defaults: it performs zero semantic validation, defers CAS
+compilation to first render, and only aborts on missing structural
+`<name>`/`<testcase>` elements. "It imported fine" is NOT evidence of a
+working question — bad answertest names, input-name collisions, and
+missing validation tags all import cleanly and then fail on first
+student use or first edit-form save. The pre-import validator is the
+only gate before import; **post-import preview and bulk-test in Moodle
+are mandatory, not optional** — no delivery is complete without them.
+
+Include this instruction verbatim with every XML delivery:
+
+> After importing: preview at least one variant of every question AND
+> run the STACK question tests (or the bulk-tester on the category)
+> before releasing to students. Import success proves only that the
+> file parsed.
 
 Before returning XML to the user, read the
 `stack-question-validator/SKILL.md` skill file and apply every tier to

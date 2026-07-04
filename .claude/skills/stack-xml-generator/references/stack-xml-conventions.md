@@ -28,6 +28,9 @@ Complete reference for Moodle STACK question XML structure.
 
     <defaultgrade>10</defaultgrade>
     <penalty>0</penalty>
+    <stackversion>
+      <text>2025040100</text>
+    </stackversion>
 
     <questionvariables>
       <text>
@@ -107,6 +110,25 @@ ans_correct: V/R;
   </question>
 </quiz>
 ```
+
+## Import-Defaults Trap Table (v4.9.1)
+
+**Version stamp: qtype_stack v4.9.1 (plugin stamp `2025040100`) — the stamp
+constant lives HERE and nowhere else; skills and validators cite this table.
+Verify against the plugin's `version.php` after any STACK upgrade.**
+(Rows verified 2026-07-05 against v4.9.1 `questiontype.php`; this table is
+restricted to source-verified rows — do NOT add a row without citing the
+import default from source.)
+
+STACK's importer fills every omitted optional tag with a default. Three of
+those defaults silently contradict house rules, so these tags are ALWAYS
+emitted explicitly:
+
+| Tag | Import default | House rule | Trap when omitted | Source |
+|---|---|---|---|---|
+| `<stackversion>` | `''` → treated as version 0 | Always emit `<stackversion><text>2025040100</text></stackversion>` | Question treated as pre-2018: legacy-pattern checks activate and pollute exactly the QA surfaces we rely on (questiontestrun, bulk-tester). **The value MUST sit inside a `<text>` child** — the importer reads `stackversion → text`; a bare `<stackversion>2025040100</stackversion>` silently imports as 0. | questiontype.php:1370; question.php:1607-1691 |
+| `<insertstars>` | `0` | `1` for algebraic-expression inputs (P-STACK-10) | Omission silently violates the house rule and changes grading semantics for implied multiplication (`2x`). | questiontype.php:1489 |
+| `<forbidfloat>` | `1` | `0` for numerical/units inputs expecting decimal answers | Omission FORBIDS floats — students cannot enter `0.523`; every decimal answer is rejected at validation. | questiontype.php:1494 |
 
 ## Input Types
 
