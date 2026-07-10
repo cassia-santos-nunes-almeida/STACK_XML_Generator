@@ -181,6 +181,18 @@ console errors — add a favicon or accept-and-log).
    an index-based tans that STACK grades as always-wrong; any PREVIOUSLY
    exported MCQ XML in use should be re-exported (imports heal
    automatically).
+7. (Stage 4) Run the real-Moodle import via **docs/import-test-pack/**
+   (CHECKLIST.md; absorbs item 3 — the pack is the curated 5-file version;
+   the full 14-fixture walk in docs/a8-gate-log.md remains for completeness).
+   Step 2 records the Healthcheck Maxima version = carried D5.
+8. (Stage 4) Review premortem-remediation decisions: D-app-26 (W-MAX-05 in
+   teacher answers stays a warning — promote to blocking?), D-app-28 (no
+   real prerequisite check for algebraic/matrix — acceptable, or revisit
+   once D5/CAS verification exists?).
+9. (Stage 4) Any PREVIOUSLY exported question with an algebraic/radio/string
+   prerequisite part promises "must answer correctly" while gating on
+   attempt-only — re-export after this stage to get honest wording (radio/
+   string get real gates).
 
 ## Additional autonomous decisions (this stage's execution)
 
@@ -402,3 +414,73 @@ stackversion 2025040100 and 2 qtests each.
   demonstrated guards) + docs/import-test-pack/ per phase3-prompt-app.md.
 - Premortem inputs unchanged (a8-gate-log.md "Known limitations") plus the
   new W-MAX-05 severity question (D-app-23).
+
+---
+
+# STAGE 4 — premortem remediation + import-test pack + final report, 2026-07-10
+
+Autonomous staged run continued. Baseline at pickup: `288ca1e` (walkthrough),
+`npm test` 438/438 green, tree clean. Inputs: the independent premortem's
+14 findings (7 defect-needs-fix, 5 guard-demonstrated, 2 accepted-risk) +
+phase3-lessons-for-app.md.
+
+## Premortem remediation (all 7 defects verified real, fixed TDD, one commit each)
+
+| Finding | Commit | Fix + tests |
+|---|---|---|
+| F1 "]]>" malformed export | 1e07f58 | all raw CDATA sites route through the splitting helper (new `cdataRaw` keeps empty-content byte parity); prereq fv merge split-aware; export button re-parses via DOMParser (E-XML-01, download blocked). 8 new tests |
+| F2 tans bypasses Maxima lint | d421e6d | non-identifier teacherAnswer + curated distractor run validateMaximaExpression + lintMaximaValue (E-MAX-02 blocking); 6 new tests |
+| F3 ";" in string truncates import | 8cf6661 | `splitMaximaStatements` (string/paren/comment-aware) replaces naive split; unclosed-quote check in validateMaximaExpression; strings no longer false-flag bracket checks. 9 new tests |
+| F6 quoted MCQ option dropped | 1d40b0e | escape-aware option regex (same pattern as tans recovery); 2 new tests |
+| F7 {@expr@} invisible | 7d5f410 | W-VAR-06 warning + dashed "computed by Moodle" preview span; corpus dry-run 0 hits (14 templates + 14 fixtures); 5 new tests |
+| F4 foreign PRT silently rebuilt | adadc40 | parser regenerates each PRT from recovered state, compares grading structure (nodes/tests/scores/branches/fv), emits plain-language REBUILT notice on mismatch; A2-migrated parts keep their own notice (no double-noticing). 3 new tests incl. all-templates + all-fixtures no-false-positive corpus |
+| F5 tautological prereq gate | 88277fb | radio prereq compares the submitted option value; string prereq compares the teacher answer (sdowncase when case-insensitive); algebraic/matrix/jsxgraph/notes keep attempt-only gate but the student notice says "complete" (never "correctly") + W-PRE-04 to the teacher; qtest walk decides the new equality gates; X1 parser lockstep. 8 new tests |
+
+## Pre-existing defects found and fixed en route (F4-prep, in adadc40)
+
+- jsxgraph graphCode recovered via innerHTML — `&&`/`>=` entity-escaped, so a
+  re-export after import shipped corrupted JS (jsxgraph_vector demonstrated).
+  Now extracted from the jsxgraph-box textContent.
+- The `boundp` helper tail was recovered into gradingCode and re-appended on
+  every import/export cycle (fv grew each roundtrip).
+- rand-typed constant variables (jsxgraph_connect t1..t4) degraded to calc on
+  import — questionnote entries and deployed seeds silently vanished on
+  re-export. Types now recovered from the questionnote's rand-var list.
+- New permanent all-templates roundtrip gauntlet
+  (src/tests/integration/template-roundtrip.test.js); matrix_operations
+  documented as an HTML-equivalent `&`→`&amp;` fixed-point exception.
+
+## Stage-4 autonomous decisions (one line each)
+
+- D-app-26: F2 lint findings keep their variable-value severities (E-MAX-02
+  error, W-MAX-05 warning) — severity promotion for tans context is an owner
+  call (D-app-23 precedent); zero hits on templates/fixtures corpus.
+- D-app-27: F4 detection = structural comparison against a REGENERATED PRT
+  (numeric-normalized scores/testoptions, alias-canonicalized answertests,
+  comment/whitespace-normalized fv) rather than per-node heuristics; parts
+  healed by the A2 migration are excluded (their notice is more accurate).
+- D-app-28: F5 real gates only where verifiable without CAS (radio = option
+  value equality, string = teacher-answer equality mirroring String/
+  StringSloppy); algebraic/matrix `is(equal(...))` rejected as
+  CAS-unverifiable (D-app-6 precedent) — honest wording + W-PRE-04 instead.
+- D-app-29: F1 adds a SECOND independent layer (DOMParser re-parse at the
+  export button, E-XML-01) besides routing through cdata() — belt and braces
+  because the validator false-PASS was the premortem's worst class.
+- D-app-30: import-test pack = 5 fixture-identical XMLs (numerical/units/
+  algebraic/radio/notes+prereq); matrix+jsxgraph ride the full 14-fixture A8
+  walk; `.gitattributes -text` pins byte identity.
+
+## Stage-4 gauntlet (lesson 5 — after ALL edits)
+
+- `npm test` 494/494 green serial (438 baseline + 56 new).
+- `scripts/a8-e2e.mjs`: 17/17, zero console errors.
+- `scripts/phase3-teacher-walkthrough.mjs`: 19/19, zero console errors.
+- A8 golden gate green throughout — the 7 fixes changed no template bytes.
+- Import-test pack XMLs parse under PowerShell [xml] with stackversion
+  2025040100 read back; byte-identical to golden fixtures (hash-verified).
+
+## Deliverables
+
+- docs/import-test-pack/ (5 XMLs + README + CHECKLIST + RESULTS-TEMPLATE),
+  commits e1eab36 + 475adba.
+- docs/phase3-report-app.md — final report per the session prompt.
