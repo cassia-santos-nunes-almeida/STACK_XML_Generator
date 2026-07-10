@@ -1,5 +1,10 @@
-// Validation utilities for STACK question data
+// Validation utilities for STACK question data.
+// A6: every issue carries a stable code ([EW]-AREA-NN) so teachers can be
+// pointed at documentation; name/character rules come from stack-rules.json
+// (X2 — one rule-data source shared with the emitters and the skill).
 import { lintStopSlop } from './stop-slop-lint.js';
+import { questionNoteMayBeConstant } from '../generators/question-note.js';
+import STACK_RULES from './stack-rules.json' with { type: 'json' };
 
 
 /**
@@ -89,19 +94,64 @@ export function validateMaximaExpression(expr) {
 }
 
 /**
- * Validates a variable name for Maxima compatibility.
+ * Validates a variable name against the STACK rules (X2: regex + character
+ * cap from stack-rules.json). Returns { code, message } or null.
  */
-export function validateVariableName(name) {
-    if (!name) return 'Variable name cannot be empty.';
-    if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(name)) {
-        return 'Variable name must start with a letter or underscore, and contain only letters, numbers, and underscores.';
+export function checkVariableName(name) {
+    if (!name) {
+        return { code: 'E-VAR-01', message: 'Variable name cannot be empty.' };
+    }
+    if (name.length > STACK_RULES.inputNameMaxLength) {
+        return {
+            code: 'E-VAR-03',
+            message: `Variable name "${name}" is too long — STACK allows at most ${STACK_RULES.inputNameMaxLength} characters.`,
+        };
+    }
+    if (!new RegExp(STACK_RULES.inputNameRegex).test(name)) {
+        return {
+            code: 'E-VAR-01',
+            message: 'Variable name must start with a letter, contain only letters, numbers, and underscores, and not end with an underscore.',
+        };
     }
     // Reserved Maxima words
     const reserved = ['if', 'then', 'else', 'do', 'for', 'while', 'true', 'false', 'and', 'or', 'not'];
     if (reserved.includes(name.toLowerCase())) {
-        return `"${name}" is a reserved word in Maxima.`;
+        return { code: 'E-VAR-02', message: `"${name}" is a reserved word in Maxima.` };
     }
     return null;
+}
+
+/**
+ * Legacy string API for the variable-name check.
+ */
+export function validateVariableName(name) {
+    return checkVariableName(name)?.message ?? null;
+}
+
+/**
+ * Lints a Maxima VALUE expression (never prose — comments and string
+ * literals are stripped first) for constants written as bare symbols.
+ * A3 rider: negative lookbehind so %pi never matches; \b so pin/api never
+ * match. Returns [{ code, message }].
+ */
+export function lintMaximaValue(value, definedNames = new Set()) {
+    const findings = [];
+    const stripped = String(value || '')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/"(?:[^"\\]|\\.)*"/g, ' ');
+    if (!definedNames.has('pi') && /(?<!%)\bpi\b/.test(stripped)) {
+        findings.push({
+            code: 'E-MAX-02',
+            message: 'uses bare "pi" — write %pi for the circle constant (bare pi is just an unknown name in Maxima, so answers would be wrong).',
+        });
+    }
+    if (!definedNames.has('e') && /(?<![%.\w])e(?![\w(])/.test(stripped)) {
+        findings.push({
+            code: 'W-MAX-03',
+            message: 'uses "e" as a value — if you mean Euler\'s number, write %e.',
+        });
+    }
+    return findings;
 }
 
 /**
@@ -161,30 +211,31 @@ export function validateSnapVsTolerance(part) {
  */
 export function validateQuestionData(data) {
     const issues = [];
+    const push = (level, code, message) => issues.push({ level, code, message });
 
     if (!data.name || !data.name.trim()) {
-        issues.push({ level: 'error', message: 'Question name is required.' });
+        push('error', 'E-GEN-01', 'Question name is required.');
     }
 
     if (!data.questionText || !data.questionText.trim()) {
-        issues.push({ level: 'error', message: 'Question text is required.' });
+        push('error', 'E-GEN-02', 'Question text is required.');
     }
 
     if (!data.parts || data.parts.length === 0) {
-        issues.push({ level: 'error', message: 'At least one part (answer input) is required.' });
+        push('error', 'E-GEN-03', 'At least one part (answer input) is required.');
     }
 
     // Check variable references
     const allText = [data.questionText || '', ...(data.parts || []).map(p => p.text || '')].join(' ');
     const varWarnings = validateVariableReferences(allText, data.variables || []);
-    issues.push(...varWarnings.map(w => ({ level: 'warning', message: w.message })));
+    varWarnings.forEach(w => push('warning', 'W-VAR-05', w.message));
 
     // Check each part
     (data.parts || []).forEach((part, idx) => {
         const label = String.fromCharCode(97 + idx);
 
         if (!part.answer || !part.answer.trim()) {
-            issues.push({ level: 'error', message: `Part (${label}): Answer input name is missing.` });
+            push('error', 'E-PART-01', `Part (${label}): Answer input name is missing.`);
         }
 
         // A2: gradeable parts must name a teacher-answer variable distinct
@@ -193,45 +244,51 @@ export function validateQuestionData(data) {
         if (needsTeacherAnswer.includes(part.type)) {
             const ta = (part.teacherAnswer || '').trim();
             if (!ta) {
-                issues.push({ level: 'error', message: `Part (${label}): Answer variable is required — choose the variable that holds the correct answer.` });
+                push('error', 'E-PART-02', `Part (${label}): Answer variable is required — choose the variable that holds the correct answer.`);
             } else if (ta === part.answer) {
-                issues.push({ level: 'error', message: `Part (${label}): The answer variable must be different from the student input name "${part.answer}".` });
+                push('error', 'E-PART-03', `Part (${label}): The answer variable must be different from the student input name "${part.answer}".`);
             } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(ta) && !(data.variables || []).some(v => v.name === ta)) {
-                issues.push({ level: 'warning', message: `Part (${label}): Answer variable "${ta}" is not defined in the Variables section.` });
+                push('warning', 'W-PART-04', `Part (${label}): Answer variable "${ta}" is not defined in the Variables section.`);
+            }
+        }
+
+        // Units answers should carry their units via stackunits (a unitless
+        // teacher answer cannot be checked by the units answer tests).
+        if (part.type === 'units') {
+            const taVar = (data.variables || []).find(v => v.name === part.teacherAnswer);
+            if (taVar && !/^stackunits\s*\(/.test((taVar.value || '').trim())) {
+                push('warning', 'W-UNITS-01', `Part (${label}): For an answer with units, define "${part.teacherAnswer}" as stackunits(value, unit) — e.g. stackunits(${taVar.value || 'value'}, m/s) — so the units are checked.`);
             }
         }
 
         if (part.type === 'radio') {
             if (!part.options || part.options.length < 2) {
-                issues.push({ level: 'error', message: `Part (${label}): Multiple choice needs at least 2 options.` });
+                push('error', 'E-MCQ-01', `Part (${label}): Multiple choice needs at least 2 options.`);
             }
             const hasCorrect = part.options && part.options.some(o => o.correct);
             if (!hasCorrect) {
-                issues.push({ level: 'error', message: `Part (${label}): No correct option marked.` });
+                push('error', 'E-MCQ-02', `Part (${label}): No correct option marked.`);
             }
         }
 
         if (part.type === 'numerical' || part.type === 'units') {
             if (part.grading && part.grading.tightTol > part.grading.wideTol && part.grading.wideTol > 0) {
-                issues.push({
-                    level: 'warning',
-                    message: `Part (${label}): Tight tolerance (${part.grading.tightTol}) is larger than wide tolerance (${part.grading.wideTol}).`,
-                });
+                push('warning', 'W-TOL-01', `Part (${label}): Tight tolerance (${part.grading.tightTol}) is larger than wide tolerance (${part.grading.wideTol}).`);
             }
         }
 
         if (part.type === 'jsxgraph') {
             if (!part.graphCode || !part.graphCode.trim()) {
-                issues.push({ level: 'warning', message: `Part (${label}): JSXGraph code is empty.` });
+                push('warning', 'W-JSX-01', `Part (${label}): JSXGraph code is empty.`);
             }
             if (!part.gradingCode || !part.gradingCode.trim()) {
-                issues.push({ level: 'warning', message: `Part (${label}): Graph grading code is empty.` });
+                push('warning', 'W-JSX-02', `Part (${label}): Graph grading code is empty.`);
             }
             validateJSXGraphBlocks(part).forEach(w => {
-                issues.push({ level: w.level, message: `Part (${label}): ${w.message}` });
+                push(w.level, w.level === 'error' ? 'E-JSX-03' : 'W-JSX-03', `Part (${label}): ${w.message}`);
             });
             validateSnapVsTolerance(part).forEach(w => {
-                issues.push({ level: w.level, message: `Part (${label}): ${w.message}` });
+                push(w.level, 'W-JSX-04', `Part (${label}): ${w.message}`);
             });
         }
 
@@ -239,52 +296,55 @@ export function validateQuestionData(data) {
         if (part.prerequisite) {
             const prereqPart = (data.parts || []).find(p => p.id === part.prerequisite);
             if (!prereqPart) {
-                issues.push({ level: 'error', message: `Part (${label}): Prerequisite references a non-existent part.` });
+                push('error', 'E-PRE-01', `Part (${label}): Prerequisite references a non-existent part.`);
             } else if (prereqPart.id >= part.id) {
-                issues.push({ level: 'error', message: `Part (${label}): Prerequisite must reference an earlier part.` });
+                push('error', 'E-PRE-02', `Part (${label}): Prerequisite must reference an earlier part.`);
             }
             // Warn about circular prerequisites
             if (prereqPart && prereqPart.prerequisite === part.id) {
-                issues.push({ level: 'error', message: `Part (${label}): Circular prerequisite detected with part (${String.fromCharCode(96 + prereqPart.id)}).` });
+                push('error', 'E-PRE-03', `Part (${label}): Circular prerequisite detected with part (${String.fromCharCode(96 + prereqPart.id)}).`);
             }
         }
     });
 
     // Check variable expressions
     const inputNames = new Set((data.parts || []).map(p => p.answer).filter(Boolean));
+    const definedNames = new Set((data.variables || []).map(v => v.name));
     (data.variables || []).forEach(v => {
-        const nameErr = validateVariableName(v.name);
+        const nameErr = checkVariableName(v.name);
         if (nameErr) {
-            issues.push({ level: 'error', message: `Variable "${v.name}": ${nameErr}` });
+            push('error', nameErr.code, `Variable "${v.name}": ${nameErr.message}`);
         }
         // A2: input names are a reserved namespace — a variable named like a
         // student input silently breaks grading (STACK forbids writing to
         // input names; the edit form blocks the next save after import).
         if (inputNames.has(v.name)) {
-            issues.push({
-                level: 'error',
-                message: `Variable "${v.name}" has the same name as a student answer box — rename it (for example "ta_${v.name}"). Answer-box names are reserved.`,
-            });
+            push('error', 'E-VAR-05', `Variable "${v.name}" has the same name as a student answer box — rename it (for example "ta_${v.name}"). Answer-box names are reserved.`);
         } else if (/^ans\d+$/.test(v.name)) {
-            issues.push({
-                level: 'error',
-                message: `Variable "${v.name}": names like "ans1", "ans2" are reserved for student answer boxes. Use a different name (for example "ta${v.name.slice(3)}").`,
-            });
+            push('error', 'E-VAR-04', `Variable "${v.name}": names like "ans1", "ans2" are reserved for student answer boxes. Use a different name (for example "ta${v.name.slice(3)}").`);
         }
         const exprErr = validateMaximaExpression(v.value);
         if (exprErr) {
-            issues.push({ level: 'warning', message: `Variable "${v.name}": ${exprErr}` });
+            push('warning', 'W-MAX-01', `Variable "${v.name}": ${exprErr}`);
         }
+        // A6 Maxima lint — value fields only, never prose (A3 lookbehind).
+        lintMaximaValue(v.value, definedNames).forEach(f => {
+            push(f.code.startsWith('E-') ? 'error' : 'warning', f.code, `Variable "${v.name}" ${f.message}`);
+        });
     });
+
+    // A6: variant-tracking note distinctness (warning — blocking here would
+    // lock out legitimately constant questions; STACK's edit form is the
+    // hard gate for truly empty notes on randomised questions).
+    if (questionNoteMayBeConstant(data)) {
+        push('warning', 'W-NOTE-01', 'This question uses random values, but the variant summary (question note) would be the same for every variant — reports will not distinguish variants. Check that the random values really vary.');
+    }
 
     // Stop-slop lint on student-facing prose (P-WRITE-01)
     const slopFindings = lintStopSlop(data);
     slopFindings.forEach(f => {
         const matchText = f.matches.map(m => `"${m}"`).join(', ');
-        issues.push({
-            level: 'warning',
-            message: `[stop-slop] ${f.field}: ${matchText} — try: ${f.suggest}`,
-        });
+        push('warning', 'W-SLOP-01', `[stop-slop] ${f.field}: ${matchText} — try: ${f.suggest}`);
     });
 
     return issues;

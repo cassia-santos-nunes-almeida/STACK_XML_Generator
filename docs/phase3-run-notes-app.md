@@ -250,7 +250,8 @@ Autonomous staged run continued. Baseline at pickup: `1a8b936` (A11),
 | Item | Commit | Tests |
 |---|---|---|
 | A5-prep | 647fd94 | 331/331 green; all 14 exports [xml]-parse OK; mcq tans = `&quot;7&quot;`, circuit_ohm qv carries stackunits |
-| A5 (+X1) | (this commit) | 351/351 green x3 runs (sampling stable); 14 exports [xml]-parse OK; 11/14 carry the canonical pair, 3 jsxgraph model-only (documented); projectile model = full marks at sig-figs node (prtN-2-T), sign-flip distractor 0.5 at prtN-3-T; 2x pin on both algebraic templates; 3 seeds everywhere incl. MCQ (random_permutation counts as randomised); roundtrip byte-stable with qtests, seeds + distractors recovered on import |
+| A5 (+X1) | bdac194 | 351/351 green x3 runs (sampling stable); 14 exports [xml]-parse OK; 11/14 carry the canonical pair, 3 jsxgraph model-only (documented); projectile model = full marks at sig-figs node (prtN-2-T), sign-flip distractor 0.5 at prtN-3-T; 2x pin on both algebraic templates; 3 seeds everywhere incl. MCQ (random_permutation counts as randomised); roundtrip byte-stable with qtests, seeds + distractors recovered on import |
+| A6 | (this commit) | 395/395 green; stable codes on every issue; name regex + 18-cap from stack-rules.json (X2); bare-pi lint = error, bare-e = warning (rider corpus pinned); W-NOTE-01 distinctness via variable-parser sampling; W-UNITS-01 unitless units-ta; hidden ?allow-invalid-export owner override; humble pass-copy; generator invariants (input/validation pairing + fixture corpus zero errors) as Vitest |
 
 ## Stage-2 autonomous decisions (one line each)
 
@@ -278,6 +279,15 @@ Autonomous staged run continued. Baseline at pickup: `1a8b936` (A11),
 - D-app-19: seeds emit when rand* vars OR any radio part exists
   (random_permutation randomises the question — the backlog missed MCQs);
   default seed set 12345/10101/10102 (house pattern), imported sets kept.
+- D-app-21: questionnote completeness ships as WARNING W-NOTE-01 (not the
+  backlog's blocking gate): the auto-generated note is never empty when
+  rand vars exist, so the only real defect class is a CONSTANT note —
+  blocking on that would lock out legitimately constant questions
+  (jsxgraph_connect's fixed "rand" vars); STACK's edit form remains the
+  hard gate for empty notes. Flagged for owner.
+- D-app-22: A6's note check reads the SAME builder the XML emission uses
+  (new src/generators/question-note.js) so check and emission cannot drift;
+  A10 extends that builder rather than the generator inline code.
 - D-app-20: pre-existing roundtrip defects fixed en route (exposed by the
   first template-wide byte-stability tests): units tolerance/feedback
   mapped to wrong keys on import; numerical tolerance nodes matched by

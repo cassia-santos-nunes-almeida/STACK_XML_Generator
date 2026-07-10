@@ -129,23 +129,31 @@ function initApp() {
             if (!confirm(msg)) return;
         }
 
-        // Validate first
+        // Validate first (A6 blocking gate — plain language + stable codes).
         const issues = validateQuestionData(state.data);
         const errors = issues.filter(i => i.level === 'error');
+        const fmt = i => `- [${i.code}] ${i.message}`;
 
         if (errors.length > 0) {
-            const errorMsg = 'Cannot export — fix these errors first:\n\n' +
-                errors.map(e => '- ' + e.message).join('\n');
-            showNotification(errorMsg, 'error');
-            return;
+            // Hidden owner-only override (never a teacher-visible button):
+            // append ?allow-invalid-export to the URL.
+            const ownerOverride = new URLSearchParams(window.location.search).has('allow-invalid-export');
+            if (!ownerOverride) {
+                const errorMsg = 'This file cannot be downloaded yet — fix these first:\n\n' +
+                    errors.map(fmt).join('\n');
+                showNotification(errorMsg, 'error');
+                return;
+            }
+            if (!confirm('OWNER OVERRIDE — exporting with blocking errors:\n\n' +
+                errors.map(fmt).join('\n') + '\n\nExport anyway?')) return;
         }
 
         const warnings = issues.filter(i => i.level === 'warning');
         if (warnings.length > 0) {
             const proceed = confirm(
-                'Warnings found:\n\n' +
-                warnings.map(w => '- ' + w.message).join('\n') +
-                '\n\nExport anyway?'
+                'Please check these points:\n\n' +
+                warnings.map(fmt).join('\n') +
+                '\n\nDownload anyway?'
             );
             if (!proceed) return;
         }
@@ -154,7 +162,8 @@ function initApp() {
         const baseName = state.data.name || 'question';
         const suffix = state.data.examMode ? '_with_notes' : '';
         downloadFile(xml, baseName + suffix + '.xml', 'application/xml');
-        showNotification('XML exported successfully.', 'success');
+        // A6 pass-state copy: never overclaim what the checks prove.
+        showNotification('Structure checks passed. Always preview the question in Moodle before giving it to students.', 'success');
     });
 
     // Preview XML
