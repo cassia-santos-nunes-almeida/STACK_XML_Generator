@@ -166,7 +166,7 @@ neutralization; A8 golden byte-gate + byte-stable roundtrips.
 6. Backlog items appended during the walkthrough, not yet approved: W1
    (one-click answer variable), W2 (units "expected unit" field). B1 (Bloom
    design features) still awaits its own panel pass.
-7. NOT pushed — commits are local only (pushes are owner-gated). 30 commits
+7. NOT pushed — commits are local only (pushes are owner-gated). 29 commits
    ahead of origin/main at close.
 8. `.claude/skills/**` files are synced from my-claude-skills and were not
    touched by this track.
