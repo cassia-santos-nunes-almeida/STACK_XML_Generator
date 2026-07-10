@@ -17,6 +17,7 @@ export const PHYSICS_TEMPLATES = {
                 text: 'What is the final speed? (include units, e.g., 15 m/s)',
                 answer: 'ans1',
                 teacherAnswer: 'ta1',
+                distractor: 'stackunits(-v_val, m/s)',
                 grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {

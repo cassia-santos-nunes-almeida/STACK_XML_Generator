@@ -5,6 +5,7 @@ import { generateQuestionVariables } from './question-variables.js';
 import { generateInput } from './inputs/input-factory.js';
 import { generatePRT } from './prts/prt-factory.js';
 import { generateCompanionNotesQuestion } from './companion-question.js';
+import { generateDeployedSeeds, generateQuestionTests } from './qtest-generator.js';
 import STACK_RULES from '../core/stack-rules.json' with { type: 'json' };
 
 /**
@@ -53,15 +54,24 @@ export function generateStackXML(data) {
     // space (A11 degenerate-zero fallback).
     const allParts = data.parts || [];
     const ctx = { variables: data.variables || [] };
-    allParts.forEach((p, idx) => {
-        xml += generatePRT(p, idx, allParts, ctx);
-    });
+    const prtBlocks = allParts.map((p, idx) => ({
+        part: p,
+        prtName: `prt${p.id || idx + 1}`,
+        xml: generatePRT(p, idx, allParts, ctx),
+    }));
+    prtBlocks.forEach(b => { xml += b.xml; });
 
-    // 7. Close STACK question
+    // 7. Deployed seeds + question tests (A5, P-STACK-61 doctrine): seeds
+    // only when the question actually randomises; qtest expectations are
+    // derived by walking the PRT node graphs emitted above.
+    xml += generateDeployedSeeds(data);
+    xml += generateQuestionTests(data, prtBlocks);
+
+    // 8. Close STACK question
     xml += `
   </question>`;
 
-    // 8. Optional companion handwritten notes question (exam mode)
+    // 9. Optional companion handwritten notes question (exam mode)
     if (data.examMode) {
         xml += generateCompanionNotesQuestion(
             data.name,
@@ -71,7 +81,7 @@ export function generateStackXML(data) {
         );
     }
 
-    // 9. Close quiz wrapper
+    // 10. Close quiz wrapper
     xml += `
 </quiz>`;
 

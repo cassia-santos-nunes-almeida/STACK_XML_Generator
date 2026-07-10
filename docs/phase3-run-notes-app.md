@@ -249,4 +249,39 @@ Autonomous staged run continued. Baseline at pickup: `1a8b936` (A11),
 
 | Item | Commit | Tests |
 |---|---|---|
-| A5-prep | (this commit) | 331/331 green; all 14 exports [xml]-parse OK; mcq tans = `&quot;7&quot;`, circuit_ohm qv carries stackunits |
+| A5-prep | 647fd94 | 331/331 green; all 14 exports [xml]-parse OK; mcq tans = `&quot;7&quot;`, circuit_ohm qv carries stackunits |
+| A5 (+X1) | (this commit) | 351/351 green x3 runs (sampling stable); 14 exports [xml]-parse OK; 11/14 carry the canonical pair, 3 jsxgraph model-only (documented); projectile model = full marks at sig-figs node (prtN-2-T), sign-flip distractor 0.5 at prtN-3-T; 2x pin on both algebraic templates; 3 seeds everywhere incl. MCQ (random_permutation counts as randomised); roundtrip byte-stable with qtests, seeds + distractors recovered on import |
+
+## Stage-2 autonomous decisions (one line each)
+
+- D-app-14: model qtest input for sig-figs-checked numerical parts is
+  `significantfigures(taN, n)` (raw `ev(taN,simp)` full-precision floats
+  would false-fail the sig-figs node); trailing-zero display edge (e.g.
+  100.0 rendering as 4 s.f.) is a documented STACK qtest limitation —
+  owner's real-Moodle bulk-test is the arbiter.
+- D-app-15: circuit_ohm units parts drop checkSigFigs — NumSigFigs against a
+  raw units input is CAS-unverifiable (D2 = no local CAS) and blocked the
+  model answer from full marks in its own qtest; sig-figs on units stays
+  supported for imports, just not a template default. Flagged for owner.
+- D-app-16: qtest walk decides branches by numeric sampling (30 rerolls, all
+  must agree); anything undecidable DROPS that qtest rather than guessing —
+  the three jsxgraph templates (CAS-opaque grading code) therefore ship
+  model-only qtests; owner one-click "Run test -> Save updated test" in
+  Moodle is the documented upgrade path.
+- D-app-17: `<expectedpenalty/>` mirrors the final node's penalty field
+  (empty -> self-closing) per the conventions reference; corpus injector
+  qtests write 0.0000000 but are warming-only, the reference is normative.
+- D-app-18: auto distractors: numerical -> sign-flipped ta (only when ta
+  provably nonzero), radio -> first wrong option value; matrix det part
+  curated `ev(ta3 + 1, simp)`; imported foreign qtests are HEALED (replaced
+  by derived ones), only distractor inputs + seeds roundtrip as data.
+- D-app-19: seeds emit when rand* vars OR any radio part exists
+  (random_permutation randomises the question — the backlog missed MCQs);
+  default seed set 12345/10101/10102 (house pattern), imported sets kept.
+- D-app-20: pre-existing roundtrip defects fixed en route (exposed by the
+  first template-wide byte-stability tests): units tolerance/feedback
+  mapped to wrong keys on import; numerical tolerance nodes matched by
+  literal id 0/1 (breaks under prereq gate shifting — now order-based);
+  radio/algebraic/matrix/string/jsxgraph/notes feedback never recovered;
+  notes boxsize/syntaxhint lost; notesN part texts lost (regex only matched
+  ansN); show_reasoning template renumbered to the ansN=partId convention.

@@ -48,7 +48,11 @@ export const ENGINEERING_TEMPLATES = {
                 text: 'Calculate the current through the resistor (include units):',
                 answer: 'ans1',
                 teacherAnswer: 'ta1',
-                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
+                distractor: 'stackunits(-(V/R), A)',
+                // checkSigFigs off (D-app-15): NumSigFigs against a raw
+                // units-typed input is CAS-unverifiable here and blocks the
+                // model answer from earning full marks in its own qtest.
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct! Ohm\'s Law: \\(I = V/R\\).',
@@ -61,7 +65,8 @@ export const ENGINEERING_TEMPLATES = {
                 text: 'Calculate the power dissipated by the resistor (include units):',
                 answer: 'ans2',
                 teacherAnswer: 'ta2',
-                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
+                distractor: 'stackunits(-(V^2/R), W)',
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct! Power: \\(P = V^2/R\\).',

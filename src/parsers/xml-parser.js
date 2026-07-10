@@ -3,6 +3,7 @@
 import { INPUT_TYPES, DEFAULT_GRADING } from '../core/constants.js';
 import { detectVariableType, parseVariableDefinition } from './variable-parser.js';
 import { migrateLegacyTeacherAnswers } from '../core/migrate-teacher-answer.js';
+import { modelInputValue } from '../generators/qtest-generator.js';
 
 const SIMPLE_TYPE_MAP = {
     numerical: INPUT_TYPES.NUMERICAL,
@@ -135,7 +136,7 @@ export function parseStackXML(xmlString) {
             if (strong) strong.remove();
             let text = cloneP.innerHTML.trim();
 
-            const match = pd.innerHTML.match(/\[\[input:(ans\d+)\]\]/);
+            const match = pd.innerHTML.match(/\[\[input:([A-Za-z_][A-Za-z0-9_]*)\]\]/);
             if (match) {
                 partTexts[match[1]] = text;
             }
@@ -144,7 +145,7 @@ export function parseStackXML(xmlString) {
         // Detect JSXGraph code
         const jsxMatch = pd.innerHTML.match(/\[\[jsxgraph[^\]]*\]\]([\s\S]*?)\[\[\/jsxgraph\]\]/);
         if (jsxMatch) {
-            const ansMatch = pd.innerHTML.match(/\[\[input:(ans\d+)\]\]/);
+            const ansMatch = pd.innerHTML.match(/\[\[input:([A-Za-z_][A-Za-z0-9_]*)\]\]/);
             if (ansMatch) {
                 partTexts[ansMatch[1] + '_graphCode'] = jsxMatch[1].trim();
             }
@@ -153,7 +154,7 @@ export function parseStackXML(xmlString) {
         // Detect image upload instruction for notes parts
         const imgInstruction = pd.innerHTML.includes('photograph or scan your handwritten');
         if (imgInstruction) {
-            const ansMatch = pd.innerHTML.match(/\[\[input:(ans\d+)\]\]/);
+            const ansMatch = pd.innerHTML.match(/\[\[input:([A-Za-z_][A-Za-z0-9_]*)\]\]/);
             if (ansMatch) {
                 partTexts[ansMatch[1] + '_notesRequireImage'] = true;
             }
@@ -163,7 +164,7 @@ export function parseStackXML(xmlString) {
         const prereqNotice = pd.querySelector('.prerequisite-notice');
         if (prereqNotice) {
             const prereqMatch = prereqNotice.textContent.match(/part \(([a-z])\)/);
-            const ansMatch = pd.innerHTML.match(/\[\[input:(ans\d+)\]\]/);
+            const ansMatch = pd.innerHTML.match(/\[\[input:([A-Za-z_][A-Za-z0-9_]*)\]\]/);
             if (prereqMatch && ansMatch) {
                 partTexts[ansMatch[1] + '_prerequisite'] = prereqMatch[1].charCodeAt(0) - 96;
             }
@@ -214,6 +215,10 @@ export function parseStackXML(xmlString) {
             part.type = INPUT_TYPES.NOTES;
             part.notesAutoCredit = true;
             part.notesRequireImage = false;
+            const boxSize = parseInt(inp.querySelector('boxsize')?.textContent);
+            if (Number.isFinite(boxSize)) part.notesBoxSize = boxSize;
+            const hint = inp.querySelector('syntaxhint')?.textContent;
+            if (hint) part.notesSyntaxHint = hint;
         } else if (type === 'radio' || type === 'dropdown') {
             part.type = INPUT_TYPES.RADIO;
             // Recover options from ta_ansX variable (FIXES BUG 4)
@@ -243,6 +248,17 @@ export function parseStackXML(xmlString) {
     // Sort parts by ID
     state.parts.sort((a, b) => a.id - b.id);
 
+    // A5 (X1): deployed seeds roundtrip as data; question tests are HEALED,
+    // not preserved — the app re-derives qtests from the PRT graph on
+    // export, so only the curated wrong-answer inputs (distractors) are
+    // recovered here. Foreign/warming-only qtests are replaced by canonical
+    // derived ones.
+    const seeds = Array.from(doc.querySelectorAll('deployedseed'))
+        .map(s => parseInt(s.textContent.trim()))
+        .filter(n => Number.isFinite(n));
+    if (seeds.length > 0) state.deployedSeeds = seeds;
+    recoverDistractors(doc, state);
+
     // A2: heal legacy input-name/variable collisions (rename + rewrite +
     // plain-language notice for the UI).
     const notices = migrateLegacyTeacherAnswers(state);
@@ -252,11 +268,39 @@ export function parseStackXML(xmlString) {
 }
 
 /**
+ * Recovers curated distractor inputs from imported <qtest> blocks: any
+ * testinput whose value is neither the part's model-answer value nor the
+ * insertstars pin ("2x") is treated as that part's wrong-answer distractor.
+ */
+function recoverDistractors(doc, state) {
+    const ctx = { variables: state.variables };
+    doc.querySelectorAll('qtest').forEach(qt => {
+        qt.querySelectorAll('testinput').forEach(ti => {
+            const name = ti.querySelector('name')?.textContent?.trim();
+            const value = ti.querySelector('value')?.textContent?.trim();
+            if (!name || !value) return;
+            const part = state.parts.find(p => p.answer === name);
+            if (!part || part.distractor !== undefined) return;
+            if (part.type === 'algebraic' && value === '2x') return;
+            let model;
+            try {
+                model = modelInputValue(part, ctx);
+            } catch {
+                return;
+            }
+            if (value !== model) part.distractor = value;
+        });
+    });
+}
+
+/**
  * Analyzes the PRT (Potential Response Tree) for a part and populates
  * grading settings, feedback, and type overrides.
  */
 function analyzePRT(doc, part, name, type) {
-    const prtName = name.replace('ans', 'prt');
+    // PRT names follow the PART id (prt{id}), which equals the ansN number
+    // for ansN inputs but NOT for notes inputs (notesN) — derive from the id.
+    const prtName = `prt${part.id}`;
     const prt = Array.from(doc.querySelectorAll('prt'))
         .find(p => p.querySelector('name')?.textContent === prtName);
 
@@ -300,29 +344,73 @@ function analyzePRT(doc, part, name, type) {
         }
     }
 
-    // Analyze nodes for tolerances and feedback
+    // Analyze nodes for tolerances and feedback. Tolerance nodes are mapped
+    // by ORDER, not by literal node id — prerequisite gate wrapping shifts
+    // every id by one, so "node 0 = wide" would misread gated parts.
     const nodes = prt.querySelectorAll('node');
+    let tolNodesSeen = 0;
+    const tolNodesTotal = Array.from(nodes).filter(
+        n => TOLERANCE_TESTS.has(n.querySelector('answertest')?.textContent)).length;
     nodes.forEach(node => {
         const nodeId = node.querySelector('name')?.textContent;
         const testType = node.querySelector('answertest')?.textContent;
         const testOpt = node.querySelector('testoptions')?.textContent;
+        const sans = node.querySelector('sans')?.textContent?.trim();
 
         // Extract custom feedback messages
         const trueFb = node.querySelector('truefeedback text')?.textContent?.trim();
         const falseFb = node.querySelector('falsefeedback text')?.textContent?.trim();
 
+        // Special nodes (recognised by their sans) — recover their feedback
+        // and skip the tolerance mapping below.
+        if (sans === 'prereq_passed') {
+            if (falseFb) part.feedback.prerequisiteNotMet = falseFb;
+            return;
+        }
+        if (sans === 'is_sign_flip') {
+            if (trueFb) part.feedback.signFlip = trueFb;
+            return;
+        }
+        if (sans === 'is_p10_error') {
+            if (trueFb) part.feedback.powerOf10Error = trueFb;
+            return;
+        }
+
+        // Single-comparison part types: the main node's feedback pair.
+        if ([INPUT_TYPES.ALGEBRAIC, INPUT_TYPES.MATRIX, INPUT_TYPES.STRING,
+            INPUT_TYPES.RADIO, INPUT_TYPES.JSXGRAPH].includes(part.type)) {
+            const stripJsx = (s) => s.replace(/<br><hr><p>\{@feedback_msg@\}<\/p>$/, '');
+            if (trueFb) part.feedback.correct = stripJsx(trueFb);
+            if (falseFb) part.feedback.incorrect = stripJsx(falseFb);
+        }
+        if (part.type === INPUT_TYPES.NOTES && trueFb) {
+            part.feedback.notesReceived = trueFb;
+        }
+
         if (part.type === INPUT_TYPES.NUMERICAL || part.type === INPUT_TYPES.UNITS) {
             if (TOLERANCE_TESTS.has(testType)) {
                 // A11: preserve the imported file's tolerance semantics
                 part.grading.tolType = RELATIVE_TESTS.has(testType) ? 'relative' : 'absolute';
-                if (nodeId === '0') {
-                    part.grading.wideTol = parseFloat(testOpt) || 0.2;
-                    if (falseFb) part.feedback.incorrect = falseFb;
-                }
-                if (nodeId === '1') {
+                tolNodesSeen++;
+                if (part.type === INPUT_TYPES.UNITS) {
+                    // units-prt emits a SINGLE tolerance node (the tight
+                    // tolerance) — there is no wide tier for units parts.
                     part.grading.tightTol = parseFloat(testOpt) || 0.05;
                     if (trueFb) part.feedback.correct = trueFb;
-                    if (falseFb) part.feedback.closeButInaccurate = falseFb;
+                    if (falseFb) part.feedback.wrongUnits = falseFb;
+                } else if (tolNodesTotal >= 2 && tolNodesSeen === 1) {
+                    // Two-tier pipeline: first tolerance node = wide (50%).
+                    part.grading.wideTol = parseFloat(testOpt) || 0.2;
+                    if (falseFb) part.feedback.incorrect = falseFb;
+                } else {
+                    // Tight/full-credit check (second of two, or a single).
+                    part.grading.tightTol = parseFloat(testOpt) || 0.05;
+                    if (tolNodesTotal === 1) part.grading.wideTol = 0;
+                    if (trueFb) part.feedback.correct = trueFb;
+                    if (falseFb) {
+                        if (tolNodesTotal >= 2) part.feedback.closeButInaccurate = falseFb;
+                        else part.feedback.incorrect = falseFb;
+                    }
                 }
             }
             if (SIGFIGS_TESTS.has(testType)) {
