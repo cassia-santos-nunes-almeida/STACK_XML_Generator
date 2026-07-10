@@ -210,3 +210,43 @@ console errors — add a favicon or accept-and-log).
 - Known pre-existing cosmetics: favicon.ico 404 (console error in walkthrough
   scope); `src/public/test-status.json` path oddity (dev gate serves 200 —
   verify reporter path if it ever 404s).
+
+---
+
+# STAGE 2 — second half (A5 -> A6 -> A7 -> A10 -> A8-gate), 2026-07-10
+
+Autonomous staged run continued. Baseline at pickup: `1a8b936` (A11),
+`npm test` 322/322 green, tree clean.
+
+## Phase-1 re-verification (this stage's items, one line per revision)
+
+- **A5 spec sources fetched:** qtest schema = synced skill
+  stack-xml-conventions.md "Question Tests" (verified against real STACK
+  exports; NO `<text>` wrapping anywhere inside `<qtest>`; children only
+  testcase/description/testinput/expected); canonical-pair doctrine + worked
+  example = stack-xml-generator SKILL.md P-STACK-61 section (model input
+  `ev(taN, simp)`, wrong answer targets a SPECIFIC branch); placement
+  verified against deployed corpus (deployedseeds after last `</prt>`, then
+  qtests, then `</question>`).
+- **A5-prep (defects the qtests would have baked in, fixed FIRST):**
+  (1) radio-prt compared the student answer against a 1-based option INDEX —
+  STACK MCQ inputs return the selected option's VALUE, and an index cannot
+  survive the random_permutation shuffle the app itself emits; tans is now
+  the correct option's quoted value, parser heals legacy index exports (X1).
+  (2) circuit_ohm units parts pointed tans at unitless `V/R` — units answer
+  tests need a stackunits(...) tans (house style); wrapped as
+  `stackunits(V/R, A)` / `stackunits(V^2/R, W)`.
+  (3) calculus_int ta1 was `integrate(...)` — numerically unevaluable, which
+  forced A11's conservative absolute fallback and would make qtest walking
+  undecidable; replaced with the closed form `k^3 + c*k`.
+  (4) jsxgraph_sketch ta1 was the flat y-list `expected_y` — feeding it back
+  as the model answer errors its own grading code (expects [[x,y],...]);
+  now `matrix([x1,y1],...)` matching the input serialisation.
+- **A7 grep claim verified:** exactly 7 STACK/Maxima/XML occurrences in
+  index.html (lines 6, 19, 33, 34, 100, 136, 174).
+
+## Per-item status (stage 2)
+
+| Item | Commit | Tests |
+|---|---|---|
+| A5-prep | (this commit) | 331/331 green; all 14 exports [xml]-parse OK; mcq tans = `&quot;7&quot;`, circuit_ohm qv carries stackunits |

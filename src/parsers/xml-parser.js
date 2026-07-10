@@ -332,13 +332,22 @@ function analyzePRT(doc, part, name, type) {
             }
         }
 
-        // MCQ: recover correct answer
+        // MCQ: recover correct answer. Canonical form (A5-prep): tans is the
+        // correct option's VALUE as a Maxima string. Legacy exports carried a
+        // 1-based index — heal those on import (X1).
         if (part.type === INPUT_TYPES.RADIO && nodeId === '0') {
-            const correctTans = node.querySelector('tans')?.textContent;
+            const correctTans = node.querySelector('tans')?.textContent?.trim();
             if (correctTans && part.options.length > 0) {
-                const correctIdx = parseInt(correctTans) - 1;
-                if (correctIdx >= 0 && correctIdx < part.options.length) {
-                    part.options[correctIdx].correct = true;
+                const strMatch = correctTans.match(/^"([\s\S]*)"$/);
+                if (strMatch) {
+                    const val = strMatch[1].replace(/\\"/g, '"');
+                    const opt = part.options.find(o => o.value === val);
+                    if (opt) opt.correct = true;
+                } else {
+                    const correctIdx = parseInt(correctTans) - 1;
+                    if (correctIdx >= 0 && correctIdx < part.options.length) {
+                        part.options[correctIdx].correct = true;
+                    }
                 }
             }
         }

@@ -38,8 +38,8 @@ export const ENGINEERING_TEMPLATES = {
             { name: 'V', type: 'rand', value: 'rand([5, 9, 12, 24])' },
             { name: 'I_val', type: 'calc', value: 'V / R' },
             { name: 'P_val', type: 'calc', value: 'V * V / R' },
-            { name: 'ta1', type: 'algebraic', value: 'V / R' },
-            { name: 'ta2', type: 'algebraic', value: 'V^2 / R' },
+            { name: 'ta1', type: 'algebraic', value: 'stackunits(V/R, A)' },
+            { name: 'ta2', type: 'algebraic', value: 'stackunits(V^2/R, W)' },
         ],
         parts: [
             {

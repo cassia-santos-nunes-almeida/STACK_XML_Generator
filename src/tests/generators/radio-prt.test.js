@@ -17,14 +17,14 @@ describe('Radio PRT Generator', () => {
         expect(xml).toContain('<answertest>AlgEquiv</answertest>');
     });
 
-    it('uses 1-based index for correct answer', () => {
+    it('compares against the correct option VALUE (radio submits values, not indices)', () => {
         const xml = generateRadioPRT(basePart, 'prt1');
-        // Option B is index 1 (0-based) → 2 (1-based)
-        expect(xml).toContain('<tans>2</tans>');
+        expect(xml).toContain('<tans>&quot;Option B&quot;</tans>');
+        expect(xml).not.toContain('<tans>2</tans>');
     });
 
-    it('generates correct teacher answer variable', () => {
+    it('generates correct teacher answer expression', () => {
         const ta = generateRadioTeacherAnswer(basePart);
-        expect(ta).toBe('2');
+        expect(ta).toBe('"Option B"');
     });
 });

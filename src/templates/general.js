@@ -252,7 +252,10 @@ feedback_msg: sconcat(
             { name: 'y4', type: 'rand', value: 'rand(5)+2' },
             { name: 'y5', type: 'rand', value: 'rand(3)' },
             { name: 'expected_y', type: 'algebraic', value: '[y1, y2, y3, y4, y5]' },
-            { name: 'ta1', type: 'algebraic', value: 'expected_y' },
+            // Model answer shaped like the student input ([[x,y],...] pairs;
+            // matrix form because Maxima parses [[...],[...]] as a matrix and
+            // the grading code unwraps it with args()).
+            { name: 'ta1', type: 'algebraic', value: 'matrix([x1,y1],[x2,y2],[x3,y3],[x4,y4],[x5,y5])' },
         ],
         parts: [
             {

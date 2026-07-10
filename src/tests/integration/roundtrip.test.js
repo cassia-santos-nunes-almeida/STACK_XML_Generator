@@ -272,6 +272,20 @@ describe('Roundtrip: Radio/MCQ', () => {
         const varNames = result.variables.map(v => v.name);
         expect(varNames).not.toContain('ta_ans1');
     });
+
+    it('recovers the correct option from a value tans (A5-prep)', () => {
+        const result = roundtrip(mcqData);
+        expect(result.parts[0].options.find(o => o.correct)?.value).toBe('Banana');
+    });
+
+    it('heals legacy index-based tans on import (X1)', () => {
+        const legacy = generateStackXML(mcqData)
+            .replace('<tans>&quot;Banana&quot;</tans>', '<tans>2</tans>');
+        const healed = parseStackXML(legacy);
+        expect(healed.parts[0].options.find(o => o.correct)?.value).toBe('Banana');
+        // Re-export carries the canonical value form
+        expect(generateStackXML(healed)).toContain('<tans>&quot;Banana&quot;</tans>');
+    });
 });
 
 describe('Roundtrip: String', () => {

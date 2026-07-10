@@ -6,8 +6,9 @@ import { escapeXml, feedbackElement } from '../xml-helpers.js';
 /**
  * Generates the PRT XML for a radio (MCQ) answer part.
  *
- * In STACK, radio inputs submit the selected option's value as a string.
- * The PRT compares this with the correct option value.
+ * In STACK, radio inputs submit the selected option's VALUE (the first
+ * element of the [[value, correct], ...] pairs). The PRT compares this
+ * with the correct option's value.
  *
  * @param {object} part - Part data with .options array
  * @param {string} prtName - PRT identifier
@@ -15,19 +16,19 @@ import { escapeXml, feedbackElement } from '../xml-helpers.js';
  */
 export function generateRadioPRT(part, prtName) {
     const fb = part.feedback || {};
-    const correctOpt = part.options.find(o => o.correct);
-    const correctVal = correctOpt ? correctOpt.value : '';
-
-    // For STACK radio, the teacher answer in PRT should be the correct option's index + 1
-    // STACK radio inputs return the 1-based index of the selected option
-    const correctIndex = part.options.findIndex(o => o.correct) + 1;
+    // STACK MCQ inputs return the SELECTED OPTION'S VALUE (a CAS expression),
+    // never a 1-based index. Comparing against an index marks every answer
+    // wrong, and an index cannot survive random_permutation shuffling. The
+    // tans must be the correct option's value exactly as written in the
+    // ta_ansN list (same quoting/escaping).
+    const correctVal = radioCorrectValue(part);
 
     return `
       <node>
         <name>0</name>
         <answertest>${ANSWER_TESTS.ALG_EQUIV}</answertest>
         <sans>${part.answer}</sans>
-        <tans>${correctIndex}</tans>
+        <tans>${escapeXml(correctVal)}</tans>
         <testoptions></testoptions>
         <quiet>0</quiet>
         <truescoremode>${SCORE_MODES.SET}</truescoremode>
@@ -46,10 +47,19 @@ export function generateRadioPRT(part, prtName) {
 }
 
 /**
- * Generates the teacher answer variable for radio input.
- * STACK radio inputs need the correct answer defined as a variable.
+ * The correct option's value as a Maxima string literal, escaped exactly
+ * like generateRadioVariable writes it into the ta_ansN option list —
+ * this is what the radio input submits when the correct option is chosen.
+ */
+export function radioCorrectValue(part) {
+    const correctOpt = (part.options || []).find(o => o.correct);
+    if (!correctOpt) return '""';
+    return `"${String(correctOpt.value).replace(/"/g, '\\"')}"`;
+}
+
+/**
+ * Teacher-answer expression for a radio part (the correct option's value).
  */
 export function generateRadioTeacherAnswer(part) {
-    const correctIndex = part.options.findIndex(o => o.correct) + 1;
-    return String(correctIndex);
+    return radioCorrectValue(part);
 }

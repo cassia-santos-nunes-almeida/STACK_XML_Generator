@@ -32,7 +32,9 @@ export const MATHS_TEMPLATES = {
         variables: [
             { name: 'k', type: 'rand', value: 'rand(4)+1' },
             { name: 'c', type: 'rand', value: 'rand(10)' },
-            { name: 'ta1', type: 'algebraic', value: 'integrate(3*x^2 + c, x, 0, k)' },
+            // Closed form (= integrate(3*x^2 + c, x, 0, k)) so the app can
+            // sample it numerically for sign-flip gating and qtest walking.
+            { name: 'ta1', type: 'algebraic', value: 'k^3 + c*k' },
         ],
         parts: [
             {
