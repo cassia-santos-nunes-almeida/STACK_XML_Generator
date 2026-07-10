@@ -14,9 +14,11 @@ const GRADEABLE_TYPES = new Set([
  * Idempotent: parts that already carry a distinct teacherAnswer are skipped.
  *
  * @param {object} data - State-shaped question data (mutated in place)
+ * @param {Set<number>} [migratedIds] - Out-param: ids of migrated parts
+ *   (used by the F4 rebuild-notice check to avoid double-noticing)
  * @returns {string[]} Plain-language notices (empty when nothing migrated)
  */
-export function migrateLegacyTeacherAnswers(data) {
+export function migrateLegacyTeacherAnswers(data, migratedIds) {
     const notices = [];
     const parts = data.parts || [];
     const variables = data.variables || [];
@@ -59,6 +61,7 @@ export function migrateLegacyTeacherAnswers(data) {
             }
         });
         p.teacherAnswer = ta;
+        if (migratedIds) migratedIds.add(p.id);
 
         notices.push(
             `Older file updated: the variable "${oldName}" was both a student input name and ` +

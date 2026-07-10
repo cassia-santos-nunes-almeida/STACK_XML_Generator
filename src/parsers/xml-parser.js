@@ -3,7 +3,9 @@
 import { INPUT_TYPES, DEFAULT_GRADING } from '../core/constants.js';
 import { detectVariableType, parseVariableDefinition, splitMaximaStatements } from './variable-parser.js';
 import { migrateLegacyTeacherAnswers } from '../core/migrate-teacher-answer.js';
-import { modelInputValue } from '../generators/qtest-generator.js';
+import { modelInputValue, parsePrtGraph } from '../generators/qtest-generator.js';
+import { generatePRT } from '../generators/prts/prt-factory.js';
+import STACK_RULES from '../core/stack-rules.json' with { type: 'json' };
 
 const SIMPLE_TYPE_MAP = {
     numerical: INPUT_TYPES.NUMERICAL,
@@ -102,6 +104,18 @@ export function parseStackXML(xmlString) {
         });
     });
 
+    // 4.5 Variable-type recovery from the questionnote (F4-prep): the note
+    // lists every rand variable as "name={@name@}". A rand-typed variable
+    // whose value happens to be constant (e.g. "t1: 10") would otherwise
+    // degrade to calc on import — silently dropping it from the note and
+    // the deployed seeds on re-export.
+    const noteText = doc.querySelector('questionnote text')?.textContent || '';
+    for (const m of noteText.matchAll(/([a-zA-Z_][a-zA-Z0-9_]*)=\{@([a-zA-Z_][a-zA-Z0-9_]*)@\}/g)) {
+        if (m[1] !== m[2]) continue; // taN/part refs are keyed by ansN, not by their own name
+        const v = state.variables.find(x => x.name === m[1]);
+        if (v && v.type !== 'rand') v.type = 'rand';
+    }
+
     // 5. Images
     const fileNodes = doc.querySelectorAll('questiontext file');
     fileNodes.forEach(f => {
@@ -144,8 +158,13 @@ export function parseStackXML(xmlString) {
             }
         }
 
-        // Detect JSXGraph code
-        const jsxMatch = pd.innerHTML.match(/\[\[jsxgraph[^\]]*\]\]([\s\S]*?)\[\[\/jsxgraph\]\]/);
+        // Detect JSXGraph code. Extract from TEXT (not innerHTML): the graph
+        // code is JavaScript living in a text node, and innerHTML would
+        // entity-escape it (&& -> &amp;&amp;, >= -> &gt;=), so a re-export
+        // after import would ship corrupted code (F4-prep).
+        const jsxBox = pd.querySelector('.jsxgraph-box');
+        const jsxSource = jsxBox ? jsxBox.textContent : pd.innerHTML;
+        const jsxMatch = jsxSource.match(/\[\[jsxgraph[^\]]*\]\]([\s\S]*?)\[\[\/jsxgraph\]\]/);
         if (jsxMatch) {
             const ansMatch = pd.innerHTML.match(/\[\[input:([A-Za-z_][A-Za-z0-9_]*)\]\]/);
             if (ansMatch) {
@@ -263,10 +282,90 @@ export function parseStackXML(xmlString) {
 
     // A2: heal legacy input-name/variable collisions (rename + rewrite +
     // plain-language notice for the UI).
-    const notices = migrateLegacyTeacherAnswers(state);
+    const migratedIds = new Set();
+    const notices = migrateLegacyTeacherAnswers(state, migratedIds);
+
+    // F4: importing a question whose PRT this editor cannot fully represent
+    // used to REPLACE the grading logic silently on re-export (partial
+    // credit, extra branches, and custom feedbackvariables vanished with no
+    // notice). Detect it by regenerating each PRT from the recovered state
+    // and comparing the grading structure with what the file actually holds.
+    // Parts the A2 migration just healed already carry their own (stronger,
+    // more accurate) notice.
+    notices.push(...detectUnrecoveredPrts(doc, state, migratedIds));
+
     if (notices.length > 0) state.importNotices = notices;
 
     return state;
+}
+
+/**
+ * F4: one notice per part whose imported PRT does not structurally match
+ * what the editor would re-export from the recovered state.
+ */
+function detectUnrecoveredPrts(doc, state, skipIds = new Set()) {
+    const notices = [];
+    const allParts = state.parts || [];
+    const ctx = { variables: state.variables || [] };
+    const prtEls = Array.from(doc.querySelectorAll('prt'));
+    const canonical = t => STACK_RULES.legacyAliases[t] || t || '';
+    const num = s => {
+        const t = (s ?? '').toString().trim();
+        if (t === '') return '';
+        const n = parseFloat(t);
+        return Number.isFinite(n) ? n : t;
+    };
+    const normFv = fv => String(fv || '')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    const sig = n => JSON.stringify([
+        n.id, canonical(n.answertest), n.sans, n.tans, num(n.testoptions),
+        n.tMode, num(n.tScore), n.tNext, n.tNote,
+        n.fMode, num(n.fScore), n.fNext, n.fNote,
+    ]);
+
+    allParts.forEach((part, idx) => {
+        if (skipIds.has(part.id)) return;
+        const prtName = `prt${part.id || idx + 1}`;
+        const label = String.fromCharCode(96 + (part.id || idx + 1));
+        const notice = `Part (${label}): this file's grading logic contains structure this editor cannot represent. If you export from here, the grading will be REBUILT in the editor's standard style — custom partial credit, extra branches, or custom feedback variables from the original file will be replaced. Compare the re-exported question against the original in Moodle before giving it to students.`;
+        const prtEl = prtEls.find(p => p.querySelector('name')?.textContent === prtName);
+
+        let generated;
+        try {
+            generated = generatePRT(part, idx, allParts, ctx);
+        } catch {
+            generated = null;
+        }
+        if (!prtEl || !generated) {
+            notices.push(notice);
+            return;
+        }
+
+        const gen = parsePrtGraph(generated);
+        const genSigs = [...gen.nodes.values()].map(n => sig({
+            id: n.id, answertest: n.answertest, sans: n.sans, tans: n.tans,
+            testoptions: n.testoptions,
+            tMode: n.t.mode, tScore: n.t.score, tNext: n.t.next, tNote: n.t.note,
+            fMode: n.f.mode, fScore: n.f.score, fNext: n.f.next, fNote: n.f.note,
+        }));
+
+        const g = (el, tag) => el.querySelector(`:scope > ${tag}`)?.textContent?.trim() ?? '';
+        const impSigs = Array.from(prtEl.querySelectorAll('node')).map(n => sig({
+            id: g(n, 'name'), answertest: g(n, 'answertest'), sans: g(n, 'sans'), tans: g(n, 'tans'),
+            testoptions: g(n, 'testoptions'),
+            tMode: g(n, 'truescoremode'), tScore: parseFloat(g(n, 'truescore')), tNext: g(n, 'truenextnode'), tNote: g(n, 'trueanswernote'),
+            fMode: g(n, 'falsescoremode'), fScore: parseFloat(g(n, 'falsescore')), fNext: g(n, 'falsenextnode'), fNote: g(n, 'falseanswernote'),
+        }));
+        const impFv = prtEl.querySelector('feedbackvariables text')?.textContent || '';
+
+        const same = impSigs.length === genSigs.length
+            && impSigs.every((s, i) => s === genSigs[i])
+            && normFv(impFv) === normFv(gen.fv);
+        if (!same) notices.push(notice);
+    });
+    return notices;
 }
 
 /**
@@ -312,7 +411,12 @@ function analyzePRT(doc, part, name, type) {
     const fbVars = prt.querySelector('feedbackvariables text')?.textContent || '';
     if (fbVars.includes('all_correct') || fbVars.includes('pt_checks')) {
         part.type = INPUT_TYPES.JSXGRAPH;
-        part.gradingCode = fbVars.trim();
+        // Strip the helper tail the generator appends on every export —
+        // recovering it into gradingCode used to make re-exports append it
+        // AGAIN (fv grows once per import/export cycle; F4-prep).
+        part.gradingCode = fbVars
+            .replace(/\s*\/\* Ensure feedback_msg exists \*\/\s*if not boundp\(feedback_msg\) then feedback_msg: "";\s*$/, '')
+            .trim();
     }
 
     // Power of 10 detection
