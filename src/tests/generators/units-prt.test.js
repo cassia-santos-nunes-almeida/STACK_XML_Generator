@@ -14,9 +14,9 @@ describe('Units PRT Generator (BUG 2 Fix)', () => {
         feedback: {},
     };
 
-    it('uses ATUnits answer test (NOT AlgEquiv)', () => {
+    it('uses UnitsAbsolute answer test (NOT AlgEquiv)', () => {
         const xml = generateUnitsPRT(basePart, 'prt1');
-        expect(xml).toContain('<answertest>ATUnits</answertest>');
+        expect(xml).toContain('<answertest>UnitsAbsolute</answertest>');
         expect(xml).not.toContain('<answertest>AlgEquiv</answertest>');
     });
 
@@ -33,7 +33,7 @@ describe('Units PRT Generator (BUG 2 Fix)', () => {
         const xml = generateUnitsPRT(part, 'prt1');
 
         expect(xml).toContain('<name>1</name>');
-        expect(xml).toContain('ATNumSigFigs');
+        expect(xml).toContain('NumSigFigs');
         expect(xml).toContain('<testoptions>4</testoptions>');
     });
 

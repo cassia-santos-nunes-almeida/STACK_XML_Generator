@@ -1,5 +1,5 @@
 // PRT generator for numerical answer type
-// Implements: ATNumAbs (wide + tight tolerance), ATNumSigFigs, Power-of-10 check
+// Implements: NumAbsolute (wide + tight tolerance), NumSigFigs, Power-of-10 check
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement } from '../xml-helpers.js';
 
@@ -7,9 +7,9 @@ import { feedbackElement } from '../xml-helpers.js';
  * Generates the PRT XML for a numerical answer part.
  *
  * Grading pipeline:
- *   Node 0: Wide tolerance check (ATNumAbs) - partial credit
- *   Node 1: Tight tolerance check (ATNumAbs) - full credit
- *   Node 2: (optional) Significant figures check (ATNumSigFigs) - penalty
+ *   Node 0: Wide tolerance check (NumAbsolute) - partial credit
+ *   Node 1: Tight tolerance check (NumAbsolute) - full credit
+ *   Node 2: (optional) Significant figures check (NumSigFigs) - penalty
  *   Feedbackvariables: (optional) Power-of-10 detection with specific feedback
  *
  * @param {object} part - Part data with .answer, .grading, .feedback

@@ -1,5 +1,5 @@
 // PRT generator for units answer type — FIXES BUG 2 (was using AlgEquiv)
-// Uses ATUnits answer test which validates both numeric value AND units
+// Uses UnitsAbsolute answer test which validates both numeric value AND units
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement } from '../xml-helpers.js';
 
@@ -7,7 +7,7 @@ import { feedbackElement } from '../xml-helpers.js';
  * Generates the PRT XML for a units answer part.
  *
  * Grading pipeline:
- *   Node 0: ATUnits check with tolerance — validates number AND units
+ *   Node 0: UnitsAbsolute check with tolerance — validates number AND units
  *   Node 1: (optional) Significant figures check
  *   If units wrong but number right, STACK gives specific unit feedback
  *
@@ -23,7 +23,7 @@ export function generateUnitsPRT(part, prtName) {
 
     let nodes = '';
 
-    // --- Node 0: ATUnits check (validates value + units) ---
+    // --- Node 0: UnitsAbsolute check (validates value + units) ---
     nodes += `
       <node>
         <name>0</name>

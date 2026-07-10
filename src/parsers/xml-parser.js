@@ -10,6 +10,20 @@ const SIMPLE_TYPE_MAP = {
     matrix: INPUT_TYPES.MATRIX,
 };
 
+// Grading-structure detection accepts BOTH the canonical v4.9.1 names and
+// the legacy AT-prefixed names this app emitted before A1 — old exports
+// heal on import (X1). Tolerance-based tests carry a tolerance in
+// testoptions; sig-figs tests carry a digit count.
+const TOLERANCE_TESTS = new Set([
+    'NumAbsolute', 'ATNumAbs',
+    'NumRelative', 'ATNumRelative',
+    'UnitsAbsolute', 'ATUnits',
+    'UnitsRelative',
+    'UnitsStrictAbsolute', 'ATUnitsStrict',
+    'UnitsStrictRelative',
+]);
+const SIGFIGS_TESTS = new Set(['NumSigFigs', 'ATNumSigFigs']);
+
 /**
  * Parses a STACK question XML string into an editor state object.
  *
@@ -172,7 +186,11 @@ export function parseStackXML(xmlString) {
             text: partTexts[name] || '',
             answer: name,
             options: [],
-            grading: { ...DEFAULT_GRADING },
+            // Start detection-driven grading flags OFF: analyzePRT switches
+            // them on when the corresponding node/fv is actually present.
+            // (Spreading the raw defaults used to re-export phantom
+            // sig-figs / power-of-10 nodes that the imported XML never had.)
+            grading: { ...DEFAULT_GRADING, checkSigFigs: false, checkPowerOf10: false },
             graphCode: partTexts[name + '_graphCode'] || '',
             gradingCode: '',
             feedback: {},
@@ -273,7 +291,7 @@ function analyzePRT(doc, part, name, type) {
         const falseFb = node.querySelector('falsefeedback text')?.textContent?.trim();
 
         if (part.type === INPUT_TYPES.NUMERICAL || part.type === INPUT_TYPES.UNITS) {
-            if (testType === 'ATNumAbs' || testType === 'ATUnits') {
+            if (TOLERANCE_TESTS.has(testType)) {
                 if (nodeId === '0') {
                     part.grading.wideTol = parseFloat(testOpt) || 0.2;
                     if (falseFb) part.feedback.incorrect = falseFb;
@@ -284,7 +302,7 @@ function analyzePRT(doc, part, name, type) {
                     if (falseFb) part.feedback.closeButInaccurate = falseFb;
                 }
             }
-            if (testType === 'ATNumSigFigs') {
+            if (SIGFIGS_TESTS.has(testType)) {
                 part.grading.checkSigFigs = true;
                 part.grading.sigFigs = parseInt(testOpt) || 3;
                 if (falseFb) part.feedback.wrongSigFigs = falseFb;

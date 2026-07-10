@@ -71,6 +71,35 @@ describe('Roundtrip: Numerical', () => {
     });
 });
 
+describe('Roundtrip: byte stability + legacy healing (A1)', () => {
+    it('export -> import -> export is byte-stable', () => {
+        const xml1 = generateStackXML(numericalData);
+        const xml2 = generateStackXML(parseStackXML(xml1));
+        expect(xml2).toBe(xml1);
+    });
+
+    it('emits no AT-prefixed answertest names', () => {
+        const xml = generateStackXML(numericalData);
+        const tests = [...xml.matchAll(/<answertest>([^<]*)<\/answertest>/g)].map(m => m[1]);
+        expect(tests.length).toBeGreaterThan(0);
+        tests.forEach(t => expect(t).not.toMatch(/^AT/));
+    });
+
+    it('heals legacy AT-prefixed exports on import (grading recovered)', () => {
+        const legacyXml = generateStackXML(numericalData)
+            .replaceAll('<answertest>NumAbsolute</answertest>', '<answertest>ATNumAbs</answertest>')
+            .replaceAll('<answertest>NumSigFigs</answertest>', '<answertest>ATNumSigFigs</answertest>');
+        const result = parseStackXML(legacyXml);
+        expect(result.parts[0].grading.wideTol).toBe(0.2);
+        expect(result.parts[0].grading.tightTol).toBe(0.05);
+        expect(result.parts[0].grading.checkSigFigs).toBe(true);
+        // Re-export of a healed import carries only canonical names
+        const healed = generateStackXML(result);
+        expect(healed).not.toContain('ATNumAbs');
+        expect(healed).not.toContain('ATNumSigFigs');
+    });
+});
+
 describe('Roundtrip: Numerical with Power-of-10', () => {
     const p10Data = {
         ...numericalData,

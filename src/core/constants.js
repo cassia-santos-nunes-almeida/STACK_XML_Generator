@@ -1,15 +1,21 @@
-// STACK Answer Test identifiers used in Moodle STACK plugin
+// STACK Answer Test identifiers used in Moodle STACK plugin.
+// Names are the canonical v4.9.1 keys (stack-rules.json whitelist; the
+// compiler prepends "AT" itself, so XML must carry the bare name).
+// NOTE: UNITS/UNITS_STRICT map to the tolerance-based UnitsAbsolute /
+// UnitsStrictAbsolute tests — the bare `Units`/`UnitsStrict` names are
+// SIG-FIGS tests in v4.9.1 and would misread our tolerance testoptions.
 export const ANSWER_TESTS = {
-    NUM_ABSOLUTE: 'ATNumAbs',
-    NUM_RELATIVE: 'ATNumRelative',
-    NUM_SIG_FIGS: 'ATNumSigFigs',
+    NUM_ABSOLUTE: 'NumAbsolute',
+    NUM_RELATIVE: 'NumRelative',
+    NUM_SIG_FIGS: 'NumSigFigs',
     ALG_EQUIV: 'AlgEquiv',
-    UNITS: 'ATUnits',
-    UNITS_STRICT: 'ATUnitsStrict',
+    UNITS: 'UnitsAbsolute',
+    UNITS_RELATIVE: 'UnitsRelative',
+    UNITS_STRICT: 'UnitsStrictAbsolute',
     STRING: 'String',
     STRING_SLOPPY: 'StringSloppy',
-    SAME_TYPE: 'ATSameType',
-    CAS_EQUAL: 'CASEqual',
+    SAME_TYPE: 'SameType',
+    CAS_EQUAL: 'CasEqual',
 };
 
 // Input types supported by STACK

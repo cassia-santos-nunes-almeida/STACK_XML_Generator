@@ -67,7 +67,7 @@ describe('XML Generator Integration', () => {
         const xml = generateStackXML(sampleData);
         expect(xml).toContain('<prt>');
         expect(xml).toContain('<name>prt1</name>');
-        expect(xml).toContain('ATNumAbs');
+        expect(xml).toContain('NumAbsolute');
     });
 
     it('includes general feedback', () => {
@@ -135,8 +135,8 @@ describe('XML Generator Integration', () => {
         expect(xml).toContain('"Banana"');
     });
 
-    // Test units uses ATUnits
-    it('uses ATUnits for units type (BUG 2 fix)', () => {
+    // Test units uses UnitsAbsolute
+    it('uses UnitsAbsolute for units type (BUG 2 fix)', () => {
         const unitsData = {
             ...sampleData,
             parts: [{
@@ -150,7 +150,7 @@ describe('XML Generator Integration', () => {
         };
         const xml = generateStackXML(unitsData);
 
-        expect(xml).toContain('ATUnits');
+        expect(xml).toContain('UnitsAbsolute');
         expect(xml).not.toMatch(/<prt>[\s\S]*?<answertest>AlgEquiv<\/answertest>/);
     });
 

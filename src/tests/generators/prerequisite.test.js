@@ -23,7 +23,7 @@ describe('Prerequisite Node Generator', () => {
         const originalPrt = `
       <node>
         <name>0</name>
-        <answertest>ATNumAbs</answertest>
+        <answertest>NumAbsolute</answertest>
         <sans>ans2</sans>
         <tans>ans2</tans>
         <testoptions>0.2</testoptions>
@@ -54,7 +54,7 @@ describe('Prerequisite Node Generator', () => {
         const originalPrt = `
       <node>
         <name>0</name>
-        <answertest>ATNumAbs</answertest>
+        <answertest>NumAbsolute</answertest>
         <sans>ans2</sans>
         <tans>ans2</tans>
         <testoptions>0.2</testoptions>

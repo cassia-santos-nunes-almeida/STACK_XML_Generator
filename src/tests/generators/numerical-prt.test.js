@@ -22,7 +22,7 @@ describe('Numerical PRT Generator', () => {
         // Should have Node 0 (wide) and Node 1 (tight)
         expect(xml).toContain('<name>0</name>');
         expect(xml).toContain('<name>1</name>');
-        expect(xml).toContain('<answertest>ATNumAbs</answertest>');
+        expect(xml).toContain('<answertest>NumAbsolute</answertest>');
 
         // Node 0: wide tolerance
         expect(xml).toContain('<testoptions>0.2</testoptions>');
@@ -50,7 +50,7 @@ describe('Numerical PRT Generator', () => {
         const xml = generateNumericalPRT(part, 'prt1');
 
         expect(xml).toContain('<name>2</name>');
-        expect(xml).toContain('ATNumSigFigs');
+        expect(xml).toContain('NumSigFigs');
         expect(xml).toContain('<testoptions>3</testoptions>');
     });
 
@@ -62,13 +62,13 @@ describe('Numerical PRT Generator', () => {
         const xml = generateNumericalPRT(part, 'prt1');
 
         // SigFigs node false should subtract penalty
-        expect(xml).toMatch(/<answertest>ATNumSigFigs<\/answertest>[\s\S]*?<falsescoremode>-<\/falsescoremode>/);
-        expect(xml).toMatch(/<answertest>ATNumSigFigs<\/answertest>[\s\S]*?<falsescore>0\.1<\/falsescore>/);
+        expect(xml).toMatch(/<answertest>NumSigFigs<\/answertest>[\s\S]*?<falsescoremode>-<\/falsescoremode>/);
+        expect(xml).toMatch(/<answertest>NumSigFigs<\/answertest>[\s\S]*?<falsescore>0\.1<\/falsescore>/);
     });
 
     it('does NOT include sig figs node when disabled', () => {
         const xml = generateNumericalPRT(basePart, 'prt1');
-        expect(xml).not.toContain('ATNumSigFigs');
+        expect(xml).not.toContain('NumSigFigs');
     });
 
     // FIX BUG 1: Power of 10 check
