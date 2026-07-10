@@ -64,6 +64,14 @@ describe('Algebraic Input', () => {
         const xml = generateAlgebraicInput(part);
         expect(xml).toContain('<boxsize>20</boxsize>');
     });
+
+    it('emits the deployment-proven insertstars/strictsyntax pair (A4/D4)', () => {
+        // Copied from the EM-AC exam pools (33/33 strictsyntax=1; insertstars=1
+        // majority + house rule). Semantics to be pinned by a `2x` qtest in A5.
+        const xml = generateAlgebraicInput(part);
+        expect(xml).toContain('<insertstars>1</insertstars>');
+        expect(xml).toContain('<strictsyntax>1</strictsyntax>');
+    });
 });
 
 describe('Units Input', () => {

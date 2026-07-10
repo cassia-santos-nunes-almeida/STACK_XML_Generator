@@ -5,6 +5,7 @@ import { generateQuestionVariables } from './question-variables.js';
 import { generateInput } from './inputs/input-factory.js';
 import { generatePRT } from './prts/prt-factory.js';
 import { generateCompanionNotesQuestion } from './companion-question.js';
+import STACK_RULES from '../core/stack-rules.json' with { type: 'json' };
 
 /**
  * Generates complete STACK question XML for Moodle import.
@@ -15,6 +16,13 @@ import { generateCompanionNotesQuestion } from './companion-question.js';
 export function generateStackXML(data) {
     // 1. Question header (name, text, images, generalfeedback, hints)
     let xml = generateQuestionHeader(data);
+
+    // 1.5 Version stamp (A4). MUST stay <text>-wrapped: the importer reads
+    // stackversion through a <text> child; the unwrapped shorthand imports
+    // as version 0 and re-activates legacy castext checks (F-1, v4.9.1
+    // questiontype.php:1370). The stamp constant lives ONLY in stack-rules.json.
+    xml += `
+    <stackversion><text>${STACK_RULES.stackVersion}</text></stackversion>`;
 
     // 2. Question variables (Maxima code)
     xml += generateQuestionVariables(data);

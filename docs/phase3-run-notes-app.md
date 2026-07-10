@@ -138,7 +138,8 @@ inherit a checked base):
 | Item | Commit | Tests |
 |---|---|---|
 | A1 (+X2 JSON) | b20162c | 244/244 green; 14 template exports parse clean under PowerShell [xml]; only canonical answertests emitted; byte-stable roundtrip + legacy-heal pinned |
-| A2 | (this commit) | 279/279 green; template invariant suite (no tans equals an input name, qv never writes an input name); legacy XML auto-migration pinned incl. notice + healed re-export; behavioural: 14 exports, 0 parse failures, 0 self-tans, 0 `tans_` |
+| A2 | 7134c70 | 279/279 green; template invariant suite (no tans equals an input name, qv never writes an input name); legacy XML auto-migration pinned incl. notice + healed re-export; behavioural: 14 exports, 0 parse failures, 0 self-tans, 0 `tans_` |
+| A4 | (this commit) | 281/281 green; all 14 exports carry `<stackversion><text>2025040100</text></stackversion>` (read back via [xml] `.stackversion.text` — the same path the importer uses); algebraic emits strictsyntax=1 + insertstars=1; `2x` qtest pin = binding A5 rider |
 | A4 | pending | pending |
 | A3 | pending | pending |
 | A11 | pending | pending |

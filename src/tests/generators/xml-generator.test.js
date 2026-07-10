@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { generateStackXML } from '../../generators/xml-generator.js';
+import STACK_RULES from '../../core/stack-rules.json';
 
 describe('XML Generator Integration', () => {
     const sampleData = {
@@ -49,6 +50,14 @@ describe('XML Generator Integration', () => {
     it('includes question name', () => {
         const xml = generateStackXML(sampleData);
         expect(xml).toContain('<name><text>Test Question</text></name>');
+    });
+
+    it('emits <text>-wrapped stackversion with the production stamp (A4/F-1)', () => {
+        const xml = generateStackXML(sampleData);
+        // The importer reads stackversion through a <text> child — the
+        // unwrapped shorthand silently imports as version 0 (F-1).
+        expect(xml).toContain(`<stackversion><text>${STACK_RULES.stackVersion}</text></stackversion>`);
+        expect(xml).not.toMatch(/<stackversion>\d/);
     });
 
     it('includes question variables', () => {

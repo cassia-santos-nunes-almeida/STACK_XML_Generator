@@ -15,7 +15,7 @@ export function generateAlgebraicInput(part) {
       <tans>${teacherAnswer}</tans>
       <boxsize>20</boxsize>
       <strictsyntax>1</strictsyntax>
-      <insertstars>0</insertstars>
+      <insertstars>1</insertstars>
       <syntaxhint></syntaxhint>
       <syntaxattribute>0</syntaxattribute>
       <forbidwords></forbidwords>
