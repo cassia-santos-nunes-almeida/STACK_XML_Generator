@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="stack">
+    <name><text>Maths: First-Order Differential Equation</text></name>
+    <questiontext format="html">
+      <text><![CDATA[Solve the differential equation: \[ \frac{dy}{dx} = {@a@}x + {@b@} \] with initial condition \(y(0) = {@y0@}\).
+
+<div class="stack-part"><p><strong>(a)</strong> Find \(y(x)\):</p><div>[[input:ans1]]</div><div style="margin-top:4px"><small style="color:#6b7280"><em>The box below shows how your answer was interpreted. Please verify it matches what you intended before submitting.</em></small></div><div>[[validation:ans1]]</div></div>]]></text>
+
+    </questiontext>
+
+    <generalfeedback format="html">
+      <text><![CDATA[Integrating: \(y = \int ({@a@}x + {@b@})\,dx = \frac{{@a@}}{2}x^2 + {@b@}x + C\)<br>Using \(y(0) = {@y0@}\): \(C = {@y0@}\)<br>So \(y(x) = \frac{{@a@}}{2}x^2 + {@b@}x + {@y0@}\)]]></text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.1</penalty>
+    <hidden>0</hidden>
+
+    <hint format="html">
+      <text><![CDATA[Integrate the right-hand side with respect to x.]]></text>
+    </hint>
+    <hint format="html">
+      <text><![CDATA[Don't forget the constant of integration C. Use the initial condition to find it.]]></text>
+    </hint>
+    <stackversion><text>2025040100</text></stackversion>
+    <questionvariables>
+      <text><![CDATA[a: rand(5)+1;
+b: rand(8)+1;
+y0: rand(5);
+ta1: a*x^2/2 + b*x + y0;]]></text>
+    </questionvariables>
+    <specificfeedback format="html">
+      <text><![CDATA[[[feedback:prt1]]]]></text>
+    </specificfeedback>
+    <questionnote format="html">
+      <text><![CDATA[a={@a@}, b={@b@}, y0={@y0@}, ans1={@ta1@}]]></text>
+    </questionnote>
+    <input>
+      <name>ans1</name>
+      <type>algebraic</type>
+      <tans>ta1</tans>
+      <boxsize>20</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>1</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>1</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>1</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>3</showvalidation>
+      <options></options>
+    </input>
+    <prt>
+      <name>prt1</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>ans1</sans>
+        <tans>ta1</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-0-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct! Well done integrating and applying the initial condition.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-0-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Integrate both sides and use y(0) to find the constant of integration.]]></text></falsefeedback>
+      </node>
+    </prt>
+    <deployedseed>12345</deployedseed>
+    <deployedseed>10101</deployedseed>
+    <deployedseed>10102</deployedseed>
+    <qtest>
+      <testcase>1</testcase>
+      <description>Model answer earns full marks.</description>
+      <testinput>
+        <name>ans1</name>
+        <value>ev(ta1, simp)</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-0-T</expectedanswernote>
+      </expected>
+    </qtest>
+    <qtest>
+      <testcase>2</testcase>
+      <description>Implied multiplication (2x) is accepted and graded (insertstars=1).</description>
+      <testinput>
+        <name>ans1</name>
+        <value>2x</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>0.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-0-F</expectedanswernote>
+      </expected>
+    </qtest>
+  </question>
+</quiz>

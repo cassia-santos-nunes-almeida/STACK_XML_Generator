@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="stack">
+    <name><text>Maths: Algebraic Expansion</text></name>
+    <questiontext format="html">
+      <text><![CDATA[Expand the following expression completely: \((x + {@a@})(x - {@b@})\)
+
+<div class="stack-part"><p><strong>(a)</strong> Expanded form:</p><div>[[input:ans1]]</div><div style="margin-top:4px"><small style="color:#6b7280"><em>The box below shows how your answer was interpreted. Please verify it matches what you intended before submitting.</em></small></div><div>[[validation:ans1]]</div></div>]]></text>
+
+    </questiontext>
+
+    <generalfeedback format="html">
+      <text><![CDATA[\((x + {@a@})(x - {@b@}) = x^2 + ({@a@} - {@b@})x - {@a@} \cdot {@b@}\)]]></text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.1</penalty>
+    <hidden>0</hidden>
+
+    <hint format="html">
+      <text><![CDATA[Use the FOIL method: First, Outer, Inner, Last.]]></text>
+    </hint>
+    <stackversion><text>2025040100</text></stackversion>
+    <questionvariables>
+      <text><![CDATA[a: rand(9)+1;
+b: rand(9)+1;
+ta1: expand((x+a)*(x-b));]]></text>
+    </questionvariables>
+    <specificfeedback format="html">
+      <text><![CDATA[[[feedback:prt1]]]]></text>
+    </specificfeedback>
+    <questionnote format="html">
+      <text><![CDATA[a={@a@}, b={@b@}, ans1={@ta1@}]]></text>
+    </questionnote>
+    <input>
+      <name>ans1</name>
+      <type>algebraic</type>
+      <tans>ta1</tans>
+      <boxsize>20</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>1</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>1</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>1</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>3</showvalidation>
+      <options></options>
+    </input>
+    <prt>
+      <name>prt1</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>ans1</sans>
+        <tans>ta1</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-0-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct! The expansion is complete.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-0-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Use FOIL or distributive property to expand.]]></text></falsefeedback>
+      </node>
+    </prt>
+    <deployedseed>12345</deployedseed>
+    <deployedseed>10101</deployedseed>
+    <deployedseed>10102</deployedseed>
+    <qtest>
+      <testcase>1</testcase>
+      <description>Model answer earns full marks.</description>
+      <testinput>
+        <name>ans1</name>
+        <value>ev(ta1, simp)</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-0-T</expectedanswernote>
+      </expected>
+    </qtest>
+    <qtest>
+      <testcase>2</testcase>
+      <description>Implied multiplication (2x) is accepted and graded (insertstars=1).</description>
+      <testinput>
+        <name>ans1</name>
+        <value>2x</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>0.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-0-F</expectedanswernote>
+      </expected>
+    </qtest>
+  </question>
+</quiz>

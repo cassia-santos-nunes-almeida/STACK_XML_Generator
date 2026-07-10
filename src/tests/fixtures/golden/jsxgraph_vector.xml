@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="stack">
+    <name><text>Interactive: Vector Drawing</text></name>
+    <questiontext format="html">
+      <text><![CDATA[Draw the vector \(\vec{v} = ({@vx@}, {@vy@})\) on the coordinate plane below.<br>Drag the start point (blue) and end point (red) so that the vector has the correct components.<br><small>The vector components are: \(\Delta x = {@vx@}\), \(\Delta y = {@vy@}\).</small>
+
+<div class="stack-part"><p><strong>(a)</strong> Drag the points to draw the vector with the correct components:</p><div class="jsxgraph-box">
+[[jsxgraph input-ref-ans1="ans1Ref" width="500px" height="400px"]]
+var board = JXG.JSXGraph.initBoard(divid, {
+    boundingbox: [-10, 10, 10, -10],
+    axis: true, showNavigation: true, showCopyright: false, grid: true
+});
+
+var startPt = board.create('point', [0, 0], {
+    name: 'Start', size: 4, strokeColor: '#2563eb', fillColor: '#2563eb'
+});
+var endPt = board.create('point', [3, 4], {
+    name: 'End', size: 4, strokeColor: '#ef4444', fillColor: '#ef4444'
+});
+
+board.create('arrow', [startPt, endPt], {strokeWidth: 3, strokeColor: '#10b981'});
+
+/* Use STACK binding API — serialize as flat list [startX, startY, endX, endY] */
+stack_jxg.custom_bind(ans1Ref, function() {
+    return '[' + startPt.X().toFixed(1) + ',' + startPt.Y().toFixed(1) + ',' +
+                 endPt.X().toFixed(1) + ',' + endPt.Y().toFixed(1) + ']';
+}, function(data) {
+    if (!data || data === '' || data === '[]') return;
+    var nums = data.match(/(-?[\d.]+)/g);
+    if (nums && nums.length >= 4) {
+        startPt.moveTo([parseFloat(nums[0]), parseFloat(nums[1])]);
+        endPt.moveTo([parseFloat(nums[2]), parseFloat(nums[3])]);
+    }
+    board.update();
+}, [startPt, endPt]);
+[[/jsxgraph]]
+</div>
+<p style="display:none">[[input:ans1]] [[validation:ans1]]</p></div>]]></text>
+
+    </questiontext>
+
+    <generalfeedback format="html">
+      <text><![CDATA[The vector \(\vec{v} = ({@vx@}, {@vy@})\) means:<br>\(\Delta x = {@vx@}\) (horizontal component)<br>\(\Delta y = {@vy@}\) (vertical component).<br>For example, starting at the origin \((0,0)\), the end point should be at \(({@vx@}, {@vy@})\).]]></text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.1</penalty>
+    <hidden>0</hidden>
+
+    <hint format="html">
+      <text><![CDATA[The vector components are the differences: dx = end_x - start_x, dy = end_y - start_y.]]></text>
+    </hint>
+    <hint format="html">
+      <text><![CDATA[You can place the start point anywhere — only the direction and magnitude matter.]]></text>
+    </hint>
+    <stackversion><text>2025040100</text></stackversion>
+    <questionvariables>
+      <text><![CDATA[vx: rand(7)-3;
+vy: rand(7)-3;
+expected_vector: [vx, vy];
+ta1: [0, 0, vx, vy];]]></text>
+    </questionvariables>
+    <specificfeedback format="html">
+      <text><![CDATA[[[feedback:prt1]]]]></text>
+    </specificfeedback>
+    <questionnote format="html">
+      <text><![CDATA[vx={@vx@}, vy={@vy@}, ans1={@ta1@}]]></text>
+    </questionnote>
+    <input>
+      <name>ans1</name>
+      <type>algebraic</type>
+      <tans>ta1</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>0</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>0</checkanswertype>
+      <mustverify>0</mustverify>
+      <showvalidation>0</showvalidation>
+      <options>hideanswer</options>
+    </input>
+    <prt>
+      <name>prt1</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <feedbackvariables>
+        <text><![CDATA[/* Vector Drawing Grading — Auto-generated */
+/* IMPORTANT: Define 'expected_vector' in Question Variables as [dx, dy]:
+   expected_vector: [3, 4]; */
+
+tolerance: 2;
+
+/* Student answer is a flat list [startX, startY, endX, endY] */
+dx_student: ans1[3] - ans1[1];
+dy_student: ans1[4] - ans1[2];
+
+dx_correct: expected_vector[1];
+dy_correct: expected_vector[2];
+
+dx_ok: is(abs(dx_student - dx_correct) < tolerance);
+dy_ok: is(abs(dy_student - dy_correct) < tolerance);
+all_correct: dx_ok and dy_ok;
+
+/* Build detailed feedback */
+feedback_msg: sconcat(
+    "<table border='1' cellpadding='4' style='border-collapse:collapse'>",
+    "<tr><th></th><th>Your vector</th><th>Expected</th><th>Result</th></tr>",
+    "<tr><td>dx</td><td>", string(dx_student), "</td><td>", string(dx_correct), "</td>",
+    "<td>", if dx_ok then "&#10004;" else "&#10008;", "</td></tr>",
+    "<tr><td>dy</td><td>", string(dy_student), "</td><td>", string(dy_correct), "</td>",
+    "<td>", if dy_ok then "&#10004;" else "&#10008;", "</td></tr>",
+    "</table>"
+);
+/* Ensure feedback_msg exists */
+if not boundp(feedback_msg) then feedback_msg: "";]]></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>all_correct</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-0-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct! Your vector has the right components.<br><hr><p>{@feedback_msg@}</p>]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-0-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[The vector components do not match. Remember: \(\Delta x = \text{end}_x - \text{start}_x\) and \(\Delta y = \text{end}_y - \text{start}_y\).<br><hr><p>{@feedback_msg@}</p>]]></text></falsefeedback>
+      </node>
+    </prt>
+    <deployedseed>12345</deployedseed>
+    <deployedseed>10101</deployedseed>
+    <deployedseed>10102</deployedseed>
+    <qtest>
+      <testcase>1</testcase>
+      <description>Model answer earns full marks.</description>
+      <testinput>
+        <name>ans1</name>
+        <value>ev(ta1, simp)</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-0-T</expectedanswernote>
+      </expected>
+    </qtest>
+  </question>
+</quiz>

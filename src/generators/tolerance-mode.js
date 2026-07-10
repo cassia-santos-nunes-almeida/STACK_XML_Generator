@@ -5,7 +5,12 @@
 // unknown = degenerate.
 import { evaluatePreviewValue } from '../parsers/variable-parser.js';
 
-const SAMPLES = 30;
+// 100 rerolls: a rand space that hits zero ~5% of the time would slip past
+// 30 samples in ~21% of exports (nondeterministic PRT structure between
+// exports of the SAME question); 100 samples push that below 1%. Authors
+// with genuinely zero-capable answers should still set tolType 'absolute'
+// explicitly (deterministic), as the matrix determinant template does.
+const SAMPLES = 100;
 const EPSILON = 1e-9;
 
 /**

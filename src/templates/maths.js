@@ -130,7 +130,10 @@ export const MATHS_TEMPLATES = {
                 answer: 'ans3',
                 teacherAnswer: 'ta3',
                 distractor: 'ev(ta3 + 1, simp)',
-                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
+                // Explicitly absolute: det(A) can legitimately be 0, so a
+                // relative tolerance is ill-defined (and the sampled
+                // degeneracy fallback would be nondeterministic here).
+                grading: { tolType: 'absolute', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: { correct: 'Correct!', incorrect: 'For a 2x2 matrix: det = a11*a22 - a12*a21.' },
             },

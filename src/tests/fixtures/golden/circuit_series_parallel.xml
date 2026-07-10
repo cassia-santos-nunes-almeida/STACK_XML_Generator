@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="stack">
+    <name><text>Engineering: Series-Parallel Circuit</text></name>
+    <questiontext format="html">
+      <text><![CDATA[Two resistors \(R_1 = {@R1@} \; \Omega\) and \(R_2 = {@R2@} \; \Omega\) are connected. Calculate the equivalent resistance for:
+
+<div class="stack-part"><p><strong>(a)</strong> Series connection (\(\Omega\)):</p><div>[[input:ans1]]</div><div style="margin-top:4px"><small style="color:#6b7280"><em>The box below shows how your answer was interpreted. Please verify it matches what you intended before submitting.</em></small></div><div>[[validation:ans1]]</div></div>
+
+<div class="stack-part"><p><strong>(b)</strong> Parallel connection (\(\Omega\)):</p><div>[[input:ans2]]</div><div style="margin-top:4px"><small style="color:#6b7280"><em>The box below shows how your answer was interpreted. Please verify it matches what you intended before submitting.</em></small></div><div>[[validation:ans2]]</div></div>]]></text>
+
+    </questiontext>
+
+    <generalfeedback format="html">
+      <text><![CDATA[Series: \(R_{eq} = R_1 + R_2 = {@R1@} + {@R2@} = {@ta1@} \; \Omega\)<br>Parallel: \(R_{eq} = \frac{R_1 \cdot R_2}{R_1 + R_2} = \frac{{@R1@} \cdot {@R2@}}{{@R1@} + {@R2@}} = {@ta2@} \; \Omega\)]]></text>
+    </generalfeedback>
+    <defaultgrade>2</defaultgrade>
+    <penalty>0.1</penalty>
+    <hidden>0</hidden>
+
+    <hint format="html">
+      <text><![CDATA[For series: just add the resistances.]]></text>
+    </hint>
+    <hint format="html">
+      <text><![CDATA[For parallel: use the product-over-sum formula.]]></text>
+    </hint>
+    <stackversion><text>2025040100</text></stackversion>
+    <questionvariables>
+      <text><![CDATA[R1: rand([100, 220, 330, 470]);
+R2: rand([100, 220, 330, 470]);
+ta1: R1 + R2;
+ta2: (R1 * R2) / (R1 + R2);]]></text>
+    </questionvariables>
+    <specificfeedback format="html">
+      <text><![CDATA[[[feedback:prt1]]
+[[feedback:prt2]]]]></text>
+    </specificfeedback>
+    <questionnote format="html">
+      <text><![CDATA[R1={@R1@}, R2={@R2@}, ans1={@significantfigures(ta1,4)@}, ans2={@significantfigures(ta2,4)@}]]></text>
+    </questionnote>
+    <input>
+      <name>ans1</name>
+      <type>numerical</type>
+      <tans>ta1</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>1</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>3</showvalidation>
+      <options></options>
+    </input>
+    <input>
+      <name>ans2</name>
+      <type>numerical</type>
+      <tans>ta2</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>1</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>3</showvalidation>
+      <options></options>
+    </input>
+    <prt>
+      <name>prt1</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <feedbackvariables>
+        <text><![CDATA[
+/* Sign-flip diagnostic (house Rule 3): student within 5% of -ta */
+sf_safe_tans: if is(ta1 = 0) then 1 else ta1;
+sf_ratio: ans1 / sf_safe_tans;
+is_sign_flip: is(abs(sf_ratio + 1) < 0.05);
+]]></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans1</sans>
+        <tans>ta1</tans>
+        <testoptions>0.15</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>1</truenextnode>
+        <trueanswernote>prt1-0-T</trueanswernote>
+        <truefeedback format="html"><text></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>2</falsenextnode>
+        <falseanswernote>prt1-0-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Incorrect. Please try again.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>1</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans1</sans>
+        <tans>ta1</tans>
+        <testoptions>0.05</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-1-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct! Series: \(R_{eq} = R_1 + R_2\).]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0.5</falsescore>
+        <falsepenalty>0.1</falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-1-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Close, but check your accuracy. Review your calculation steps.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>2</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>is_sign_flip</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-2-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Sign error: your answer is the negative of the expected value — check the sign convention.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-2-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+    </prt>
+    <prt>
+      <name>prt2</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <feedbackvariables>
+        <text><![CDATA[
+/* Sign-flip diagnostic (house Rule 3): student within 5% of -ta */
+sf_safe_tans: if is(ta2 = 0) then 1 else ta2;
+sf_ratio: ans2 / sf_safe_tans;
+is_sign_flip: is(abs(sf_ratio + 1) < 0.05);
+]]></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans2</sans>
+        <tans>ta2</tans>
+        <testoptions>0.15</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>1</truenextnode>
+        <trueanswernote>prt2-0-T</trueanswernote>
+        <truefeedback format="html"><text></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>3</falsenextnode>
+        <falseanswernote>prt2-0-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[For parallel: \(\frac{1}{R_{eq}} = \frac{1}{R_1} + \frac{1}{R_2}\).]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>1</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans2</sans>
+        <tans>ta2</tans>
+        <testoptions>0.05</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>2</truenextnode>
+        <trueanswernote>prt2-1-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct! Parallel: \(R_{eq} = \frac{R_1 R_2}{R_1 + R_2}\).]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0.5</falsescore>
+        <falsepenalty>0.1</falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt2-1-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Close, but check your accuracy. Review your calculation steps.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>2</name>
+        <answertest>NumSigFigs</answertest>
+        <sans>ans2</sans>
+        <tans>ta2</tans>
+        <testoptions>3</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>+</truescoremode>
+        <truescore>0</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt2-2-T</trueanswernote>
+        <truefeedback format="html"><text></text></truefeedback>
+        <falsescoremode>-</falsescoremode>
+        <falsescore>0.1</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt2-2-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Your answer has the wrong number of significant figures. Check the precision required.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>3</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>is_sign_flip</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt2-3-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Sign error: your answer is the negative of the expected value — check the sign convention.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt2-3-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+    </prt>
+    <deployedseed>12345</deployedseed>
+    <deployedseed>10101</deployedseed>
+    <deployedseed>10102</deployedseed>
+    <qtest>
+      <testcase>1</testcase>
+      <description>Model answer earns full marks.</description>
+      <testinput>
+        <name>ans1</name>
+        <value>ev(ta1, simp)</value>
+      </testinput>
+      <testinput>
+        <name>ans2</name>
+        <value>significantfigures(ta2, 3)</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-1-T</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt2</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt2-2-T</expectedanswernote>
+      </expected>
+    </qtest>
+    <qtest>
+      <testcase>2</testcase>
+      <description>Wrong answer lands on the diagnosed branch.</description>
+      <testinput>
+        <name>ans1</name>
+        <value>ev(-(ta1), simp)</value>
+      </testinput>
+      <testinput>
+        <name>ans2</name>
+        <value>ev(-(ta2), simp)</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>0.5000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-2-T</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt2</name>
+        <expectedscore>0.5000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt2-3-T</expectedanswernote>
+      </expected>
+    </qtest>
+  </question>
+</quiz>

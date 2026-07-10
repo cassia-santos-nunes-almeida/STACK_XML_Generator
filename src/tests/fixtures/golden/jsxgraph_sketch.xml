@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="stack">
+    <name><text>Interactive: Function Sketch</text></name>
+    <questiontext format="html">
+      <text><![CDATA[Sketch the graph of the function \(y = f(x)\) described below by clicking on the graph to place control points. A smooth curve will be drawn through your points.<br><br>The function has the following values:<br>\(f({@x1@}) = {@y1@}\), \(f({@x2@}) = {@y2@}\), \(f({@x3@}) = {@y3@}\), \(f({@x4@}) = {@y4@}\), \(f({@x5@}) = {@y5@}\).<br><small>Click to place 5 control points, then a spline will connect them.</small>
+
+<div class="stack-part"><p><strong>(a)</strong> Place 5 control points on the graph at the x-values given above:</p><div class="jsxgraph-box">
+[[jsxgraph input-ref-ans1="ans1Ref" width="500px" height="400px"]]
+var board = JXG.JSXGraph.initBoard(divid, {
+    boundingbox: [-2, 12, 12, -2],
+    axis: true, showNavigation: true, showCopyright: false, grid: true
+});
+
+var points = [];
+var curve = null;
+var stateInput = document.getElementById(ans1Ref);
+
+function serializePoints() {
+    if (points.length === 0) {
+        stateInput.value = '[]';
+    } else {
+        var parts = [];
+        for (var i = 0; i < points.length; i++) {
+            var px = (Math.round(points[i].X() * 2) / 2).toFixed(1);
+            var py = (Math.round(points[i].Y() * 2) / 2).toFixed(1);
+            parts.push('[' + px + ',' + py + ']');
+        }
+        stateInput.value = '[' + parts.join(',') + ']';
+    }
+    stateInput.dispatchEvent(new Event('change'));
+}
+
+function getMouseCoords(e) {
+    var cPos = board.getCoordsTopLeftCorner(e),
+        absPos = JXG.getPosition(e),
+        dx = absPos[0] - cPos[0],
+        dy = absPos[1] - cPos[1];
+    return new JXG.Coords(JXG.COORDS_BY_SCREEN, [dx, dy], board);
+}
+
+function redrawCurve() {
+    if (curve) board.removeObject(curve);
+    if (points.length > 1) {
+        curve = board.create('spline', points, {strokeColor: '#ef4444', strokeWidth: 2});
+    }
+}
+
+function addSketchPoint(x, y) {
+    var p = board.create('point', [x, y], {
+        size: 3, face: 'o', strokeColor: '#2563eb', fillColor: '#2563eb'
+    });
+    p.on('drag', function() {
+        redrawCurve();
+        serializePoints();
+    });
+    points.push(p);
+    redrawCurve();
+    return p;
+}
+
+/* Restore state from saved answer on page reload */
+if (stateInput.value && stateInput.value !== '' && stateInput.value !== '[]') {
+    var matches = stateInput.value.match(/\[(-?[\d.]+),\s*(-?[\d.]+)\]/g);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var nums = matches[i].match(/(-?[\d.]+)/g);
+            if (nums && nums.length >= 2) addSketchPoint(parseFloat(nums[0]), parseFloat(nums[1]));
+        }
+        board.update();
+    }
+}
+
+board.on('down', function(e) {
+    var canCreate = true, coords, el;
+
+    if (e[JXG.touchProperty]) return;
+
+    coords = getMouseCoords(e);
+
+    for (el in board.objects) {
+        if (JXG.isPoint(board.objects[el]) && board.objects[el].hasPoint(coords.scrCoords[1], coords.scrCoords[2])) {
+            canCreate = false;
+            break;
+        }
+    }
+
+    if (!canCreate) return;
+
+    var x = Math.round(coords.usrCoords[1] * 2) / 2;
+    var y = Math.round(coords.usrCoords[2] * 2) / 2;
+    addSketchPoint(x, y);
+    serializePoints();
+});
+[[/jsxgraph]]
+</div>
+<p style="display:none">[[input:ans1]] [[validation:ans1]]</p></div>]]></text>
+
+    </questiontext>
+
+    <generalfeedback format="html">
+      <text><![CDATA[The function passes through the points:<br>\(({@x1@}, {@y1@})\), \(({@x2@}, {@y2@})\), \(({@x3@}, {@y3@})\), \(({@x4@}, {@y4@})\), \(({@x5@}, {@y5@})\).<br>Place your control points at these coordinates and the spline will approximate the correct curve.]]></text>
+    </generalfeedback>
+    <defaultgrade>1</defaultgrade>
+    <penalty>0.1</penalty>
+    <hidden>0</hidden>
+
+    <hint format="html">
+      <text><![CDATA[Start from the leftmost point and work to the right.]]></text>
+    </hint>
+    <hint format="html">
+      <text><![CDATA[Check the Y-value at each given X-coordinate carefully.]]></text>
+    </hint>
+    <stackversion><text>2025040100</text></stackversion>
+    <questionvariables>
+      <text><![CDATA[x1: 0;
+x2: 2;
+x3: 4;
+x4: 6;
+x5: 8;
+y1: rand(3);
+y2: rand(5)+3;
+y3: rand(5)+5;
+y4: rand(5)+2;
+y5: rand(3);
+expected_y: [y1, y2, y3, y4, y5];
+ta1: matrix([x1,y1],[x2,y2],[x3,y3],[x4,y4],[x5,y5]);]]></text>
+    </questionvariables>
+    <specificfeedback format="html">
+      <text><![CDATA[[[feedback:prt1]]]]></text>
+    </specificfeedback>
+    <questionnote format="html">
+      <text><![CDATA[y1={@y1@}, y2={@y2@}, y3={@y3@}, y4={@y4@}, y5={@y5@}, ans1={@ta1@}]]></text>
+    </questionnote>
+    <input>
+      <name>ans1</name>
+      <type>algebraic</type>
+      <tans>ta1</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>0</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>0</checkanswertype>
+      <mustverify>0</mustverify>
+      <showvalidation>0</showvalidation>
+      <options>hideanswer</options>
+    </input>
+    <prt>
+      <name>prt1</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <feedbackvariables>
+        <text><![CDATA[/* Function Sketch Grading — Auto-generated */
+/* IMPORTANT: Define 'expected_y' in Question Variables as a list of Y-values:
+   expected_y: [0, 2, 4, 3, 1];
+   These correspond to the Y-value at each student control point. */
+
+/* Convert student answer from matrix to list */
+student_raw: ans1;
+student_pts: if matrixp(student_raw) then args(student_raw) else student_raw;
+
+tolerance: 3;
+
+/* Compare student Y-values to expected values */
+student_count: length(student_pts);
+num_expected: length(expected_y);
+pt_checks: makelist(
+    if is(i <= student_count) and is(abs(student_pts[i][2] - expected_y[i]) < tolerance) then 1 else 0,
+    i, 1, num_expected
+);
+
+num_correct: apply("+", pt_checks);
+all_correct: is(num_correct >= floor(0.8 * num_expected));
+
+/* Build detailed feedback */
+feedback_parts: makelist(
+    sconcat(
+        "<tr><td>", i, "</td>",
+        "<td>", string(expected_y[i]), "</td>",
+        "<td>", if is(i <= student_count) then string(student_pts[i][2]) else "missing", "</td>",
+        "<td>", if is(pt_checks[i] = 1) then "&#10004;" else "&#10008;", "</td></tr>"
+    ),
+    i, 1, num_expected
+);
+
+feedback_msg: sconcat(
+    "<strong>", string(num_correct), "/", string(num_expected), " points matched</strong> (need 80%)",
+    "<table border='1' cellpadding='4' style='border-collapse:collapse;margin-top:8px'>",
+    "<tr><th>#</th><th>Expected Y</th><th>Your Y</th><th>Result</th></tr>",
+    simplode(feedback_parts, ""),
+    "</table>"
+);
+/* Ensure feedback_msg exists */
+if not boundp(feedback_msg) then feedback_msg: "";]]></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>all_correct</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-0-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct! Your sketch matches the expected function shape.<br><hr><p>{@feedback_msg@}</p>]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-0-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Some of your control points do not match the expected Y-values. Check the function values given in the question.<br><hr><p>{@feedback_msg@}</p>]]></text></falsefeedback>
+      </node>
+    </prt>
+    <deployedseed>12345</deployedseed>
+    <deployedseed>10101</deployedseed>
+    <deployedseed>10102</deployedseed>
+    <qtest>
+      <testcase>1</testcase>
+      <description>Model answer earns full marks.</description>
+      <testinput>
+        <name>ans1</name>
+        <value>ev(ta1, simp)</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-0-T</expectedanswernote>
+      </expected>
+    </qtest>
+  </question>
+</quiz>

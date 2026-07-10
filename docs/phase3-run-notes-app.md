@@ -158,18 +158,29 @@ console errors — add a favicon or accept-and-log).
 ## Owner actions (running list)
 
 1. D5 still owed: production Maxima version (STACK Healthcheck page) —
-   unchanged, carried from skills track.
+   unchanged, carried from skills track. Recording it is step 4 of the
+   A8 Moodle checklist (docs/a8-gate-log.md).
 2. Review flagged decisions D-app-5 (p10 score 0.5), D-app-6 (no units
-   sign-flip), D-app-7 (wide tolerance 15% default).
-3. Real-Moodle import of anything this track produces stays owner-verified
-   (no harness covers the import path) — final pack comes from the next
-   agent's A8/premortem phase.
+   sign-flip), D-app-7 (wide tolerance 15% default); from stage 2 also
+   D-app-14 (sig-figs qtest wrapper), D-app-15 (circuit_ohm sig-figs off),
+   D-app-17 (expectedpenalty empty-mirror), D-app-21 (note completeness as
+   warning, not blocker).
+3. **Real-Moodle import run** (the owner half of the A8 gate): follow
+   docs/a8-gate-log.md — sandbox category `_ZZ_VALIDATION_DO_NOT_USE`,
+   import the 14 golden fixtures, upgrade the 3 jsxgraph model-only qtests
+   via "Save updated test", record the Healthcheck Maxima version, then
+   delete the sandbox category. (The Phase-4 premortem agent will fold this
+   into docs/import-test-pack/.)
 4. Templates' numerical/units gradings were RETUNED to house Rule 3
    (relative 5% / within-15%) rather than blanket-flipping their old
    absolute numbers to relative (which would have turned e.g. projectile's
    tightTol 0.5 m into 50%). Review welcome (D-app-9 below).
-5. NOT pushed — 8 local commits ahead of origin/main (3 skills-track syncs
-   + 5 from this stage); pushing is owner-gated.
+5. NOT pushed — 14 local commits ahead of origin/main (3 skills-track syncs
+   + 5 stage 1 + 6 stage 2); pushing is owner-gated.
+6. MCQ grading fix (A5-prep): pre-existing exports of radio questions carry
+   an index-based tans that STACK grades as always-wrong; any PREVIOUSLY
+   exported MCQ XML in use should be re-exported (imports heal
+   automatically).
 
 ## Additional autonomous decisions (this stage's execution)
 
@@ -191,7 +202,26 @@ console errors — add a favicon or accept-and-log).
   after A11 covering all five items' UI surface (RAM-constrained box; each
   item still had per-item [xml]-parse behavioural checks).
 
-## Handoff state for the next agent (A5, A6, A7, A10, A8-gate)
+## Handoff state for the NEXT stage (Phase 3 walkthrough + Phase 4 premortem)
+
+- HEAD after stage 2 = the A8-gate commit; `npm test` baseline 421/421;
+  binding item sequence COMPLETE (A1..A11 + A8 gate all landed).
+- Phase 3 (teacher walkthrough, 3 question types via UI only) and Phase 4
+  (independent red-team premortem + docs/import-test-pack/) remain per
+  phase3-prompt-app.md. scripts/a8-e2e.mjs drives the app end-to-end and
+  passes 17/17 with zero console errors — the favicon 404 is FIXED (A7).
+- Walkthrough watchpoints collected during stage 2: (1) grading presets
+  still expose sig-figs/power-of-10 vocabulary in render-parts (plain but
+  dense); (2) the jsxgraph advanced panel is unavoidably technical — didactic
+  hints were EXPLICITLY deferred until the walkthrough produces the real
+  stall-point list; (3) "Question Values" heading tooltip carries the
+  STACK/Maxima bridge; (4) import of foreign XML with warnings surfaces a
+  confirm() dialog chain — check it reads sensibly to a novice.
+- Premortem inputs: docs/a8-gate-log.md "Known limitations" (jsxgraph
+  qtests, sig-figs trailing-zero edge, expectedpenalty convention) are the
+  first candidates for demonstrated guards / accepted-risk entries.
+
+## Stage-1 handoff (historical): A5, A6, A7, A10, A8-gate
 
 - HEAD after this stage: see per-item table (A11 = last commit). `npm test`
   baseline is now 322/322. Binding sequence remaining: A5 -> A6 -> A7 ->
@@ -253,7 +283,8 @@ Autonomous staged run continued. Baseline at pickup: `1a8b936` (A11),
 | A5 (+X1) | bdac194 | 351/351 green x3 runs (sampling stable); 14 exports [xml]-parse OK; 11/14 carry the canonical pair, 3 jsxgraph model-only (documented); projectile model = full marks at sig-figs node (prtN-2-T), sign-flip distractor 0.5 at prtN-3-T; 2x pin on both algebraic templates; 3 seeds everywhere incl. MCQ (random_permutation counts as randomised); roundtrip byte-stable with qtests, seeds + distractors recovered on import |
 | A6 | 91e4590 | 395/395 green; stable codes on every issue; name regex + 18-cap from stack-rules.json (X2); bare-pi lint = error, bare-e = warning (rider corpus pinned); W-NOTE-01 distinctness via variable-parser sampling; W-UNITS-01 unitless units-ta; hidden ?allow-invalid-export owner override; humble pass-copy; generator invariants (input/validation pairing + fixture corpus zero errors) as Vitest |
 | A7 | dd8091e | 400/400 green; all 7 verified index.html jargon spots relabeled; single labels map src/ui/labels.js (static HTML stamped at init via applyStaticLabels — one source); technical terms kept in tooltips/suffixes; Maxima-help copy in jsxgraph panel + variables panel routed through the map; inline SVG favicon added (kills the pre-existing 404 console error flagged for the walkthrough); labels-only — no state key, XML tag, or answernote touched (roundtrip suites unchanged) |
-| A10 | (this commit) | 406/406 green; note = `name={@rand@}` pairs + `ansN={@taN@}` per gradeable part (NEVER part.answer as value); numeric-nonzero answers rounded via significantfigures(taN,4); units/matrix/algebra raw; radio parts reference `ta_ansN` (shuffled list) so MCQ notes distinguish variants — W-NOTE-01 on mcq_primes gone; zero-rand empty-note edge fixed; byte-stable roundtrips hold (note regenerates deterministically) |
+| A10 | d0f4885 | 406/406 green; note = `name={@rand@}` pairs + `ansN={@taN@}` per gradeable part (NEVER part.answer as value); numeric-nonzero answers rounded via significantfigures(taN,4); units/matrix/algebra raw; radio parts reference `ta_ansN` (shuffled list) so MCQ notes distinguish variants — W-NOTE-01 on mcq_primes gone; zero-rand empty-note edge fixed; byte-stable roundtrips hold (note regenerates deterministically) |
+| A8-gate | (this commit) | 421/421 green x5 consecutive runs; 14 golden fixtures committed (`src/tests/fixtures/golden/`, CRLF-protected) + GATE-STALE Vitest; [xml] importer-path check 14/14 (stackversion 2025040100 read back); Playwright E2E 17/17, ZERO console errors; gate log + owner Moodle checklist in docs/a8-gate-log.md (sandbox category `_ZZ_VALIDATION_DO_NOT_USE`, cleanup step, plugin v4.9.1 recorded). Gate run surfaced and FIXED a real nondeterminism: A11 degeneracy sampling flipped matrix_operations' PRT structure between exports (~21% of runs) — det part now explicitly absolute + sampler 30->100 rerolls |
 
 ## Stage-2 autonomous decisions (one line each)
 
