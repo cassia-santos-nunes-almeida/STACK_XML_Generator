@@ -5,10 +5,14 @@ import { generateStackXML } from '../generators/xml-generator.js';
 import { TEMPLATES } from '../templates/index.js';
 import { validateQuestionData } from '../core/validators.js';
 import { escapeHtml } from './escape-utils.js';
+import { LABELS, applyStaticLabels } from './labels.js';
 
 function initApp() {
     const state = new StateManager();
     const ui = new UIManager(state);
+
+    // A7: teacher-facing labels come from the single labels map.
+    applyStaticLabels();
 
     // Subscribe UI to state changes
     state.subscribe((data, previewValues) => {
@@ -98,10 +102,10 @@ function initApp() {
                 let notices = [];
                 if (file.name.endsWith('.xml')) {
                     notices = state.loadFromXml(content) || [];
-                    showNotification('XML file imported successfully.', 'success');
+                    showNotification(LABELS.notifyImportedQuestion, 'success');
                 } else {
                     notices = state.loadFromJson(content) || [];
-                    showNotification('JSON file loaded successfully.', 'success');
+                    showNotification(LABELS.notifyImportedDraft, 'success');
                 }
                 // A2: legacy-migration notices (plain language, blocking read)
                 if (notices.length > 0) {
@@ -172,7 +176,7 @@ function initApp() {
         const previewWindow = window.open('', '_blank');
         if (previewWindow) {
             previewWindow.document.write('<pre>' + escapeHtml(xml) + '</pre>');
-            previewWindow.document.title = 'XML Preview';
+            previewWindow.document.title = LABELS.previewWindowTitle;
         }
     });
 

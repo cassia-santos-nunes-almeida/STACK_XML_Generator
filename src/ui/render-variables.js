@@ -1,6 +1,7 @@
 // Renders the variables editor section with syntax helpers and examples
 import { SYNTAX_EXAMPLES } from '../core/constants.js';
 import { escapeHtml, escapeAttr } from './escape-utils.js';
+import { LABELS } from './labels.js';
 
 /**
  * Renders the variables list with controls and syntax example panel.
@@ -68,7 +69,7 @@ function renderSyntaxPanel() {
 
     let html = `<div class="syntax-panel">
         <details>
-            <summary>Maxima Syntax Reference & Examples</summary>
+            <summary>${LABELS.syntaxReference}</summary>
             <div class="syntax-categories">`;
 
     categories.forEach(cat => {

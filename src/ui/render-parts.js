@@ -2,6 +2,7 @@
 import { INPUT_TYPES, GRADING_PRESETS, DEFAULT_FEEDBACK } from '../core/constants.js';
 import { GRAPH_GRADING_TEMPLATES } from '../generators/prts/jsxgraph-prt.js';
 import { escapeHtml, escapeAttr } from './escape-utils.js';
+import { LABELS } from './labels.js';
 
 /**
  * Renders the parts list with type-specific editors and grading configuration.
@@ -165,8 +166,8 @@ function renderJSXGraphConfig(part, idx) {
             <textarea class="graph-code" rows="12" data-idx="${idx}" placeholder="var board = JXG.JSXGraph.initBoard(divid, {...});">${escapeHtml(part.graphCode || '')}</textarea>
         </div>
         <div class="form-group">
-            <label>Server-Side Maxima (Grading Logic)
-                <span class="tooltip" title="This Maxima code runs on the server to grade the student's graph answer. Must set 'all_correct' to true/false.">?</span>
+            <label>${LABELS.graphGradingLabel}
+                <span class="tooltip" title="${LABELS.graphGradingTooltip}">?</span>
             </label>
             <textarea class="grading-code" rows="8" data-idx="${idx}" placeholder="/* Must set all_correct: true or false */&#10;all_correct: true;">${escapeHtml(part.gradingCode || '')}</textarea>
         </div>
@@ -177,14 +178,14 @@ function renderGraphPresetHelp(preset) {
     const help = {
         pointPlacement: `<strong>Point Placement</strong> &mdash; Students click to place points on the graph.
             The JS code limits how many points can be placed (<em>Max Points</em>).
-            The Maxima grading checks each student point against <code>correct_points</code> (a list you must define in Variables, e.g. <code>correct_points: [[10,20],[30,40]]</code>).
+            ${LABELS.graphGradingHelpTerm} checks each student point against <code>correct_points</code> (a list you must define in Question Values, e.g. <code>correct_points: [[10,20],[30,40]]</code>).
             Each point must be within <em>Tolerance</em> graph units of the expected position.`,
         functionSketch: `<strong>Function Sketch</strong> &mdash; Students click to place control points; a spline is drawn through them.
-            The Maxima grading compares each student Y-value against <code>expected_y</code> (a list you define in Variables).
+            ${LABELS.graphGradingHelpTerm} compares each student Y-value against <code>expected_y</code> (a list you define in Question Values).
             A student passes if at least 80% of their points are within <em>Tolerance</em> of the expected values.`,
         vectorDraw: `<strong>Vector Drawing</strong> &mdash; Students drag a start and end point to define a vector.
             The answer is stored as <code>[startX, startY, endX, endY]</code>.
-            The Maxima grading compares the vector components (dx, dy) against <code>expected_vector: [dx, dy]</code> (defined in Variables).
+            ${LABELS.graphGradingHelpTerm} compares the vector components (dx, dy) against <code>expected_vector: [dx, dy]</code> (defined in Question Values).
             <em>Max Points</em> is not used for this preset.`,
     };
 
