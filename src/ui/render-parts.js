@@ -1,5 +1,5 @@
 // Renders the parts (inputs & grading) editor section
-import { INPUT_TYPES, GRADING_PRESETS, DEFAULT_FEEDBACK } from '../core/constants.js';
+import { INPUT_TYPES, GRADING_PRESETS, DEFAULT_FEEDBACK, DEFAULT_GRADING } from '../core/constants.js';
 import { GRAPH_GRADING_TEMPLATES } from '../generators/prts/jsxgraph-prt.js';
 import { escapeHtml, escapeAttr } from './escape-utils.js';
 import { LABELS } from './labels.js';
@@ -265,6 +265,22 @@ function renderGradingConfig(part, idx) {
 
     const g = part.grading || {};
 
+    // Walkthrough fix 3: say what the tolerance number MEANS in the current
+    // mode ("0.05" alone reads as ±0.05 to a teacher, but the default is
+    // relative = 5% of the correct answer), and let the teacher switch to a
+    // fixed-± tolerance (tolType is already supported by the generators and
+    // the importer). ?? not ||: the Exact preset legitimately uses 0.
+    const tolType = g.tolType === 'absolute' ? 'absolute' : 'relative';
+    const wideTol = g.wideTol ?? DEFAULT_GRADING.wideTol;
+    const tightTol = g.tightTol ?? DEFAULT_GRADING.tightTol;
+    const tolHint = (v) => {
+        const n = Number(v);
+        if (!Number.isFinite(n)) return '';
+        return tolType === 'relative'
+            ? `= ${+(n * 100).toFixed(2)}% of the correct answer`
+            : `= accepts the correct answer &plusmn;${n}`;
+    };
+
     let html = `
     <div class="grading-section">
         <h4>Grading Configuration</h4>
@@ -278,13 +294,23 @@ function renderGradingConfig(part, idx) {
             </select>
         </div>
 
+        <div class="grading-inputs tol-mode-row">
+            <label>Tolerance is measured
+                <select class="g-tol-type" data-idx="${idx}">
+                    <option value="relative" ${tolType === 'relative' ? 'selected' : ''}>as a fraction of the correct answer (0.05 = 5%)</option>
+                    <option value="absolute" ${tolType === 'absolute' ? 'selected' : ''}>as a fixed &plusmn; amount (in the answer's units)</option>
+                </select>
+            </label>
+        </div>
+
         <div class="grading-pipeline">
             <div class="pipeline-step active">
                 <div class="step-icon">1</div>
                 <div class="step-content">
                     <strong>Wide Tolerance</strong> (Partial Credit: 50%)
                     <div class="grading-inputs">
-                        <label>Tolerance: <input type="number" class="g-wide-tol" value="${g.wideTol || 0.2}" step="0.01" min="0" data-idx="${idx}"></label>
+                        <label>Tolerance: <input type="number" class="g-wide-tol" value="${wideTol}" step="0.01" min="0" data-idx="${idx}"></label>
+                        <span class="tol-hint">${tolHint(wideTol)}</span>
                     </div>
                 </div>
             </div>
@@ -294,7 +320,8 @@ function renderGradingConfig(part, idx) {
                 <div class="step-content">
                     <strong>Tight Tolerance</strong> (Full Credit: 100%)
                     <div class="grading-inputs">
-                        <label>Tolerance: <input type="number" class="g-tight-tol" value="${g.tightTol || 0.05}" step="0.01" min="0" data-idx="${idx}"></label>
+                        <label>Tolerance: <input type="number" class="g-tight-tol" value="${tightTol}" step="0.01" min="0" data-idx="${idx}"></label>
+                        <span class="tol-hint">${tolHint(tightTol)}</span>
                     </div>
                 </div>
             </div>
@@ -403,6 +430,9 @@ function attachPartEvents(container, parts, handlers) {
     });
 
     // Grading inputs
+    container.querySelectorAll('.g-tol-type').forEach(el => {
+        el.addEventListener('change', () => handlers.onGrading(parseInt(el.dataset.idx), 'tolType', el.value));
+    });
     container.querySelectorAll('.g-tight-tol').forEach(el => {
         el.addEventListener('change', () => handlers.onGrading(parseInt(el.dataset.idx), 'tightTol', parseFloat(el.value)));
     });
