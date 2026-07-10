@@ -16,11 +16,19 @@ export function generateQuestionHeader(data) {
         let partContent = `<div class="stack-part">`;
         const label = String.fromCharCode(96 + p.id);
 
-        // Show prerequisite notice if this part depends on another
+        // Show prerequisite notice if this part depends on another. F5: only
+        // promise "correctly" when the gate actually checks correctness —
+        // for algebraic/matrix/jsxgraph/notes prerequisites it can only
+        // require an attempt.
         if (p.prerequisite) {
             const prereqLabel = String.fromCharCode(96 + p.prerequisite);
+            const prereqPart = parts.find(x => x.id === p.prerequisite);
+            const checkable = prereqPart && ['numerical', 'units', 'radio', 'string'].includes(prereqPart.type);
+            const requirement = checkable
+                ? `You must answer part (${prereqLabel}) correctly before attempting this part.`
+                : `You must complete part (${prereqLabel}) before attempting this part.`;
             partContent += `<div class="prerequisite-notice" style="background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;padding:8px;margin-bottom:8px;font-size:0.9em;">
-<strong>Prerequisite:</strong> You must answer part (${prereqLabel}) correctly before attempting this part.</div>`;
+<strong>Prerequisite:</strong> ${requirement}</div>`;
         }
 
         partContent += `<p><strong>(${label})</strong> ${convertMathDelimiters(p.text || '')}</p>`;

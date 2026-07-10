@@ -430,9 +430,10 @@ function analyzePRT(doc, part, name, type) {
         part.grading.signFlip = fbVars.includes('is_sign_flip');
     }
 
-    // Prerequisite detection
+    // Prerequisite detection (F5: both the real-check and the honest
+    // attempted-only comment forms)
     if (fbVars.includes('prereq_passed')) {
-        const prereqMatch = fbVars.match(/Prerequisite check: verify part \(([a-z])\)/);
+        const prereqMatch = fbVars.match(/Prerequisite (?:check: verify|gate:) part \(([a-z])\)/);
         if (prereqMatch) {
             part.prerequisite = prereqMatch[1].charCodeAt(0) - 96;
         }

@@ -334,7 +334,22 @@ function parseFvDiagnostics(fv) {
     m = fv.match(/prereq_diff:\s*abs\(([A-Za-z_][A-Za-z0-9_]*)\s*-\s*([A-Za-z_][A-Za-z0-9_]*)\);\s*\n?\s*prereq_passed:\s*is\(prereq_diff\s*(<=?)\s*([0-9.]+)\s*(\*\s*abs\(([A-Za-z_][A-Za-z0-9_]*)\))?\)/);
     if (m) {
         out.prereq = { input: m[1], ta: m[2], op: m[3], tol: parseFloat(m[4]), relative: !!m[5] };
-    } else if (/prereq_passed:\s*is\([A-Za-z_][A-Za-z0-9_]*\s*=\s*[A-Za-z_]/.test(fv) || /prereq_passed:\s*true/.test(fv)) {
+        return out;
+    }
+    // F5 equality gates: case-folded string compare, then plain equality.
+    m = fv.match(/prereq_passed:\s*is\(sdowncase\(([A-Za-z_][A-Za-z0-9_]*)\)\s*=\s*sdowncase\(([A-Za-z_][A-Za-z0-9_]*)\)\)/);
+    if (m) {
+        out.prereq = { input: m[1], taExpr: m[2], equality: true, fold: true };
+        return out;
+    }
+    m = fv.match(/prereq_passed:\s*is\(([A-Za-z_][A-Za-z0-9_]*)\s*=\s*("(?:[^"\\]|\\.)*"|[A-Za-z_][A-Za-z0-9_]*)\)/);
+    if (m) {
+        // is(ansN = ansN) is the attempted-only gate — trivially true once
+        // the input is present (a qtest always provides every input).
+        out.prereq = m[2] === m[1] ? { trivial: true } : { input: m[1], taExpr: m[2], equality: true };
+        return out;
+    }
+    if (/prereq_passed:\s*true/.test(fv)) {
         out.prereq = { trivial: true };
     }
     return out;
@@ -485,6 +500,25 @@ export function generateQuestionTests(data, prtBlocks) {
                     if (pre.trivial) return true;
                     const preScenario = valueByInput[pre.input];
                     if (preScenario && preScenario.isModel) return true;
+                    if (pre.equality) {
+                        // F5: radio/string equality gates.
+                        return decideAllSamples(samples, (s) => {
+                            const v = s.inputVals[pre.input];
+                            const ta = evalNumeric(pre.taExpr, 'calc', s.varCtx, s.freeSyms, vars);
+                            if (typeof v === 'string' && typeof ta === 'string') {
+                                return pre.fold
+                                    ? v.trim().toLowerCase() === ta.trim().toLowerCase()
+                                    : v === ta;
+                            }
+                            const sv = asComparable(v);
+                            const tv = asComparable(ta);
+                            if (!sv || !tv || (sv.unit || null) !== (tv.unit || null)) return null;
+                            const scale = Math.max(1, Math.abs(tv.num));
+                            if (Math.abs(sv.num - tv.num) < 1e-9 * scale) return true;
+                            if (Math.abs(sv.num - tv.num) > 1e-6 * scale) return false;
+                            return null;
+                        });
+                    }
                     return decideAllSamples(samples, (s) => {
                         const v = asComparable(s.inputVals[pre.input]);
                         const ta = asComparable(evalNumeric(pre.ta, 'calc', s.varCtx, s.freeSyms, vars));

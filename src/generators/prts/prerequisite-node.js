@@ -4,6 +4,7 @@
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement, cdataRaw } from '../xml-helpers.js';
 import { requireTeacherAnswer } from '../teacher-answer.js';
+import { radioCorrectValue } from './radio-prt.js';
 
 /**
  * Wraps a PRT body with a prerequisite check.
@@ -143,18 +144,32 @@ prereq_passed: is(prereq_diff <= ${tol} * abs(${prereqTa}));`;
 prereq_diff: abs(${answer} - ${prereqTa});
 prereq_passed: is(prereq_diff < ${tol});`;
         }
-        case 'algebraic':
-        case 'matrix':
+        case 'radio': {
+            // F5: a REAL check — the radio input submits the selected
+            // option's VALUE, so compare it against the correct option's
+            // value (exactly as written in the ta_ansN list).
+            const correct = radioCorrectValue(prereqPart);
             return `/* Prerequisite check: verify part (${String.fromCharCode(96 + prereqPart.id)}) answer */
-prereq_passed: is(${answer} = ${answer});`;
-        case 'radio':
+prereq_passed: is(${answer} = ${correct});`;
+        }
+        case 'string': {
+            // F5: a REAL check mirroring the string part's own answer test
+            // (String = exact; StringSloppy = case-folded).
+            const ta = requireTeacherAnswer(prereqPart);
+            if (prereqPart.grading?.caseSensitive === false) {
+                return `/* Prerequisite check: verify part (${String.fromCharCode(96 + prereqPart.id)}) answer */
+prereq_passed: is(sdowncase(${answer}) = sdowncase(${ta}));`;
+            }
             return `/* Prerequisite check: verify part (${String.fromCharCode(96 + prereqPart.id)}) answer */
-prereq_passed: is(${answer} = ${answer});`;
-        case 'string':
-            return `/* Prerequisite check: verify part (${String.fromCharCode(96 + prereqPart.id)}) answer */
-prereq_passed: is(${answer} = ${answer});`;
+prereq_passed: is(${answer} = ${ta});`;
+        }
         default:
-            return `/* Prerequisite check */
-prereq_passed: true;`;
+            // algebraic / matrix / jsxgraph / notes: correctness cannot be
+            // checked without CAS-verifiable equivalence (D2 = no local CAS
+            // to validate it) — the gate honestly requires an ATTEMPT only,
+            // and the student-facing notice says "complete", not "correctly"
+            // (question-header.js), plus W-PRE-04 tells the teacher.
+            return `/* Prerequisite gate: part (${String.fromCharCode(96 + prereqPart.id)}) must be attempted (correctness is not checkable for this answer type) */
+prereq_passed: is(${answer} = ${answer});`;
     }
 }

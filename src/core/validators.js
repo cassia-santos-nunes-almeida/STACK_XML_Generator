@@ -375,6 +375,12 @@ export function validateQuestionData(data) {
             if (prereqPart && prereqPart.prerequisite === part.id) {
                 push('error', 'E-PRE-03', `Part (${label}): Circular prerequisite detected with part (${String.fromCharCode(96 + prereqPart.id)}).`);
             }
+            // F5: correctness is only checkable for numerical/units/radio/
+            // string prerequisites — tell the teacher what the gate really does.
+            if (prereqPart && !['numerical', 'units', 'radio', 'string'].includes(prereqPart.type)) {
+                const pl = String.fromCharCode(96 + prereqPart.id);
+                push('warning', 'W-PRE-04', `Part (${label}): the prerequisite can only require that part (${pl}) is ANSWERED — whether the answer is correct cannot be checked for that answer type. Students will be told to complete part (${pl}) first (not to answer it "correctly").`);
+            }
         }
     });
 
