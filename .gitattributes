@@ -6,3 +6,7 @@
 # A8 golden fixtures are byte-compared against generator output (LF) —
 # CRLF checkout conversion would fail the gate-stale test on fresh clones.
 src/tests/fixtures/golden/*.xml -text
+
+# The import-test pack must stay byte-identical to the golden fixtures —
+# what the owner uploads to Moodle is exactly what the gate pinned.
+docs/import-test-pack/*.xml -text
