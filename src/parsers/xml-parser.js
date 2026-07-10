@@ -460,12 +460,14 @@ function parseRadioOptions(value) {
 
         const options = [];
 
-        // Split by ], [ to get individual option pairs
-        const pairs = trimmed.match(/\["([^"]*)",\s*(true|false)\]/g);
+        // Match option pairs with an escape-aware label pattern (F6): a
+        // label containing \" must not terminate the match early — the same
+        // pattern the radio PRT tans recovery uses.
+        const pairs = trimmed.match(/\["((?:[^"\\]|\\.)*)",\s*(true|false)\]/g);
         if (!pairs) return [];
 
         pairs.forEach(pair => {
-            const m = pair.match(/\["([^"]*)",\s*(true|false)\]/);
+            const m = pair.match(/\["((?:[^"\\]|\\.)*)",\s*(true|false)\]/);
             if (m) {
                 options.push({
                     value: m[1].replace(/\\"/g, '"'),
