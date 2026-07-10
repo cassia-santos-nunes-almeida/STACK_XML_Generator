@@ -403,6 +403,7 @@ button, .btn {
 
 .substituted-var { color: var(--primary); font-weight: 500; }
 .undefined-var { color: var(--danger); background: #fef2f2; padding: 0 4px; border-radius: 3px; }
+.unpreviewable-expr { color: var(--warning, #d97706); background: #fffbeb; padding: 0 4px; border-radius: 3px; border-bottom: 1px dashed var(--warning, #d97706); cursor: help; }
 
 /* ===== Variable Readout ===== */
 .var-readout { list-style: none; padding: 0; margin: 0; }

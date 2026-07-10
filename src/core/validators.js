@@ -265,6 +265,17 @@ export function validateQuestionData(data) {
     const varWarnings = validateVariableReferences(allText, data.variables || []);
     varWarnings.forEach(w => push('warning', 'W-VAR-05', w.message));
 
+    // F7: castext EXPRESSIONS ({@2*ta1@}, {@significantfigures(x,3)@}) are
+    // valid in Moodle but invisible to this app's preview and undefined-
+    // variable check — tell the teacher the preview cannot vouch for them.
+    const exprRefs = new Set();
+    for (const m of allText.matchAll(/\{@\s*([^@]*?)\s*@\}/g)) {
+        if (m[1] && !/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(m[1])) exprRefs.add(m[1]);
+    }
+    exprRefs.forEach(expr => {
+        push('warning', 'W-VAR-06', `"{@${expr}@}" is a computed expression — the preview here cannot show its value. Moodle will calculate it; double-check it renders correctly when you preview the question in Moodle.`);
+    });
+
     const definedNames = new Set((data.variables || []).map(v => v.name));
 
     // F2: any raw Maxima expression the teacher typed into an answer slot

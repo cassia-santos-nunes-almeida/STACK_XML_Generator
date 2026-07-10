@@ -164,8 +164,9 @@ function renderMatrixPreview(part, previewValues) {
 
 /**
  * Processes text by substituting variables and handling special syntax.
+ * Exported for tests (F7).
  */
-function processText(text, values, images) {
+export function processText(text, values, images) {
     if (!text) return '';
 
     let result = text;
@@ -176,6 +177,14 @@ function processText(text, values, images) {
             return `<span class="substituted-var" title="${escapeHtml(varName)}">${values[varName]}</span>`;
         }
         return `<span class="undefined-var" title="Undefined variable">${match}</span>`;
+    });
+
+    // F7: computed castext expressions ({@2*ta1@}) cannot be previewed here —
+    // mark them so the teacher knows Moodle will compute a value where this
+    // preview shows a placeholder. The lookahead skips bare identifiers
+    // (already handled above, including the undefined-var span content).
+    result = result.replace(/\{@\s*(?![a-zA-Z_][a-zA-Z0-9_]*\s*@\})([^@]*?)\s*@\}/g, (match, expr) => {
+        return `<span class="unpreviewable-expr" title="Computed by Moodle — not previewable here">${escapeHtml(`{@${expr}@}`)}</span>`;
     });
 
     // Handle image references
