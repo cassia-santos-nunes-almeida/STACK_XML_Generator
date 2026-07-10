@@ -54,7 +54,7 @@ function renderPart(part, idx, variables, allParts) {
             </div>
             ${part.type !== 'notes' && part.type !== 'radio' ? `
             <div class="form-group">
-                <label>Answer Variable <span class="tooltip" title="The variable holding the correct answer (must be defined in Variables section). The student's answer box itself is named automatically (${escapeAttr(part.answer || '')}).">?</span></label>
+                <label>Answer Variable <span class="tooltip" title="The variable holding the correct answer — define it under &quot;3. Question Values&quot; below. The student's answer box itself is named automatically (${escapeAttr(part.answer || '')}).">?</span></label>
                 <input type="text" class="part-ans" value="${escapeAttr(part.teacherAnswer || '')}" data-idx="${idx}" placeholder="e.g., ta${part.id || idx + 1}">
             </div>` : ''}
 

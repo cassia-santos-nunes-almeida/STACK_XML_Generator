@@ -248,7 +248,7 @@ export function validateQuestionData(data) {
             } else if (ta === part.answer) {
                 push('error', 'E-PART-03', `Part (${label}): The answer variable must be different from the student input name "${part.answer}".`);
             } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(ta) && !(data.variables || []).some(v => v.name === ta)) {
-                push('warning', 'W-PART-04', `Part (${label}): Answer variable "${ta}" is not defined in the Variables section.`);
+                push('warning', 'W-PART-04', `Part (${label}): Answer variable "${ta}" is not defined under "3. Question Values".`);
             }
         }
 

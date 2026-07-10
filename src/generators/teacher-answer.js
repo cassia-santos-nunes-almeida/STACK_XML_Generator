@@ -14,7 +14,7 @@ export function requireTeacherAnswer(part) {
     if (!ta) {
         throw new Error(
             `Part input "${part.answer}": no answer variable set. ` +
-            'Choose the variable that holds the correct answer (defined in the Variables section).'
+            'Choose the variable that holds the correct answer (defined under "3. Question Values").'
         );
     }
     if (ta === part.answer) {
