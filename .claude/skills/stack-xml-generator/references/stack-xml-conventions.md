@@ -363,14 +363,19 @@ The four elements above (`<testcase>`, `<description>`, `<testinput>`, `<expecte
 
 ## Partial Credit Scoring Pattern
 
-Typical partial credit tiers:
+House partial-credit ladder (SKILL.md Rule 3; canonical node graph in
+P-STACK-49):
 
 | Score | Meaning |
 |-------|---------|
 | 1.0 | Correct (within 5% or exact match) |
-| 0.7 | Close (within 15%) |
-| 0.3 | Order-of-magnitude correct |
+| 0.5 | Diagnostic partial credit — within 15%, sign-flip, or x10^n magnitude error (ONE combined diagnostic node; P-STACK-49) |
+| 0.5 | Follow-through credit — correct method on a wrong upstream value (P-STACK-49 node 1 / P-STACK-26) |
 | 0.0 | Incorrect |
+
+Do not invent alternative ladders (e.g. 0.7/0.3): existing pools and
+their qtests expect the 50% tier, and mixed schemes make bulk-test
+expected scores fail across pools.
 
 ## Diagram Embedding
 

@@ -1,6 +1,6 @@
 ---
 name: stack-question-validator
-version: 1.1.1
+version: 1.1.2
 description: >
   Use when: STACK XML has been generated and is ready for delivery,
   after completing a STACK question, before exporting XML, when asked
@@ -110,7 +110,7 @@ See `references/stack-xml-conventions.md` "Question Tests (`<qtest>`)" section f
 
 | Check | What to verify |
 |-------|---------------|
-| Progressive hints | At least 2 hints: strategy hint, then worked-example hint |
+| Progressive hints | Practice/weekly: at least 2 hints (strategy hint, then worked-example hint). Exam pools: ZERO `<hint>` elements — syntaxhint + unit-reference table only (P-STACK-44 HARD-GATE); a `<hint>` in exam-pool XML is FAIL for new output, deployed: advisory |
 | Error model coverage | Each PRT branch maps to a specific anticipated error |
 | MCQ type match | Dropdown for short labels, radio for long descriptions (P-STACK-13) |
 | Difficulty appropriate | No dependent sources in Easy questions (P-STACK-14) |

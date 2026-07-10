@@ -420,12 +420,20 @@ security check (P-STACK-12) in stack-question-validator.
 
 ### Progressive Hints
 
-Every question MUST include 2--3 `<hint>` elements at the end of the
-`<question>` block (Moodle's progressive hints shown on "Try again"):
+**Practice / weekly questions:** every question MUST include 2--3
+`<hint>` elements at the end of the `<question>` block (Moodle's
+progressive hints shown on "Try again"):
 
 1. **Hint 1:** Intuition / physical reasoning
 2. **Hint 2:** Relevant formulas and approach
 3. **Hint 3:** Worked step or partial derivation
+
+**Exam pools: ZERO progressive hints** (P-STACK-44 HARD-GATE). Exam
+questions get exactly two hint mechanisms — the `<syntaxhint>` on each
+input and the standardized unit-reference table — because progressive
+hints leak method structure and defeat the AI-resistance design.
+Never add `<hint>` elements to a `pool_q{N}_{difficulty}.xml` exam
+export.
 
 These are separate from syntax hints -- syntax hints are always
 visible; conceptual hints are revealed progressively.
@@ -446,7 +454,10 @@ types catalog (14 types with extra options for each).
 ### Units inputs — `units` type vs `numerical` + inline label
 
 When the answer carries a physical unit, the input type depends on the
-*kind* of unit (P-STACK-63):
+*kind* of unit (P-STACK-63, the "STACK `<type>units</type>` rejects
+logarithmic-ratio units" entry — PATTERNS.md carries duplicate
+P-STACK-62/63 IDs as of 2026-07, so match by title until the owner
+renumbers):
 
 - **SI-derived / multiplicative units** (V, A, Ω, Wb, T, m, s, W, J,
   Hz, F, H, …): use `<type>units</type>`. The student enters
@@ -573,7 +584,7 @@ Before finalizing any STACK XML, validate every PRT:
 **Tier 2 -- Grading Correctness**
 - [ ] `NumAbsolute` for zero-valued answers (tolerance 0.01)
 - [ ] `NumRelative` fallback on symbolic PRTs against `float()`
-- [ ] Score consistency: 1.0 (exact/5%), 0.7 (close/15%), 0.3 (order-of-magnitude), 0.0 (wrong)
+- [ ] Score consistency: 1.0 (exact / within 5%), 0.5 (diagnostic layer: within-15%, sign-flip, or x10^n — one combined node per Rule 3 / P-STACK-49), 0.0 (wrong). The house standard is a single 50% diagnostic tier — never 0.7/0.3 ladders (they break qtest expected scores against Rule-3 PRTs)
 - [ ] No `SigFigsStrict` as scoring gate
 - [ ] No `{@ansN@}` in specificfeedback
 
@@ -585,7 +596,7 @@ Before finalizing any STACK XML, validate every PRT:
 
 **Tier 4 -- Pedagogical Quality**
 - [ ] Syntax hints present after every `[[input:ansN]]`
-- [ ] Progressive hints (2--3 `<hint>` elements) per question
+- [ ] Progressive hints: practice/weekly 2--3 `<hint>` elements per question; exam pools ZERO `<hint>` elements (P-STACK-44)
 - [ ] No answer leaks via `syntaxhint`, placeholder text, or hint content
 
 ---
