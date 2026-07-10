@@ -248,6 +248,20 @@ export function validateQuestionData(data) {
     const varWarnings = validateVariableReferences(allText, data.variables || []);
     varWarnings.forEach(w => push('warning', 'W-VAR-05', w.message));
 
+    const definedNames = new Set((data.variables || []).map(v => v.name));
+
+    // F2: any raw Maxima expression the teacher typed into an answer slot
+    // gets the same lints as a variable value — in <tans> a bare pi or "2a"
+    // is a CAS break at attempt time (insertstars applies to STUDENT input
+    // only, never to the teacher answer).
+    const lintAnswerExpression = (expr, where) => {
+        const exprErr = validateMaximaExpression(expr);
+        if (exprErr) push('warning', 'W-MAX-01', `${where} "${expr}": ${exprErr}`);
+        lintMaximaValue(expr, definedNames).forEach(f => {
+            push(f.code.startsWith('E-') ? 'error' : 'warning', f.code, `${where} ${f.message}`);
+        });
+    };
+
     // Check each part
     (data.parts || []).forEach((part, idx) => {
         const label = String.fromCharCode(97 + idx);
@@ -265,9 +279,20 @@ export function validateQuestionData(data) {
                 push('error', 'E-PART-02', `Part (${label}): Answer variable is required — choose the variable that holds the correct answer.`);
             } else if (ta === part.answer) {
                 push('error', 'E-PART-03', `Part (${label}): The answer variable must be different from the student input name "${part.answer}".`);
-            } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(ta) && !(data.variables || []).some(v => v.name === ta)) {
-                push('warning', 'W-PART-04', `Part (${label}): Answer variable "${ta}" is not defined under "3. Question Values".`);
+            } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(ta)) {
+                if (!(data.variables || []).some(v => v.name === ta)) {
+                    push('warning', 'W-PART-04', `Part (${label}): Answer variable "${ta}" is not defined under "3. Question Values".`);
+                }
+            } else {
+                // Raw expression instead of a variable name (typed or imported)
+                lintAnswerExpression(ta, `Part (${label}) answer`);
             }
+        }
+
+        // F2: the curated wrong-answer example is exported into a question
+        // test input — lint it like any other Maxima value.
+        if (part.distractor && String(part.distractor).trim()) {
+            lintAnswerExpression(String(part.distractor).trim(), `Part (${label}) wrong-answer example`);
         }
 
         // Units answers should carry their units via stackunits (a unitless
@@ -327,7 +352,6 @@ export function validateQuestionData(data) {
 
     // Check variable expressions
     const inputNames = new Set((data.parts || []).map(p => p.answer).filter(Boolean));
-    const definedNames = new Set((data.variables || []).map(v => v.name));
     (data.variables || []).forEach(v => {
         const nameErr = checkVariableName(v.name);
         if (nameErr) {
