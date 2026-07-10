@@ -87,6 +87,40 @@ describe('A6: Maxima lint (A3 lookbehind corpus)', () => {
         expect(lintMaximaValue('/* pi here */ 4', none)).toHaveLength(0);
     });
 
+    // Phase-3 walkthrough: a teacher typing natural math ("2a + 1") got a
+    // silent [Preview N/A] and would have exported a Maxima syntax error
+    // that breaks the question in Moodle. Corpus dry-run evidence for the
+    // warning severity: 0 hits over 14 golden fixtures + 22 deployed pools
+    // (comments/strings stripped — lesson 6).
+    it('warns on implied multiplication (digit before name or bracket)', () => {
+        expect(lintMaximaValue('2a + 1', none).some(f => f.code === 'W-MAX-05')).toBe(true);
+        expect(lintMaximaValue('3(x + 1)', none).some(f => f.code === 'W-MAX-05')).toBe(true);
+        expect(lintMaximaValue('x^2y', none).some(f => f.code === 'W-MAX-05')).toBe(true);
+    });
+
+    it('the implied-multiplication message shows the fix', () => {
+        const f = lintMaximaValue('2ab + 1', none).find(f => f.code === 'W-MAX-05');
+        expect(f.message).toContain('2*ab');
+    });
+
+    it('does not flag explicit multiplication, indices, or scientific notation', () => {
+        expect(lintMaximaValue('2*a + 1', none)).toHaveLength(0);
+        expect(lintMaximaValue('x2y + a1', none)).toHaveLength(0);   // identifiers
+        expect(lintMaximaValue('2.5e-3 + 1E+10', none)).toHaveLength(0); // sci notation
+        expect(lintMaximaValue('3d2', none)).toHaveLength(0);        // Maxima double float
+        expect(lintMaximaValue('rand(10)+1', none)).toHaveLength(0);
+        expect(lintMaximaValue('matrix([1,2],[3,4])', none)).toHaveLength(0);
+        expect(lintMaximaValue('sqrt(2*h/9.81)', none)).toHaveLength(0);
+    });
+
+    it('implied multiplication surfaces as a warning via validateQuestionData', () => {
+        const issues = validateQuestionData({
+            ...baseData,
+            variables: [{ name: 'ta1', type: 'calc', value: '2a + 1' }],
+        });
+        expect(issues.some(i => i.code === 'W-MAX-05' && i.level === 'warning')).toBe(true);
+    });
+
     it('bare pi in a variable value blocks export via validateQuestionData', () => {
         const issues = validateQuestionData({
             ...baseData,

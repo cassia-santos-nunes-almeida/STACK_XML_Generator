@@ -151,6 +151,24 @@ export function lintMaximaValue(value, definedNames = new Set()) {
             message: 'uses "e" as a value — if you mean Euler\'s number, write %e.',
         });
     }
+    // W-MAX-05 (Phase-3 walkthrough): "2a" / "3(x+1)" is natural on paper but
+    // a syntax error in Maxima — the exported question would break in Moodle.
+    // Scientific notation (2e3, 2.5E-3) and Maxima double floats (3d2) are
+    // valid and excluded. Warning severity backed by a corpus dry-run:
+    // 0 hits over 14 golden fixtures + 22 deployed exam pools (2026-07-10).
+    const impliedMul = /(?<![\w.%])(\d+(?:\.\d+)?)\s*(\(|[a-zA-Z_][a-zA-Z0-9_]*)/g;
+    for (const m of stripped.matchAll(impliedMul)) {
+        if (/^[eEdD]\d+$/.test(m[2])) continue; // 2e3 / 3d2 notation
+        const after = stripped.slice(m.index + m[0].length);
+        if (/^[eEdD]$/.test(m[2]) && /^[+-]\d/.test(after)) continue; // 2.5e-3
+        const shown = m[2] === '(' ? `${m[1]}(` : `${m[1]}${m[2]}`;
+        const fixed = m[2] === '(' ? `${m[1]}*(` : `${m[1]}*${m[2]}`;
+        findings.push({
+            code: 'W-MAX-05',
+            message: `contains "${shown}" — multiplication must be written with a star ("${fixed}"), otherwise the question breaks in Moodle.`,
+        });
+        break; // one finding per value is enough to point at the problem
+    }
     return findings;
 }
 
