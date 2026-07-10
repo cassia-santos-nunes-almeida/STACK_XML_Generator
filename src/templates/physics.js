@@ -36,7 +36,7 @@ export const PHYSICS_TEMPLATES = {
         variables: [
             { name: 'v0', type: 'rand', value: 'rand([10, 15, 20, 25, 30])' },
             { name: 'theta', type: 'rand', value: 'rand([30, 45, 60])' },
-            { name: 'theta_rad', type: 'calc', value: 'theta * pi / 180' },
+            { name: 'theta_rad', type: 'calc', value: 'theta * %pi / 180' },
             { name: 'ta1', type: 'calc', value: 'v0 * v0 * sin(2 * theta_rad) / 9.81' },
             { name: 'ta2', type: 'calc', value: '(v0 * sin(theta_rad))^2 / (2 * 9.81)' },
         ],

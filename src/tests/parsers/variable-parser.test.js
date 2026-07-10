@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { evaluatePreviewValue, detectVariableType, parseVariableDefinition } from '../../parsers/variable-parser.js';
+import { PHYSICS_TEMPLATES } from '../../templates/physics.js';
+import { generateStackXML } from '../../generators/xml-generator.js';
 
 describe('Variable Parser', () => {
     describe('detectVariableType', () => {
@@ -66,6 +68,31 @@ describe('Variable Parser', () => {
             expect(val).toBeCloseTo(1, 5);
         });
 
+        // A3 rider corpus: %pi must evaluate (the old \bpi\b pass corrupted
+        // it to %Math.PI -> '[Calc Error]'), bare pi keeps working, and
+        // pi-lookalike identifiers must not be rewritten.
+        it('evaluates %pi correctly (A3 fix)', () => {
+            expect(evaluatePreviewValue('calc', 'sin(%pi/2)', {})).toBeCloseTo(1, 5);
+            expect(evaluatePreviewValue('calc', 'theta * %pi / 180', { theta: 45 })).toBeCloseTo(Math.PI / 4, 5);
+        });
+
+        it('still evaluates bare pi (A3)', () => {
+            expect(evaluatePreviewValue('calc', 'pi', {})).toBeCloseTo(Math.PI, 5);
+            // Preview rounds to 6 significant figures
+            expect(evaluatePreviewValue('calc', '2*pi*f', { f: 50 })).toBeCloseTo(100 * Math.PI, 2);
+        });
+
+        it('does not rewrite pi-lookalike identifiers (A3)', () => {
+            // 'pin' and 'api' contain 'pi' but are unknown identifiers —
+            // they must NOT become Math.PI-flavoured numbers.
+            expect(evaluatePreviewValue('calc', 'pin', {})).toBe('[Preview N/A]');
+            expect(evaluatePreviewValue('calc', 'api', {})).toBe('[Preview N/A]');
+        });
+
+        it('evaluates %e correctly (A3)', () => {
+            expect(evaluatePreviewValue('calc', '%e', {})).toBeCloseTo(Math.E, 5);
+        });
+
         it('returns expression string for algebraic type', () => {
             const val = evaluatePreviewValue('algebraic', 'expand((x+a)*(x-b))', { a: 3, b: 2 });
             expect(typeof val).toBe('string');
@@ -76,6 +103,27 @@ describe('Variable Parser', () => {
             const prev = { a: 5, b: 3 };
             const val = evaluatePreviewValue('calc', 'a + b', prev);
             expect(val).toBe(8);
+        });
+    });
+
+    describe('A3 acceptance: projectile template', () => {
+        it('preview computes numeric values through the %pi chain', () => {
+            // Same loop StateManager.generateSampleValues runs
+            const previewValues = {};
+            for (const v of PHYSICS_TEMPLATES.projectile.variables) {
+                previewValues[v.name] = evaluatePreviewValue(v.type, v.value, previewValues);
+            }
+            expect(typeof previewValues.theta_rad).toBe('number');
+            expect(typeof previewValues.ta1).toBe('number');
+            expect(typeof previewValues.ta2).toBe('number');
+            expect(previewValues.ta1).toBeGreaterThan(0);
+        });
+
+        it('export contains %pi and no bare pi in questionvariables', () => {
+            const xml = generateStackXML(PHYSICS_TEMPLATES.projectile);
+            expect(xml).toContain('theta * %pi / 180');
+            const qv = xml.match(/<questionvariables>\s*<text><!\[CDATA\[([\s\S]*?)\]\]><\/text>/)?.[1] || '';
+            expect(/(?<!%)\bpi\b/.test(qv)).toBe(false);
         });
     });
 

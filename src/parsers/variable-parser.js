@@ -141,9 +141,12 @@ function safeEval(expr) {
         jsExpr = jsExpr.replace(/\bsqrt\s*\(/g, 'Math.sqrt(');
         jsExpr = jsExpr.replace(/\blog\s*\(/g, 'Math.log(');
         jsExpr = jsExpr.replace(/\babs\s*\(/g, 'Math.abs(');
-        jsExpr = jsExpr.replace(/\bpi\b/g, 'Math.PI');
+        // A3: Maxima constants FIRST (%pi/%e), then bare pi with a negative
+        // lookbehind. The old order ran \bpi\b before %pi and \b matches
+        // after '%', so %pi became %Math.PI -> '[Calc Error]' in preview.
         jsExpr = jsExpr.replace(/%pi/g, 'Math.PI');
-        jsExpr = jsExpr.replace(/%e/g, 'Math.E');
+        jsExpr = jsExpr.replace(/%e\b/g, 'Math.E');
+        jsExpr = jsExpr.replace(/(?<!%)\bpi\b/g, 'Math.PI');
         jsExpr = jsExpr.replace(/\^/g, '**');
 
         // Safety check: only allow math-safe characters
