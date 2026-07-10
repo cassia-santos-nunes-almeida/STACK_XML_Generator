@@ -328,3 +328,77 @@ Autonomous staged run continued. Baseline at pickup: `1a8b936` (A11),
   radio/algebraic/matrix/string/jsxgraph/notes feedback never recovered;
   notes boxsize/syntaxhint lost; notesN part texts lost (regex only matched
   ansN); show_reasoning template renumbered to the ansN=partId convention.
+
+---
+
+# STAGE 3 — Phase 3 teacher walkthrough, 2026-07-10
+
+Autonomous staged run continued. Baseline at pickup: `e169c1c` (A8 gate),
+`npm test` 421/421 green, tree clean.
+
+## Method
+
+`scripts/phase3-teacher-walkthrough.mjs` (committed) drives the real UI with
+Playwright + Chromium as a teacher with no STACK/Maxima/XML knowledge:
+three question types authored from scratch (no templates) — S1 numerical
+physics (free-fall, random height, sig-figs check, export, re-import),
+S2 multiple choice (4 options, correct marked), S3 algebraic (expand a
+square, random coefficient). Every dialog/notification/tooltip surfaced to
+the teacher is captured to an evidence log; console errors monitored
+throughout. All three exports parse under PowerShell [xml] with
+stackversion 2025040100 and 2 qtests each.
+
+## Walkthrough defects found and FIXED (TDD, one commit each)
+
+| Fix | Commit | Defect | Tests |
+|---|---|---|---|
+| 1 | e055b5c | Dev export gate DEAD on Vitest 4: reporter used the removed legacy `onFinished` hook, so test-status.json was never written and EVERY export showed a developer-language "Could not verify test status" dialog even after a green run | 5 new (both reporter hooks, temp-path injectable); status file verified written by the real run |
+| 2 | a8a1e1b | Answer Variable tooltip, W-PART-04, and the generator error all pointed at a "Variables section" that A7 renamed to "3. Question Values" — teacher is directed to a section that does not exist on screen | source-scan + behavioural W-PART-04 message test (cross-artifact drift, skills-track lesson 7) |
+| 3 | e637de1 | Grading UI showed bare "Tolerance: 0.05" while the A11 default is RELATIVE (0.05 = 5% of the correct answer) — a teacher wanting +-0.5 s would type 0.5 and silently get 50%; no UI existed to choose absolute tolerances although tolType is supported end-to-end; `\|\|` fallbacks rendered the Exact preset's legitimate 0 as 0.2/0.05 | 5 new jsdom render tests (hints per mode, selector reflects/updates tolType, 0 renders as 0) |
+| 4 | eeeb1e5 | Teacher typing natural math ("2a + 1", "3(x+1)") got a silent [Preview N/A] and would export a Maxima syntax error that breaks the question in Moodle | W-MAX-05 warning with the starred fix in the message; sci-notation/double-float/identifier exclusions pinned; corpus dry-runs 0 hits (14 golden + 22 deployed pools + 14 templates) |
+
+## Deferred to backlog (design-level, appended to stack-backlog-2026-07.md with walkthrough marker)
+
+- **W1:** one-click creation of the answer variable (the 5-step manual
+  ritual in section 3 is the flow's main stall point — hit in S1 and S3).
+- **W2:** units parts have no "expected unit" field; stackunits() Maxima
+  syntax is still hand-written (W-UNITS-01 teaches it, but it is the only
+  part type REQUIRING a Maxima function call).
+
+## Gauntlet after all edits (lesson 5)
+
+- `npm test` 438/438 green (421 baseline + 17 new).
+- Walkthrough re-run: 19/19 (adds: tolerance hints visible, tol-mode
+  selector present, NO test-status dialog after a green run).
+- `scripts/a8-e2e.mjs` release gate: 17/17, zero console errors.
+- Golden fixtures untouched (no emission change in any fix; GATE-STALE and
+  byte-stability suites green).
+
+## Stage-3 autonomous decisions (one line each)
+
+- D-app-23: W-MAX-05 ships as WARNING, not error — text-proxy lint (lesson
+  6) with corpus evidence 0/36 files; promotion to blocking error is an
+  owner call after real-Moodle evidence.
+- D-app-24: tolType exposed as a teacher-facing selector (not label-only
+  disclosure) — generators/importer/qtests already supported absolute
+  end-to-end, and label-only left a teacher wanting +-0.5 s with no path.
+- D-app-25: walkthrough scenarios author from SCRATCH (no templates) — the
+  strictest reading of "as a teacher who knows no STACK"; template flows
+  are already covered by a8-e2e.mjs.
+
+## Walkthrough observations NOT classed as defects
+
+- The dev test-status confirm (when tests genuinely have not run) speaks
+  developer language ("npm run test") — dev-only surface, production builds
+  skip the gate entirely.
+- Question-text math needs LaTeX \( \) — toolbar buttons insert it and the
+  live preview renders it; typesetting is not STACK/Maxima/XML knowledge.
+- Formula syntax (sqrt, ^, *) is calculator-level; the new W-MAX-05 catches
+  the natural-math * omission.
+
+## Remaining for the NEXT stage
+
+- Phase 4 premortem (independent red-team subagent, >=8 failure paths,
+  demonstrated guards) + docs/import-test-pack/ per phase3-prompt-app.md.
+- Premortem inputs unchanged (a8-gate-log.md "Known limitations") plus the
+  new W-MAX-05 severity question (D-app-23).
