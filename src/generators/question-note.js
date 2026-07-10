@@ -1,16 +1,39 @@
-// Questionnote content + distinctness (A6 check, A5 rider; A10 extends the
-// refs with teacher answers). ONE builder feeds both the XML emission and
-// the validator so the completeness check can never drift from what is
-// actually exported.
+// Questionnote content + distinctness (A6 check + A10 emission). ONE builder
+// feeds both the XML emission and the validator so the completeness check
+// can never drift from what is actually exported.
 import { evaluatePreviewValue } from '../parsers/variable-parser.js';
+import { teacherAnswerMayBeZero } from './tolerance-mode.js';
 
 /**
- * The castext fragments the questionnote interpolates, in emission order.
+ * The castext fragments the questionnote interpolates, in emission order:
+ * every random variable, then every gradeable part's TEACHER answer (taN —
+ * never the student input name, which would just render the student's own
+ * slot). Numeric answers proven nonzero across the rand space are rounded
+ * to 4 significant figures to keep notes short and distinct (A10 rider);
+ * anything possibly zero / non-numeric (units, matrices, algebra) is
+ * interpolated raw. Radio parts reference their shuffled option list so
+ * MCQ variants stay distinguishable.
  */
 export function questionNoteRefs(data) {
-    return (data.variables || [])
+    const vars = data.variables || [];
+    const refs = vars
         .filter(v => v.type === 'rand')
-        .map(v => `{@${v.name}@}`);
+        .map(v => `${v.name}={@${v.name}@}`);
+    (data.parts || []).forEach(p => {
+        if (p.type === 'notes') return; // placeholder answers are noise
+        if (p.type === 'radio') {
+            if (p.options && p.options.length > 0) refs.push(`${p.answer}={@ta_${p.answer}@}`);
+            return;
+        }
+        const ta = (p.teacherAnswer || '').trim();
+        if (!ta) return;
+        if (p.type === 'numerical' && !teacherAnswerMayBeZero(ta, vars)) {
+            refs.push(`${p.answer}={@significantfigures(${ta},4)@}`);
+        } else {
+            refs.push(`${p.answer}={@${ta}@}`);
+        }
+    });
+    return refs;
 }
 
 /** The questionnote body as emitted inside the CDATA. */
