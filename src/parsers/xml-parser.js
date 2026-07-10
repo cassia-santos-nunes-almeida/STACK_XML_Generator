@@ -1,7 +1,7 @@
 // XML parser for importing STACK question XML back into the editor
 // FIXES BUG 4: MCQ round-trip now correctly recovers options from ta_ansX variables
 import { INPUT_TYPES, DEFAULT_GRADING } from '../core/constants.js';
-import { detectVariableType, parseVariableDefinition } from './variable-parser.js';
+import { detectVariableType, parseVariableDefinition, splitMaximaStatements } from './variable-parser.js';
 import { migrateLegacyTeacherAnswers } from '../core/migrate-teacher-answer.js';
 import { modelInputValue } from '../generators/qtest-generator.js';
 
@@ -71,7 +71,9 @@ export function parseStackXML(xmlString) {
 
     // 4. Variables
     const varText = doc.querySelector('questionvariables text')?.textContent || '';
-    const varDefs = varText.split(';').map(s => s.trim()).filter(s => s);
+    // F3: statement-aware split — a ";" inside a string literal, a
+    // parenthesised compound, or a comment must not truncate the variable.
+    const varDefs = splitMaximaStatements(varText);
 
     const radioVarMap = {}; // ta_ansX -> parsed options
 

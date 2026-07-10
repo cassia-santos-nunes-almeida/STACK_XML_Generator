@@ -48,9 +48,26 @@ export function validateMaximaExpression(expr) {
 
     const trimmed = expr.trim().replace(/;+$/, '');
 
+    // F3: string-quote balance first (an unbalanced quote makes every later
+    // check meaningless — and used to slip through, so a truncated import
+    // re-exported broken Maxima while validating clean).
+    let inString = false;
+    for (let i = 0; i < trimmed.length; i++) {
+        const ch = trimmed[i];
+        if (inString && ch === '\\') { i++; continue; }
+        if (ch === '"') inString = !inString;
+    }
+    if (inString) return 'Unclosed string quote (").';
+
+    // Strip string literals and comments so their contents cannot
+    // false-flag the bracket checks below.
+    const code = trimmed
+        .replace(/"(?:[^"\\]|\\.)*"/g, '""')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ');
+
     // Check balanced parentheses
     let depth = 0;
-    for (const ch of trimmed) {
+    for (const ch of code) {
         if (ch === '(') depth++;
         if (ch === ')') depth--;
         if (depth < 0) return 'Unmatched closing parenthesis.';
@@ -59,7 +76,7 @@ export function validateMaximaExpression(expr) {
 
     // Check balanced brackets
     depth = 0;
-    for (const ch of trimmed) {
+    for (const ch of code) {
         if (ch === '[') depth++;
         if (ch === ']') depth--;
         if (depth < 0) return 'Unmatched closing bracket.';

@@ -170,6 +170,51 @@ function safeEval(expr) {
 }
 
 /**
+ * Splits Maxima code into top-level statements (F3). Unlike a naive
+ * split(';'), semicolons inside double-quoted strings (with backslash
+ * escapes), inside parentheses/brackets, or inside Maxima comments do NOT
+ * split — so string messages, block(...) bodies, and compound statements
+ * from hand-authored questionvariables survive import intact.
+ *
+ * @param {string} text - Maxima code (e.g. a questionvariables payload)
+ * @returns {string[]} Trimmed, non-empty statements without trailing ';'
+ */
+export function splitMaximaStatements(text) {
+    const statements = [];
+    let current = '';
+    let depth = 0;
+    let inString = false;
+    let inComment = false;
+    const src = String(text || '');
+    for (let i = 0; i < src.length; i++) {
+        const ch = src[i];
+        if (inComment) {
+            current += ch;
+            if (ch === '*' && src[i + 1] === '/') { current += '/'; i++; inComment = false; }
+            continue;
+        }
+        if (inString) {
+            current += ch;
+            if (ch === '\\') { current += src[i + 1] ?? ''; i++; }
+            else if (ch === '"') inString = false;
+            continue;
+        }
+        if (ch === '"') { inString = true; current += ch; continue; }
+        if (ch === '/' && src[i + 1] === '*') { inComment = true; current += '/*'; i++; continue; }
+        if (ch === '(' || ch === '[') depth++;
+        else if (ch === ')' || ch === ']') depth = Math.max(0, depth - 1);
+        if (ch === ';' && depth === 0) {
+            statements.push(current);
+            current = '';
+            continue;
+        }
+        current += ch;
+    }
+    statements.push(current);
+    return statements.map(s => s.trim()).filter(s => s);
+}
+
+/**
  * Parses a Maxima variable definition string "name: value" into parts.
  * @param {string} defStr - e.g., "L: rand(10)+1"
  * @returns {{name: string, value: string}|null}
