@@ -1,0 +1,670 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<quiz>
+  <question type="stack">
+    <name><text>General: Show Reasoning (Partial Auto-Correction)</text></name>
+    <questiontext format="html">
+      <text><![CDATA[A factory produces {@n@} items per hour. Due to a defect rate of {@d@}%, some items must be discarded.<br><br>Answer the following questions and <strong>explain your reasoning</strong> for each step.
+
+<div class="stack-part"><p><strong>(a)</strong> How many defective items are produced per hour?</p><div>[[input:ans1]]</div><div style="margin-top:4px"><small style="color:#6b7280"><em>The box below shows how your answer was interpreted. Please verify it matches what you intended before submitting.</em></small></div><div>[[validation:ans1]]</div></div>
+
+<div class="stack-part"><p><strong>(b)</strong> Explain how you calculated the number of defective items. What formula did you use and why?</p><div>[[input:notes2]]</div></div>
+
+<div class="stack-part"><div class="prerequisite-notice" style="background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;padding:8px;margin-bottom:8px;font-size:0.9em;">
+<strong>Prerequisite:</strong> You must answer part (a) correctly before attempting this part.</div><p><strong>(c)</strong> How many good (non-defective) items are produced per hour?</p><div>[[input:ans3]]</div><div style="margin-top:4px"><small style="color:#6b7280"><em>The box below shows how your answer was interpreted. Please verify it matches what you intended before submitting.</em></small></div><div>[[validation:ans3]]</div></div>
+
+<div class="stack-part"><div class="prerequisite-notice" style="background:#fef3c7;border:1px solid #f59e0b;border-radius:4px;padding:8px;margin-bottom:8px;font-size:0.9em;">
+<strong>Prerequisite:</strong> You must answer part (c) correctly before attempting this part.</div><p><strong>(d)</strong> If the factory runs for {@hours@} hours, how many good items are produced in total?</p><div>[[input:ans4]]</div><div style="margin-top:4px"><small style="color:#6b7280"><em>The box below shows how your answer was interpreted. Please verify it matches what you intended before submitting.</em></small></div><div>[[validation:ans4]]</div></div>
+
+<div class="stack-part"><p><strong>(e)</strong> Summarise your complete approach. Explain each step of your calculation and how the parts connect together.</p><div>[[input:notes5]]</div><div style="margin-top:8px;padding:10px;background:#eff6ff;border:1px solid #3b82f6;border-radius:4px;">
+<strong>Show your working:</strong> Please also photograph or scan your handwritten calculations and attach them using the file upload area below the question. Clear, legible working helps your teacher understand your reasoning and provide better feedback.
+<br><small><em>Note: Your uploaded image and written explanation will be reviewed and graded by your teacher. This part is not auto-marked.</em></small></div></div>]]></text>
+
+    </questiontext>
+
+    <generalfeedback format="html">
+      <text><![CDATA[<strong>Worked Solution:</strong><br>1. Defective items per hour: \({@n@} \times \frac{{@d@}}{100} = {@defective@}\)<br>2. Good items per hour: \({@n@} - {@defective@} = {@good@}\)<br>3. Total good items in {@hours@} hours: \({@good@} \times {@hours@} = {@total_good@}\)<br><br>The key idea is to break the problem into steps: first find the defect count, then subtract to get good items, then scale by time.]]></text>
+    </generalfeedback>
+    <defaultgrade>5</defaultgrade>
+    <penalty>0.1</penalty>
+    <hidden>0</hidden>
+
+    <hint format="html">
+      <text><![CDATA[The defect rate is a percentage — convert it to a decimal by dividing by 100.]]></text>
+    </hint>
+    <hint format="html">
+      <text><![CDATA[Good items = Total items - Defective items.]]></text>
+    </hint>
+    <hint format="html">
+      <text><![CDATA[For multiple hours, multiply the hourly rate by the number of hours.]]></text>
+    </hint>
+    <stackversion><text>2025040100</text></stackversion>
+    <questionvariables>
+      <text><![CDATA[n: rand(50)+50;
+d: rand(8)+2;
+defective: n * d / 100;
+ta1: n * d / 100;
+good: n - defective;
+ta2: n - n * d / 100;
+hours: rand(6)+2;
+ta3: (n - n * d / 100) * hours;
+total_good: good * hours;
+ta_notes2: "Your reasoning here";
+ta_notes5: "Your reasoning here";]]></text>
+    </questionvariables>
+    <specificfeedback format="html">
+      <text><![CDATA[[[feedback:prt1]]
+[[feedback:prt2]]
+[[feedback:prt3]]
+[[feedback:prt4]]
+[[feedback:prt5]]]]></text>
+    </specificfeedback>
+    <questionnote format="html">
+      <text><![CDATA[n={@n@}, d={@d@}, hours={@hours@}, ans1={@significantfigures(ta1,4)@}, ans3={@significantfigures(ta2,4)@}, ans4={@significantfigures(ta3,4)@}]]></text>
+    </questionnote>
+    <input>
+      <name>ans1</name>
+      <type>numerical</type>
+      <tans>ta1</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>1</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>3</showvalidation>
+      <options></options>
+    </input>
+    <input>
+      <name>notes2</name>
+      <type>notes</type>
+      <tans>ta_notes2</tans>
+      <boxsize>4</boxsize>
+      <strictsyntax>0</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint>e.g., I multiplied the production rate by the defect percentage...</syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>0</checkanswertype>
+      <mustverify>0</mustverify>
+      <showvalidation>0</showvalidation>
+      <options></options>
+    </input>
+    <input>
+      <name>ans3</name>
+      <type>numerical</type>
+      <tans>ta2</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>1</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>3</showvalidation>
+      <options></options>
+    </input>
+    <input>
+      <name>ans4</name>
+      <type>numerical</type>
+      <tans>ta3</tans>
+      <boxsize>15</boxsize>
+      <strictsyntax>1</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint></syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>1</checkanswertype>
+      <mustverify>1</mustverify>
+      <showvalidation>3</showvalidation>
+      <options></options>
+    </input>
+    <input>
+      <name>notes5</name>
+      <type>notes</type>
+      <tans>ta_notes5</tans>
+      <boxsize>6</boxsize>
+      <strictsyntax>0</strictsyntax>
+      <insertstars>0</insertstars>
+      <syntaxhint>Step 1: I found the defective items by... Step 2: I subtracted to get... Step 3: I multiplied by hours to get...</syntaxhint>
+      <syntaxattribute>0</syntaxattribute>
+      <forbidwords></forbidwords>
+      <allowwords></allowwords>
+      <forbidfloat>0</forbidfloat>
+      <requirelowestterms>0</requirelowestterms>
+      <checkanswertype>0</checkanswertype>
+      <mustverify>0</mustverify>
+      <showvalidation>0</showvalidation>
+      <options></options>
+    </input>
+    <prt>
+      <name>prt1</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <feedbackvariables>
+        <text><![CDATA[
+/* Sign-flip diagnostic (house Rule 3): student within 5% of -ta */
+sf_safe_tans: if is(ta1 = 0) then 1 else ta1;
+sf_ratio: ans1 / sf_safe_tans;
+is_sign_flip: is(abs(sf_ratio + 1) < 0.05);
+/* Power of 10 detection: check if student is off by factor of 10 or 0.1 */
+p10_safe_tans: if is(ta1 = 0) then 1 else ta1;
+p10_ratio: ans1 / p10_safe_tans;
+is_p10_high: is(abs(p10_ratio - 10) < 1);
+is_p10_low: is(abs(p10_ratio - 0.1) < 0.01);
+is_p10_error: is_p10_high or is_p10_low;
+]]></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans1</sans>
+        <tans>ta1</tans>
+        <testoptions>0.15</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>1</truenextnode>
+        <trueanswernote>prt1-0-T</trueanswernote>
+        <truefeedback format="html"><text></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>2</falsenextnode>
+        <falseanswernote>prt1-0-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Multiply the total items by the defect rate (as a decimal).]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>1</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans1</sans>
+        <tans>ta1</tans>
+        <testoptions>0.05</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-1-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct!]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0.5</falsescore>
+        <falsepenalty>0.1</falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-1-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Close, but check your accuracy. Review your calculation steps.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>2</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>is_sign_flip</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-2-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Sign error: your answer is the negative of the expected value — check the sign convention.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>3</falsenextnode>
+        <falseanswernote>prt1-2-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+      <node>
+        <name>3</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>is_p10_error</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt1-3-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Your answer appears to be off by a power of 10. Check your unit conversions or decimal placement.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt1-3-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+    </prt>
+    <prt>
+      <name>prt2</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>1</sans>
+        <tans>1</tans>
+        <testoptions></testoptions>
+        <quiet>1</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt2-0-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Thank you for showing your reasoning. Your working will be reviewed by your teacher.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt2-0-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+    </prt>
+    <prt>
+      <name>prt3</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <feedbackvariables>
+        <text><![CDATA[
+/* Prerequisite check: verify part (a) answer */
+prereq_diff: abs(ans1 - ta1);
+prereq_passed: is(prereq_diff <= 0.05 * abs(ta1));
+
+/* Sign-flip diagnostic (house Rule 3): student within 5% of -ta */
+sf_safe_tans: if is(ta2 = 0) then 1 else ta2;
+sf_ratio: ans3 / sf_safe_tans;
+is_sign_flip: is(abs(sf_ratio + 1) < 0.05);
+/* Power of 10 detection: check if student is off by factor of 10 or 0.1 */
+p10_safe_tans: if is(ta2 = 0) then 1 else ta2;
+p10_ratio: ans3 / p10_safe_tans;
+is_p10_high: is(abs(p10_ratio - 10) < 1);
+is_p10_low: is(abs(p10_ratio - 0.1) < 0.01);
+is_p10_error: is_p10_high or is_p10_low;
+
+]]></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>prereq_passed</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>1</truenextnode>
+        <trueanswernote>prt3-prereq-T</trueanswernote>
+        <truefeedback format="html"><text></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt3-prereq-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Please answer the prerequisite part correctly before attempting this part.]]></text></falsefeedback>
+      </node>
+      
+      <node>
+        <name>1</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans3</sans>
+        <tans>ta2</tans>
+        <testoptions>0.15</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>2</truenextnode>
+        <trueanswernote>prt3-1-T</trueanswernote>
+        <truefeedback format="html"><text></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>3</falsenextnode>
+        <falseanswernote>prt3-1-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Subtract the defective items from the total production.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>2</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans3</sans>
+        <tans>ta2</tans>
+        <testoptions>0.05</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt3-2-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct!]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0.5</falsescore>
+        <falsepenalty>0.1</falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt3-2-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Close, but check your accuracy. Review your calculation steps.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>3</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>is_sign_flip</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt3-3-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Sign error: your answer is the negative of the expected value — check the sign convention.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>4</falsenextnode>
+        <falseanswernote>prt3-3-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+      <node>
+        <name>4</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>is_p10_error</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt3-4-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Your answer appears to be off by a power of 10. Check your unit conversions or decimal placement.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt3-4-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+    </prt>
+    <prt>
+      <name>prt4</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <feedbackvariables>
+        <text><![CDATA[
+/* Prerequisite check: verify part (c) answer */
+prereq_diff: abs(ans3 - ta2);
+prereq_passed: is(prereq_diff <= 0.05 * abs(ta2));
+
+/* Sign-flip diagnostic (house Rule 3): student within 5% of -ta */
+sf_safe_tans: if is(ta3 = 0) then 1 else ta3;
+sf_ratio: ans4 / sf_safe_tans;
+is_sign_flip: is(abs(sf_ratio + 1) < 0.05);
+/* Power of 10 detection: check if student is off by factor of 10 or 0.1 */
+p10_safe_tans: if is(ta3 = 0) then 1 else ta3;
+p10_ratio: ans4 / p10_safe_tans;
+is_p10_high: is(abs(p10_ratio - 10) < 1);
+is_p10_low: is(abs(p10_ratio - 0.1) < 0.01);
+is_p10_error: is_p10_high or is_p10_low;
+
+]]></text>
+      </feedbackvariables>
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>prereq_passed</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>1</truenextnode>
+        <trueanswernote>prt4-prereq-T</trueanswernote>
+        <truefeedback format="html"><text></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt4-prereq-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Please answer the prerequisite part correctly before attempting this part.]]></text></falsefeedback>
+      </node>
+      
+      <node>
+        <name>1</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans4</sans>
+        <tans>ta3</tans>
+        <testoptions>0.15</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>2</truenextnode>
+        <trueanswernote>prt4-1-T</trueanswernote>
+        <truefeedback format="html"><text></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>3</falsenextnode>
+        <falseanswernote>prt4-1-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Multiply the hourly good items by the number of hours.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>2</name>
+        <answertest>NumRelative</answertest>
+        <sans>ans4</sans>
+        <tans>ta3</tans>
+        <testoptions>0.05</testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt4-2-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Correct!]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0.5</falsescore>
+        <falsepenalty>0.1</falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt4-2-F</falseanswernote>
+        <falsefeedback format="html"><text><![CDATA[Close, but check your accuracy. Review your calculation steps.]]></text></falsefeedback>
+      </node>
+      <node>
+        <name>3</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>is_sign_flip</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt4-3-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Sign error: your answer is the negative of the expected value — check the sign convention.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>4</falsenextnode>
+        <falseanswernote>prt4-3-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+      <node>
+        <name>4</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>is_p10_error</sans>
+        <tans>true</tans>
+        <testoptions></testoptions>
+        <quiet>0</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>0.5</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt4-4-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Your answer appears to be off by a power of 10. Check your unit conversions or decimal placement.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt4-4-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+    </prt>
+    <prt>
+      <name>prt5</name>
+      <value>1.0000000</value>
+      <autosimplify>1</autosimplify>
+      
+      <node>
+        <name>0</name>
+        <answertest>AlgEquiv</answertest>
+        <sans>1</sans>
+        <tans>1</tans>
+        <testoptions></testoptions>
+        <quiet>1</quiet>
+        <truescoremode>=</truescoremode>
+        <truescore>1</truescore>
+        <truepenalty></truepenalty>
+        <truenextnode>-1</truenextnode>
+        <trueanswernote>prt5-0-T</trueanswernote>
+        <truefeedback format="html"><text><![CDATA[Thank you for showing your reasoning. Your working will be reviewed by your teacher.]]></text></truefeedback>
+        <falsescoremode>=</falsescoremode>
+        <falsescore>0</falsescore>
+        <falsepenalty></falsepenalty>
+        <falsenextnode>-1</falsenextnode>
+        <falseanswernote>prt5-0-F</falseanswernote>
+        <falsefeedback format="html"><text></text></falsefeedback>
+      </node>
+    </prt>
+    <deployedseed>12345</deployedseed>
+    <deployedseed>10101</deployedseed>
+    <deployedseed>10102</deployedseed>
+    <qtest>
+      <testcase>1</testcase>
+      <description>Model answer earns full marks.</description>
+      <testinput>
+        <name>ans1</name>
+        <value>ev(ta1, simp)</value>
+      </testinput>
+      <testinput>
+        <name>notes2</name>
+        <value>&quot;attempt&quot;</value>
+      </testinput>
+      <testinput>
+        <name>ans3</name>
+        <value>ev(ta2, simp)</value>
+      </testinput>
+      <testinput>
+        <name>ans4</name>
+        <value>ev(ta3, simp)</value>
+      </testinput>
+      <testinput>
+        <name>notes5</name>
+        <value>&quot;attempt&quot;</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-1-T</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt2</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt2-0-T</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt3</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt3-2-T</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt4</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt4-2-T</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt5</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt5-0-T</expectedanswernote>
+      </expected>
+    </qtest>
+    <qtest>
+      <testcase>2</testcase>
+      <description>Wrong answer lands on the diagnosed branch.</description>
+      <testinput>
+        <name>ans1</name>
+        <value>ev(-(ta1), simp)</value>
+      </testinput>
+      <testinput>
+        <name>notes2</name>
+        <value>&quot;attempt&quot;</value>
+      </testinput>
+      <testinput>
+        <name>ans3</name>
+        <value>ev(-(ta2), simp)</value>
+      </testinput>
+      <testinput>
+        <name>ans4</name>
+        <value>ev(-(ta3), simp)</value>
+      </testinput>
+      <testinput>
+        <name>notes5</name>
+        <value>&quot;attempt&quot;</value>
+      </testinput>
+      <expected>
+        <name>prt1</name>
+        <expectedscore>0.5000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt1-2-T</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt2</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt2-0-T</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt3</name>
+        <expectedscore>0.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt3-prereq-F</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt4</name>
+        <expectedscore>0.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt4-prereq-F</expectedanswernote>
+      </expected>
+      <expected>
+        <name>prt5</name>
+        <expectedscore>1.0000000</expectedscore>
+        <expectedpenalty/>
+        <expectedanswernote>prt5-0-T</expectedanswernote>
+      </expected>
+    </qtest>
+  </question>
+</quiz>
