@@ -3,6 +3,7 @@
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement } from '../xml-helpers.js';
 import { requireTeacherAnswer } from '../teacher-answer.js';
+import { resolveToleranceMode } from '../tolerance-mode.js';
 
 /**
  * Generates the PRT XML for a units answer part.
@@ -14,22 +15,29 @@ import { requireTeacherAnswer } from '../teacher-answer.js';
  *
  * @param {object} part - Part data with .answer, .grading, .feedback
  * @param {string} prtName - PRT identifier
+ * @param {object} [ctx] - Generation context { variables } (A11 tolerance mode)
  * @returns {string} XML string for the PRT body
  */
-export function generateUnitsPRT(part, prtName) {
+export function generateUnitsPRT(part, prtName, ctx) {
     const g = part.grading;
     const fb = part.feedback || {};
     const answer = part.answer;
     const teacherAnswer = requireTeacherAnswer(part);
     const hasSigFigs = g.checkSigFigs && g.sigFigs > 0;
+    // A11: house Rule 3 uses UnitsRelative when the input has units; falls
+    // back to UnitsAbsolute for legacy/absolute parts or a possibly-zero ta.
+    // No sign-flip node for units: the ratio maths on stackunits objects is
+    // CAS behaviour we cannot verify without a local CAS (D2 = no Docker).
+    const { useRelative } = resolveToleranceMode(part, ctx);
+    const tolTest = useRelative ? ANSWER_TESTS.UNITS_RELATIVE : ANSWER_TESTS.UNITS;
 
     let nodes = '';
 
-    // --- Node 0: UnitsAbsolute check (validates value + units) ---
+    // --- Node 0: units tolerance check (validates value + units) ---
     nodes += `
       <node>
         <name>0</name>
-        <answertest>${ANSWER_TESTS.UNITS}</answertest>
+        <answertest>${tolTest}</answertest>
         <sans>${answer}</sans>
         <tans>${teacherAnswer}</tans>
         <testoptions>${g.tightTol || 0.05}</testoptions>

@@ -139,10 +139,21 @@ inherit a checked base):
 |---|---|---|
 | A1 (+X2 JSON) | b20162c | 244/244 green; 14 template exports parse clean under PowerShell [xml]; only canonical answertests emitted; byte-stable roundtrip + legacy-heal pinned |
 | A2 | 7134c70 | 279/279 green; template invariant suite (no tans equals an input name, qv never writes an input name); legacy XML auto-migration pinned incl. notice + healed re-export; behavioural: 14 exports, 0 parse failures, 0 self-tans, 0 `tans_` |
-| A4 | (this commit) | 281/281 green; all 14 exports carry `<stackversion><text>2025040100</text></stackversion>` (read back via [xml] `.stackversion.text` — the same path the importer uses); algebraic emits strictsyntax=1 + insertstars=1; `2x` qtest pin = binding A5 rider |
-| A4 | pending | pending |
-| A3 | pending | pending |
-| A11 | pending | pending |
+| A4 | 2abaf30 | 281/281 green; all 14 exports carry `<stackversion><text>2025040100</text></stackversion>` (read back via [xml] `.stackversion.text` — the same path the importer uses); algebraic emits strictsyntax=1 + insertstars=1; `2x` qtest pin = binding A5 rider |
+| A3 | 16dc182 | 287/287 green; rider corpus (%pi / pi / 2*pi*f / pin / api / %e); projectile preview computes numbers; export carries `theta * %pi / 180`, no bare pi in qv |
+| A11 | (this commit) | 322/322 green (x3 runs — degeneracy sampling stable); behavioural: projectile = NumRelative + NumSigFigs + sign-flip, matrix_operations det = NumAbsolute fallback (degenerate zero), kinematics = UnitsRelative; new-shape roundtrip byte-stable; legacy absolute imports stay absolute on re-export |
+
+## End-to-end app verification (Playwright + Chromium, 2026-07-10)
+
+Vite dev server + chromium-1223, real UI flow: load projectile template ->
+Answer Variable field shows `ta1` (A2 UI repoint) -> Generate Sample Values ->
+no `[Calc Error]` / `[Preview N/A]` anywhere (A3) -> Export XML through the
+real download path -> downloaded file has wrapped stackversion (A4), no
+AT-prefixed answertests (A1), NumRelative + is_sign_flip (A11), no
+self-comparing tans (A2), `theta * %pi / 180` (A3). 10/10 checks PASS.
+One console error: `favicon.ico` 404 — PRE-EXISTING cosmetic, not from this
+track; flagged for the next agent (the Phase-3 walkthrough requires zero
+console errors — add a favicon or accept-and-log).
 
 ## Owner actions (running list)
 
@@ -153,3 +164,49 @@ inherit a checked base):
 3. Real-Moodle import of anything this track produces stays owner-verified
    (no harness covers the import path) — final pack comes from the next
    agent's A8/premortem phase.
+4. Templates' numerical/units gradings were RETUNED to house Rule 3
+   (relative 5% / within-15%) rather than blanket-flipping their old
+   absolute numbers to relative (which would have turned e.g. projectile's
+   tightTol 0.5 m into 50%). Review welcome (D-app-9 below).
+5. NOT pushed — 8 local commits ahead of origin/main (3 skills-track syncs
+   + 5 from this stage); pushing is owner-gated.
+
+## Additional autonomous decisions (this stage's execution)
+
+- D-app-9: template numerical/units gradings retuned to tolType 'relative',
+  tightTol 0.05, wideTol 0.15 (house numbers), NOT a literal flip of the old
+  absolute values; presets: engineering/physicsLab/conceptual relative,
+  exact stays absolute.
+- D-app-10: prerequisite gates on relative parts compare relative error
+  (`prereq_diff <= tol*abs(ta)`, <= so exact passes at ta=0); absolute parts
+  keep the absolute compare.
+- D-app-11: sign-flip decision is sticky across import (grading.signFlip set
+  by the parser) so re-exports preserve imported structure AND the
+  rand-sampled degeneracy check cannot flicker roundtrip byte-stability.
+- D-app-12: parser now starts detection-driven grading flags OFF
+  (checkSigFigs/checkPowerOf10) — fixes phantom sig-figs/p10 nodes appearing
+  on re-export of imports that never had them (found by the A1 byte-stable
+  roundtrip test).
+- D-app-13: per-item Playwright run consolidated into ONE end-to-end pass
+  after A11 covering all five items' UI surface (RAM-constrained box; each
+  item still had per-item [xml]-parse behavioural checks).
+
+## Handoff state for the next agent (A5, A6, A7, A10, A8-gate)
+
+- HEAD after this stage: see per-item table (A11 = last commit). `npm test`
+  baseline is now 322/322. Binding sequence remaining: A5 -> A6 -> A7 ->
+  A10 -> A8-gate; Phase 3 (teacher walkthrough) + Phase 4 (premortem +
+  docs/import-test-pack/) also remain per phase3-prompt-app.md.
+- A5 binding riders: `2x` implied-multiplication qtest on algebraic parts
+  (pins D4 insertstars=1); expected answernotes derived by WALKING the
+  generated node graph (now includes sign-flip node + 0.5 diagnostic scores
+  + degenerate-absolute fallback — do not hardcode `prtN-2-T` style strings);
+  seeds only when rand* present, distinctness via variable-parser.
+- A6 consumes src/core/stack-rules.json (X2) — do not re-declare rule data;
+  A3's lint lookbehind pattern is in variable-parser.js (`(?<!%)\bpi\b`).
+- A7: `.part-ans` field already repointed to teacherAnswer with the input
+  name in the tooltip; labels map still to build.
+- A10: interpolate part.teacherAnswer (NEVER part.answer) into questionnote.
+- Known pre-existing cosmetics: favicon.ico 404 (console error in walkthrough
+  scope); `src/public/test-status.json` path oddity (dev gate serves 200 —
+  verify reporter path if it ever 404s).

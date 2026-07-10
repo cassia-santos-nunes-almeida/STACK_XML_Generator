@@ -16,7 +16,7 @@ export const ENGINEERING_TEMPLATES = {
                 text: 'Energy (Joules):',
                 answer: 'ans1',
                 teacherAnswer: 'ta1',
-                grading: { tightTol: 0.05, wideTol: 0.20, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct! The energy stored is \\(E = \\frac{1}{2}LI^2\\).',
@@ -48,7 +48,7 @@ export const ENGINEERING_TEMPLATES = {
                 text: 'Calculate the current through the resistor (include units):',
                 answer: 'ans1',
                 teacherAnswer: 'ta1',
-                grading: { tightTol: 0.001, wideTol: 0.01, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct! Ohm\'s Law: \\(I = V/R\\).',
@@ -61,7 +61,7 @@ export const ENGINEERING_TEMPLATES = {
                 text: 'Calculate the power dissipated by the resistor (include units):',
                 answer: 'ans2',
                 teacherAnswer: 'ta2',
-                grading: { tightTol: 0.01, wideTol: 0.05, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct! Power: \\(P = V^2/R\\).',
@@ -90,7 +90,7 @@ export const ENGINEERING_TEMPLATES = {
                 text: 'Series connection (\\(\\Omega\\)):',
                 answer: 'ans1',
                 teacherAnswer: 'ta1',
-                grading: { tightTol: 0.01, wideTol: 0.1, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: { correct: 'Correct! Series: \\(R_{eq} = R_1 + R_2\\).' },
             },
@@ -100,7 +100,7 @@ export const ENGINEERING_TEMPLATES = {
                 text: 'Parallel connection (\\(\\Omega\\)):',
                 answer: 'ans2',
                 teacherAnswer: 'ta2',
-                grading: { tightTol: 0.05, wideTol: 0.2, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct! Parallel: \\(R_{eq} = \\frac{R_1 R_2}{R_1 + R_2}\\).',

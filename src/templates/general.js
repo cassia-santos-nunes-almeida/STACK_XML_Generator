@@ -423,7 +423,7 @@ feedback_msg: sconcat(
                 text: 'How many defective items are produced per hour?',
                 answer: 'ans1',
                 teacherAnswer: 'ta1',
-                grading: { tightTol: 0.01, wideTol: 0.5, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct!',
@@ -450,7 +450,7 @@ feedback_msg: sconcat(
                 answer: 'ans2',
                 teacherAnswer: 'ta2',
                 prerequisite: 1,
-                grading: { tightTol: 0.01, wideTol: 0.5, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct!',
@@ -464,7 +464,7 @@ feedback_msg: sconcat(
                 answer: 'ans3',
                 teacherAnswer: 'ta3',
                 prerequisite: 3,
-                grading: { tightTol: 0.1, wideTol: 1.0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
+                grading: { tolType: 'relative', tightTol: 0.05, wideTol: 0.15, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
                     correct: 'Correct!',

@@ -107,6 +107,44 @@ describe('Roundtrip: byte stability + legacy healing (A1)', () => {
     });
 });
 
+describe('Roundtrip: relative-tolerance house shape (A11)', () => {
+    const relData = {
+        ...numericalData,
+        name: 'Relative Roundtrip',
+        parts: [{
+            ...numericalData.parts[0],
+            grading: {
+                ...numericalData.parts[0].grading,
+                tolType: 'relative', wideTol: 0.15, checkPowerOf10: true,
+            },
+        }],
+    };
+
+    it('recovers tolType and the sticky signFlip decision', () => {
+        const result = roundtrip(relData);
+        expect(result.parts[0].grading.tolType).toBe('relative');
+        expect(result.parts[0].grading.signFlip).toBe(true);
+        expect(result.parts[0].grading.checkPowerOf10).toBe(true);
+    });
+
+    it('export -> import -> export is byte-stable for the new shape', () => {
+        const xml1 = generateStackXML(relData);
+        expect(xml1).toContain('NumRelative');
+        expect(xml1).toContain('is_sign_flip');
+        const xml2 = generateStackXML(parseStackXML(xml1));
+        expect(xml2).toBe(xml1);
+    });
+
+    it('legacy absolute import stays absolute on re-export (no silent regrade)', () => {
+        const absXml = generateStackXML(numericalData); // tolType absent -> absolute
+        const result = parseStackXML(absXml);
+        expect(result.parts[0].grading.tolType).toBe('absolute');
+        const xml2 = generateStackXML(result);
+        expect(xml2).toContain('NumAbsolute');
+        expect(xml2).not.toContain('NumRelative');
+    });
+});
+
 describe('Legacy import auto-migration (A2)', () => {
     function legacyXml() {
         // Reconstruct the pre-A2 shape: model answer lives in a variable

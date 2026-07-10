@@ -122,7 +122,15 @@ function buildPrereqFeedbackVars(prereqPart) {
             // A2: compare the prerequisite input against its teacher-answer
             // variable directly (the old tans_ alias hack is gone).
             const prereqTa = requireTeacherAnswer(prereqPart);
-            return `/* Prerequisite check: verify part (${String.fromCharCode(96 + prereqPart.id)}) answer */
+            const label = String.fromCharCode(96 + prereqPart.id);
+            if (prereqPart.grading?.tolType === 'relative') {
+                // A11: relative-tolerance parts gate on relative error
+                // (<= so an exact answer passes even when ta is 0).
+                return `/* Prerequisite check: verify part (${label}) answer */
+prereq_diff: abs(${answer} - ${prereqTa});
+prereq_passed: is(prereq_diff <= ${tol} * abs(${prereqTa}));`;
+            }
+            return `/* Prerequisite check: verify part (${label}) answer */
 prereq_diff: abs(${answer} - ${prereqTa});
 prereq_passed: is(prereq_diff < ${tol});`;
         }

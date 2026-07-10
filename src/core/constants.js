@@ -37,13 +37,16 @@ export const SCORE_MODES = {
     SUBTRACT: '-',
 };
 
-// Grading presets for quick configuration
+// Grading presets for quick configuration.
+// tolType 'relative' = house Rule 3 (NumRelative/UnitsRelative, 5% primary,
+// within-15% diagnostic tier); 'absolute' preserves fixed-value tolerances.
 export const GRADING_PRESETS = {
     engineering: {
         label: 'Engineering (Standard)',
-        description: 'Industry-standard tolerances, 3 significant figures, power-of-10 check',
+        description: 'Industry-standard tolerances (relative), 3 significant figures, power-of-10 check',
+        tolType: 'relative',
         tightTol: 0.05,
-        wideTol: 0.20,
+        wideTol: 0.15,
         checkSigFigs: true,
         sigFigs: 3,
         penalty: 0.1,
@@ -53,6 +56,7 @@ export const GRADING_PRESETS = {
     physicsLab: {
         label: 'Physics Lab (Strict)',
         description: 'Tight tolerances for experimental work, 4 significant figures',
+        tolType: 'relative',
         tightTol: 0.01,
         wideTol: 0.05,
         checkSigFigs: true,
@@ -64,6 +68,7 @@ export const GRADING_PRESETS = {
     conceptual: {
         label: 'Conceptual (Wide)',
         description: 'Wide margins for estimation and conceptual understanding',
+        tolType: 'relative',
         tightTol: 0.15,
         wideTol: 0.50,
         checkSigFigs: false,
@@ -75,6 +80,7 @@ export const GRADING_PRESETS = {
     exact: {
         label: 'Exact Match',
         description: 'No tolerance, answer must be exactly correct',
+        tolType: 'absolute',
         tightTol: 0,
         wideTol: 0,
         checkSigFigs: false,
@@ -85,10 +91,12 @@ export const GRADING_PRESETS = {
     },
 };
 
-// Default grading configuration for new parts
+// Default grading configuration for new parts (house Rule 3: relative 5%
+// primary + within-15% diagnostic tier)
 export const DEFAULT_GRADING = {
+    tolType: 'relative',
     tightTol: 0.05,
-    wideTol: 0.20,
+    wideTol: 0.15,
     checkSigFigs: true,
     sigFigs: 3,
     penalty: 0.1,
@@ -103,6 +111,7 @@ export const DEFAULT_FEEDBACK = {
     closeButInaccurate: 'Close, but check your accuracy. Review your calculation steps.',
     wrongSigFigs: 'Your answer has the wrong number of significant figures. Check the precision required.',
     powerOf10Error: 'Your answer appears to be off by a power of 10. Check your unit conversions or decimal placement.',
+    signFlip: 'Sign error: your answer is the negative of the expected value — check the sign convention.',
     wrongUnits: 'Check the units of your answer.',
     partialCredit: 'Partially correct. You are on the right track.',
     notesReceived: 'Thank you for showing your reasoning. Your working will be reviewed by your teacher.',

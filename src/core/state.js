@@ -372,6 +372,11 @@ export default class StateManager {
 
         // Normalize parts
         data.parts = data.parts.map((p, idx) => {
+            // A11: a legacy file (no tolType) was authored with absolute
+            // tolerances — preserve its grading semantics instead of letting
+            // the new relative default silently regrade it. Templates and
+            // new parts carry tolType explicitly.
+            const hadTolType = !!(p.grading && p.grading.tolType !== undefined);
             if (!p.grading) {
                 p.grading = { ...DEFAULT_GRADING };
             } else {
@@ -380,6 +385,7 @@ export default class StateManager {
                     if (p.grading[key] === undefined) p.grading[key] = val;
                 }
             }
+            if (!hadTolType) p.grading.tolType = 'absolute';
 
             if (!p.options) p.options = [];
             if (!p.graphCode) p.graphCode = '';

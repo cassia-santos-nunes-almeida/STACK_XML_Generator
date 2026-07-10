@@ -16,18 +16,19 @@ import { generatePrerequisiteNode } from './prerequisite-node.js';
  * @param {object} part - Part data object
  * @param {number} partIndex - 0-based index of the part
  * @param {Array} allParts - All parts (needed for prerequisite checking)
+ * @param {object} [ctx] - Generation context { variables } (A11 tolerance mode)
  * @returns {string} Complete <prt> XML element
  */
-export function generatePRT(part, partIndex, allParts) {
+export function generatePRT(part, partIndex, allParts, ctx) {
     const prtName = `prt${part.id || partIndex + 1}`;
 
     let prtBody = '';
     switch (part.type) {
         case INPUT_TYPES.NUMERICAL:
-            prtBody = generateNumericalPRT(part, prtName);
+            prtBody = generateNumericalPRT(part, prtName, ctx);
             break;
         case INPUT_TYPES.UNITS:
-            prtBody = generateUnitsPRT(part, prtName);
+            prtBody = generateUnitsPRT(part, prtName, ctx);
             break;
         case INPUT_TYPES.ALGEBRAIC:
             prtBody = generateAlgebraicPRT(part, prtName);

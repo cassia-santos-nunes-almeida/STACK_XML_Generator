@@ -24,6 +24,7 @@ const TOLERANCE_TESTS = new Set([
     'UnitsStrictRelative',
 ]);
 const SIGFIGS_TESTS = new Set(['NumSigFigs', 'ATNumSigFigs']);
+const RELATIVE_TESTS = new Set(['NumRelative', 'ATNumRelative', 'UnitsRelative', 'UnitsStrictRelative']);
 
 /**
  * Parses a STACK question XML string into an editor state object.
@@ -196,7 +197,10 @@ export function parseStackXML(xmlString) {
             // them on when the corresponding node/fv is actually present.
             // (Spreading the raw defaults used to re-export phantom
             // sig-figs / power-of-10 nodes that the imported XML never had.)
-            grading: { ...DEFAULT_GRADING, checkSigFigs: false, checkPowerOf10: false },
+            // tolType starts 'absolute' — an import PRESERVES the file's
+            // grading semantics (A11); analyzePRT flips to 'relative' only
+            // when the XML actually carries a relative answertest.
+            grading: { ...DEFAULT_GRADING, checkSigFigs: false, checkPowerOf10: false, tolType: 'absolute' },
             graphCode: partTexts[name + '_graphCode'] || '',
             gradingCode: '',
             feedback: {},
@@ -270,6 +274,12 @@ function analyzePRT(doc, part, name, type) {
         part.grading.checkPowerOf10 = true;
     }
 
+    // Sign-flip diagnostic detection (A11): sticky so a re-export preserves
+    // the imported structure (conversion happens only on re-generation).
+    if (part.type === INPUT_TYPES.NUMERICAL || part.type === INPUT_TYPES.UNITS) {
+        part.grading.signFlip = fbVars.includes('is_sign_flip');
+    }
+
     // Prerequisite detection
     if (fbVars.includes('prereq_passed')) {
         const prereqMatch = fbVars.match(/Prerequisite check: verify part \(([a-z])\)/);
@@ -303,6 +313,8 @@ function analyzePRT(doc, part, name, type) {
 
         if (part.type === INPUT_TYPES.NUMERICAL || part.type === INPUT_TYPES.UNITS) {
             if (TOLERANCE_TESTS.has(testType)) {
+                // A11: preserve the imported file's tolerance semantics
+                part.grading.tolType = RELATIVE_TESTS.has(testType) ? 'relative' : 'absolute';
                 if (nodeId === '0') {
                     part.grading.wideTol = parseFloat(testOpt) || 0.2;
                     if (falseFb) part.feedback.incorrect = falseFb;

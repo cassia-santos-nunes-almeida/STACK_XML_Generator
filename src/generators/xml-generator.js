@@ -48,10 +48,13 @@ export function generateStackXML(data) {
         xml += generateInput(p);
     });
 
-    // 6. PRT elements (one per part — grading logic)
+    // 6. PRT elements (one per part — grading logic). The context lets
+    // numerical/units PRTs evaluate the teacher answer across the rand
+    // space (A11 degenerate-zero fallback).
     const allParts = data.parts || [];
+    const ctx = { variables: data.variables || [] };
     allParts.forEach((p, idx) => {
-        xml += generatePRT(p, idx, allParts);
+        xml += generatePRT(p, idx, allParts, ctx);
     });
 
     // 7. Close STACK question
