@@ -2,7 +2,7 @@
 // The prerequisite node checks if the required prior part was answered correctly
 // before allowing the current part's grading to proceed
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
-import { feedbackElement } from '../xml-helpers.js';
+import { feedbackElement, cdataRaw } from '../xml-helpers.js';
 import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
@@ -30,25 +30,23 @@ export function generatePrerequisiteNode(part, prereqPart, prtName, prtBody) {
     // Build feedbackvariables for prerequisite checking
     const prereqFeedbackVars = buildPrereqFeedbackVars(prereqPart);
 
-    // Extract any existing feedbackvariables from prtBody and merge
-    const existingFvMatch = shiftedBody.match(/<feedbackvariables>\s*<text><!\[CDATA\[([\s\S]*?)\]\]><\/text>\s*<\/feedbackvariables>/);
+    // Extract any existing feedbackvariables from prtBody and merge.
+    // Match the whole <text> payload (not up to the first "]]>") so
+    // cdata()-split content — grading code containing "]]>" — survives the
+    // merge intact (premortem F1).
+    const existingFvMatch = shiftedBody.match(/<feedbackvariables>\s*<text>([\s\S]*?)<\/text>\s*<\/feedbackvariables>/);
     let mergedFeedbackVars;
     if (existingFvMatch) {
         // Remove existing feedbackvariables from shifted body
         shiftedBody = shiftedBody.replace(existingFvMatch[0], '');
         mergedFeedbackVars = `
       <feedbackvariables>
-        <text><![CDATA[
-${prereqFeedbackVars}
-${existingFvMatch[1]}
-]]></text>
+        <text>${cdataRaw(`\n${prereqFeedbackVars}\n${cdataInner(existingFvMatch[1])}\n`)}</text>
       </feedbackvariables>`;
     } else {
         mergedFeedbackVars = `
       <feedbackvariables>
-        <text><![CDATA[
-${prereqFeedbackVars}
-]]></text>
+        <text>${cdataRaw(`\n${prereqFeedbackVars}\n`)}</text>
       </feedbackvariables>`;
     }
 
@@ -76,6 +74,17 @@ ${prereqFeedbackVars}
       </node>`;
 
     return mergedFeedbackVars + gateNode + shiftedBody;
+}
+
+/**
+ * Recovers the raw text content from an emitted <text> payload: strips the
+ * CDATA wrapper and reverses the cdata() "]]>"-split so re-wrapping with
+ * cdataRaw() cannot corrupt or truncate the content.
+ */
+function cdataInner(wrapped) {
+    const m = wrapped.match(/^<!\[CDATA\[([\s\S]*)\]\]>$/);
+    if (!m) return wrapped;
+    return m[1].replace(/\]\]\]\]><!\[CDATA\[>/g, ']]>');
 }
 
 /**

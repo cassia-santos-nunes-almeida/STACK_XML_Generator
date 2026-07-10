@@ -1,6 +1,6 @@
 // Generates the question-level XML: name, questiontext, generalfeedback, hints
 // FIXES BUG 5: No longer duplicates images inside CDATA
-import { escapeXml, convertMathDelimiters } from './xml-helpers.js';
+import { escapeXml, cdataRaw, convertMathDelimiters } from './xml-helpers.js';
 
 /**
  * Generates the question header XML including name, text, images, and feedback.
@@ -67,7 +67,7 @@ ${p.graphCode || ''}
 
     const hints = hintTexts.map(h => `
     <hint format="html">
-      <text><![CDATA[${convertMathDelimiters(h)}]]></text>
+      <text>${cdataRaw(convertMathDelimiters(h))}</text>
     </hint>`).join('');
 
     return `<?xml version="1.0" encoding="UTF-8"?>
@@ -75,14 +75,14 @@ ${p.graphCode || ''}
   <question type="stack">
     <name><text>${escapeXml(data.name || 'Untitled Question')}</text></name>
     <questiontext format="html">
-      <text><![CDATA[${convertMathDelimiters(data.questionText || '')}
+      <text>${cdataRaw(`${convertMathDelimiters(data.questionText || '')}
 
-${partsHtml}]]></text>
+${partsHtml}`)}</text>
 ${imageFiles}
     </questiontext>
 
     <generalfeedback format="html">
-      <text><![CDATA[${convertMathDelimiters(generalFeedback)}]]></text>
+      <text>${cdataRaw(convertMathDelimiters(generalFeedback))}</text>
     </generalfeedback>
     <defaultgrade>${data.defaultGrade ?? (parts.length || 1)}</defaultgrade>
     <penalty>${data.penalty ?? 0.1}</penalty>

@@ -4,7 +4,7 @@
 // Absolute tolerances remain supported (tolType 'absolute' / legacy imports /
 // degenerate-zero fallback).
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
-import { feedbackElement } from '../xml-helpers.js';
+import { feedbackElement, cdataRaw } from '../xml-helpers.js';
 import { requireTeacherAnswer } from '../teacher-answer.js';
 import { resolveToleranceMode } from '../tolerance-mode.js';
 
@@ -69,9 +69,7 @@ export function generateNumericalPRT(part, prtName, ctx) {
     }
     const feedbackVars = fvLines.length > 0 ? `
       <feedbackvariables>
-        <text><![CDATA[
-${fvLines.join('\n')}
-]]></text>
+        <text>${cdataRaw(`\n${fvLines.join('\n')}\n`)}</text>
       </feedbackvariables>` : '';
 
     let nodes = '';

@@ -7,6 +7,7 @@ import { generatePRT } from './prts/prt-factory.js';
 import { generateCompanionNotesQuestion } from './companion-question.js';
 import { generateDeployedSeeds, generateQuestionTests } from './qtest-generator.js';
 import { questionNoteContent } from './question-note.js';
+import { cdataRaw } from './xml-helpers.js';
 import STACK_RULES from '../core/stack-rules.json' with { type: 'json' };
 
 /**
@@ -32,14 +33,14 @@ export function generateStackXML(data) {
     // 3. Specific feedback (empty by default, STACK uses PRT feedback)
     xml += `
     <specificfeedback format="html">
-      <text><![CDATA[${(data.parts || []).map(p => `[[feedback:prt${p.id}]]`).join('\n')}]]></text>
+      <text>${cdataRaw((data.parts || []).map(p => `[[feedback:prt${p.id}]]`).join('\n'))}</text>
     </specificfeedback>`;
 
     // 4. Question note (for variant tracking) — content comes from the ONE
     // builder the A6 completeness check also reads (question-note.js).
     xml += `
     <questionnote format="html">
-      <text><![CDATA[${questionNoteContent(data)}]]></text>
+      <text>${cdataRaw(questionNoteContent(data))}</text>
     </questionnote>`;
 
     // 5. Input elements (one per part)

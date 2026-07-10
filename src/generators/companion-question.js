@@ -1,5 +1,6 @@
 // Generates a companion Moodle Essay question for handwritten working uploads
 // Field names and structure verified against real Moodle 4.5 Essay XML export
+import { cdataRaw } from './xml-helpers.js';
 
 /**
  * Returns the default student instruction text for the companion question.
@@ -77,7 +78,7 @@ export function generateCompanionNotesQuestion(parentName, parentTitle, gradeVal
       <text>${escapeXml(name)}</text>
     </name>
     <questiontext format="html">
-      <text><![CDATA[${text}]]></text>
+      <text>${cdataRaw(text)}</text>
     </questiontext>
     <generalfeedback format="html">
       <text></text>
@@ -96,7 +97,7 @@ export function generateCompanionNotesQuestion(parentName, parentTitle, gradeVal
     <maxbytes>0</maxbytes>
     <filetypeslist>.pdf,.jpg,.jpeg,.png</filetypeslist>
     <graderinfo format="html">
-      <text><![CDATA[${graderInfoContent(parentName)}]]></text>
+      <text>${cdataRaw(graderInfoContent(parentName))}</text>
     </graderinfo>
     <responsetemplate format="html">
       <text></text>

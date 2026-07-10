@@ -4,6 +4,7 @@ import UIManager from './ui-manager.js';
 import { generateStackXML } from '../generators/xml-generator.js';
 import { TEMPLATES } from '../templates/index.js';
 import { validateQuestionData } from '../core/validators.js';
+import { xmlWellFormedError } from '../generators/xml-helpers.js';
 import { escapeHtml } from './escape-utils.js';
 import { LABELS, applyStaticLabels } from './labels.js';
 
@@ -163,6 +164,19 @@ function initApp() {
         }
 
         const xml = generateStackXML(state.data);
+
+        // Final gate (premortem F1): never download a file Moodle will
+        // reject — re-parse the generated string before offering it.
+        const parseErr = xmlWellFormedError(xml);
+        if (parseErr) {
+            showNotification(
+                '[E-XML-01] The generated file is not valid XML and cannot be imported into Moodle — nothing was downloaded. ' +
+                'This is a bug in this tool; please report it with your question content. Details: ' + parseErr,
+                'error'
+            );
+            return;
+        }
+
         const baseName = state.data.name || 'question';
         const suffix = state.data.examMode ? '_with_notes' : '';
         downloadFile(xml, baseName + suffix + '.xml', 'application/xml');

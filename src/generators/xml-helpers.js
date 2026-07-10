@@ -27,6 +27,29 @@ export function cdata(content) {
 }
 
 /**
+ * Like cdata(), but always emits the CDATA wrapper — even for empty
+ * content. Drop-in replacement for template sites that used to write
+ * <![CDATA[...]]> literally (keeps their output byte-identical while
+ * making ]]> in teacher text safe — premortem F1).
+ */
+export function cdataRaw(content) {
+    const str = String(content ?? '');
+    return `<![CDATA[${str.replace(/\]\]>/g, ']]]]><![CDATA[>')}]]>`;
+}
+
+/**
+ * Final well-formedness gate for a generated XML string (premortem F1).
+ * Returns a short error description, or null when the XML parses clean
+ * (or when no DOMParser exists in this environment — browser/jsdom only).
+ */
+export function xmlWellFormedError(xmlString) {
+    if (typeof DOMParser === 'undefined') return null;
+    const doc = new DOMParser().parseFromString(xmlString, 'text/xml');
+    const err = doc.querySelector('parsererror');
+    return err ? err.textContent.replace(/\s+/g, ' ').trim().substring(0, 200) : null;
+}
+
+/**
  * Converts LaTeX $ delimiters to \( \) for STACK compatibility.
  * STACK uses \( \) for inline math, not $ $.
  */
