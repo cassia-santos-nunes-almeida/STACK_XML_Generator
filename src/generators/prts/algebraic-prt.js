@@ -2,6 +2,7 @@
 // Uses AlgEquiv for symbolic equivalence checking
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement } from '../xml-helpers.js';
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates the PRT XML for an algebraic (symbolic) answer part.
@@ -15,13 +16,14 @@ import { feedbackElement } from '../xml-helpers.js';
  */
 export function generateAlgebraicPRT(part, prtName) {
     const fb = part.feedback || {};
+    const teacherAnswer = requireTeacherAnswer(part);
 
     return `
       <node>
         <name>0</name>
         <answertest>${ANSWER_TESTS.ALG_EQUIV}</answertest>
         <sans>${part.answer}</sans>
-        <tans>${part.answer}</tans>
+        <tans>${teacherAnswer}</tans>
         <testoptions></testoptions>
         <quiet>0</quiet>
         <truescoremode>${SCORE_MODES.SET}</truescoremode>

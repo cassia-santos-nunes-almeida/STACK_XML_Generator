@@ -1,5 +1,6 @@
 // Input generator for JSXGraph interactive graph answer type
 // The input type is set to 'algebraic' (hidden) — the graph JS code writes to it
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates <input> XML for a JSXGraph interactive answer.
@@ -9,11 +10,12 @@
  * @returns {string} XML string
  */
 export function generateJSXGraphInput(part) {
+    const teacherAnswer = requireTeacherAnswer(part);
     return `
     <input>
       <name>${part.answer}</name>
       <type>algebraic</type>
-      <tans>${part.answer}</tans>
+      <tans>${teacherAnswer}</tans>
       <boxsize>15</boxsize>
       <strictsyntax>0</strictsyntax>
       <insertstars>0</insertstars>

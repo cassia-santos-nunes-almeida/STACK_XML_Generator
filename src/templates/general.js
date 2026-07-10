@@ -54,7 +54,7 @@ export const GENERAL_TEMPLATES = {
             { name: 'p3', type: 'algebraic', value: '[t3, -50]' },
             { name: 'p4', type: 'algebraic', value: '[t4, 0]' },
             { name: 'correct_points', type: 'algebraic', value: '[p0, p1, p2, p3, p4]' },
-            { name: 'ans1', type: 'algebraic', value: 'correct_points' },
+            { name: 'ta1', type: 'algebraic', value: 'correct_points' },
         ],
         parts: [
             {
@@ -62,6 +62,7 @@ export const GENERAL_TEMPLATES = {
                 type: 'jsxgraph',
                 text: 'Place 5 points on the graph:',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [],
                 graphCode: `var board = JXG.JSXGraph.initBoard(divid, {
@@ -251,7 +252,7 @@ feedback_msg: sconcat(
             { name: 'y4', type: 'rand', value: 'rand(5)+2' },
             { name: 'y5', type: 'rand', value: 'rand(3)' },
             { name: 'expected_y', type: 'algebraic', value: '[y1, y2, y3, y4, y5]' },
-            { name: 'ans1', type: 'algebraic', value: 'expected_y' },
+            { name: 'ta1', type: 'algebraic', value: 'expected_y' },
         ],
         parts: [
             {
@@ -259,6 +260,7 @@ feedback_msg: sconcat(
                 type: 'jsxgraph',
                 text: 'Place 5 control points on the graph at the x-values given above:',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [],
                 graphPreset: 'functionSketch',
@@ -407,11 +409,11 @@ feedback_msg: sconcat(
             { name: 'n', type: 'rand', value: 'rand(50)+50' },
             { name: 'd', type: 'rand', value: 'rand(8)+2' },
             { name: 'defective', type: 'calc', value: 'n * d / 100' },
-            { name: 'ans1', type: 'algebraic', value: 'n * d / 100' },
+            { name: 'ta1', type: 'algebraic', value: 'n * d / 100' },
             { name: 'good', type: 'calc', value: 'n - defective' },
-            { name: 'ans2', type: 'algebraic', value: 'n - n * d / 100' },
+            { name: 'ta2', type: 'algebraic', value: 'n - n * d / 100' },
             { name: 'hours', type: 'rand', value: 'rand(6)+2' },
-            { name: 'ans3', type: 'algebraic', value: '(n - n * d / 100) * hours' },
+            { name: 'ta3', type: 'algebraic', value: '(n - n * d / 100) * hours' },
             { name: 'total_good', type: 'calc', value: 'good * hours' },
         ],
         parts: [
@@ -420,6 +422,7 @@ feedback_msg: sconcat(
                 type: 'numerical',
                 text: 'How many defective items are produced per hour?',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0.01, wideTol: 0.5, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
@@ -445,6 +448,7 @@ feedback_msg: sconcat(
                 type: 'numerical',
                 text: 'How many good (non-defective) items are produced per hour?',
                 answer: 'ans2',
+                teacherAnswer: 'ta2',
                 prerequisite: 1,
                 grading: { tightTol: 0.01, wideTol: 0.5, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
@@ -458,6 +462,7 @@ feedback_msg: sconcat(
                 type: 'numerical',
                 text: 'If the factory runs for {@hours@} hours, how many good items are produced in total?',
                 answer: 'ans3',
+                teacherAnswer: 'ta3',
                 prerequisite: 3,
                 grading: { tightTol: 0.1, wideTol: 1.0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
@@ -496,7 +501,7 @@ feedback_msg: sconcat(
             { name: 'vx', type: 'rand', value: 'rand(7)-3' },
             { name: 'vy', type: 'rand', value: 'rand(7)-3' },
             { name: 'expected_vector', type: 'algebraic', value: '[vx, vy]' },
-            { name: 'ans1', type: 'algebraic', value: '[0, 0, vx, vy]' },
+            { name: 'ta1', type: 'algebraic', value: '[0, 0, vx, vy]' },
         ],
         parts: [
             {
@@ -504,6 +509,7 @@ feedback_msg: sconcat(
                 type: 'jsxgraph',
                 text: 'Drag the points to draw the vector with the correct components:',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [],
                 graphPreset: 'vectorDraw',

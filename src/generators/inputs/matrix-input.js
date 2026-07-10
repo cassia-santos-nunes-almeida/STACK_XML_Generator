@@ -1,4 +1,5 @@
 // Input generator for matrix answer type
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates <input> XML for a matrix answer.
@@ -6,12 +7,13 @@
  * @returns {string} XML string
  */
 export function generateMatrixInput(part) {
+    const teacherAnswer = requireTeacherAnswer(part);
     const boxsize = part.matrixBoxSize || 5;
     return `
     <input>
       <name>${part.answer}</name>
       <type>matrix</type>
-      <tans>${part.answer}</tans>
+      <tans>${teacherAnswer}</tans>
       <boxsize>${boxsize}</boxsize>
       <strictsyntax>1</strictsyntax>
       <insertstars>0</insertstars>

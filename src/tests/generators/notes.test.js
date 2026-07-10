@@ -28,10 +28,10 @@ describe('Notes Input Generator', () => {
         expect(xml).toContain('<type>notes</type>');
     });
 
-    it('uses answer variable for name and tans', () => {
+    it('uses input name for name and auto placeholder variable for tans (A2)', () => {
         const xml = generateNotesInput(notesPart);
         expect(xml).toContain('<name>ans2</name>');
-        expect(xml).toContain('<tans>ans2</tans>');
+        expect(xml).toContain('<tans>ta_ans2</tans>');
     });
 
     it('disables validation display', () => {
@@ -109,11 +109,11 @@ describe('Notes in Full XML Generation', () => {
         questionText: 'Solve the problem and explain your approach.',
         variables: [
             { name: 'a', type: 'rand', value: 'rand(10)+1' },
-            { name: 'ans1', type: 'calc', value: 'a * 2' },
+            { name: 'ta1', type: 'calc', value: 'a * 2' },
         ],
         parts: [
             {
-                id: 1, type: 'numerical', text: 'Calculate:', answer: 'ans1',
+                id: 1, type: 'numerical', text: 'Calculate:', answer: 'ans1', teacherAnswer: 'ta1',
                 grading: { tightTol: 0.05, wideTol: 0.2, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '', feedback: {},
                 prerequisite: null, notesAutoCredit: true, notesRequireImage: false, notesBoxSize: 6, notesSyntaxHint: '',
@@ -133,9 +133,11 @@ describe('Notes in Full XML Generation', () => {
         expect(xml).toContain('<type>notes</type>');
     });
 
-    it('generates placeholder answer variable for notes part', () => {
+    it('generates placeholder teacher-answer variable for notes part (A2)', () => {
         const xml = generateStackXML(fullData);
-        expect(xml).toContain('ans2: "Your reasoning here"');
+        expect(xml).toContain('ta_ans2: "Your reasoning here"');
+        // The input name itself must never be written in questionvariables
+        expect(xml).not.toMatch(/^\s*ans2\s*:/m);
     });
 
     it('includes image upload instruction when notesRequireImage is true', () => {

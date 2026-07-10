@@ -7,7 +7,7 @@ export const MATHS_TEMPLATES = {
         variables: [
             { name: 'a', type: 'rand', value: 'rand(9)+1' },
             { name: 'b', type: 'rand', value: 'rand(9)+1' },
-            { name: 'ans1', type: 'algebraic', value: 'expand((x+a)*(x-b))' },
+            { name: 'ta1', type: 'algebraic', value: 'expand((x+a)*(x-b))' },
         ],
         parts: [
             {
@@ -15,6 +15,7 @@ export const MATHS_TEMPLATES = {
                 type: 'algebraic',
                 text: 'Expanded form:',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: { correct: 'Correct! The expansion is complete.', incorrect: 'Use FOIL or distributive property to expand.' },
@@ -31,7 +32,7 @@ export const MATHS_TEMPLATES = {
         variables: [
             { name: 'k', type: 'rand', value: 'rand(4)+1' },
             { name: 'c', type: 'rand', value: 'rand(10)' },
-            { name: 'ans1', type: 'algebraic', value: 'integrate(3*x^2 + c, x, 0, k)' },
+            { name: 'ta1', type: 'algebraic', value: 'integrate(3*x^2 + c, x, 0, k)' },
         ],
         parts: [
             {
@@ -39,12 +40,13 @@ export const MATHS_TEMPLATES = {
                 type: 'numerical',
                 text: 'Value:',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0.01, wideTol: 0.05, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: { correct: 'Correct!', incorrect: 'Remember to integrate term by term and evaluate at the limits.' },
             },
         ],
-        generalFeedback: '\\(\\int_0^{{@k@}} (3x^2 + {@c@})\\,dx = [x^3 + {@c@}x]_0^{{@k@}} = {@k@}^3 + {@c@} \\cdot {@k@} = {@ans1@}\\)',
+        generalFeedback: '\\(\\int_0^{{@k@}} (3x^2 + {@c@})\\,dx = [x^3 + {@c@}x]_0^{{@k@}} = {@k@}^3 + {@c@} \\cdot {@k@} = {@ta1@}\\)',
         hints: ['The antiderivative of 3x^2 is x^3, and the antiderivative of a constant c is cx.'],
         images: [],
     },
@@ -56,7 +58,7 @@ export const MATHS_TEMPLATES = {
             { name: 'a', type: 'rand', value: 'rand(5)+1' },
             { name: 'b', type: 'rand', value: 'rand(8)+1' },
             { name: 'y0', type: 'rand', value: 'rand(5)' },
-            { name: 'ans1', type: 'algebraic', value: 'a*x^2/2 + b*x + y0' },
+            { name: 'ta1', type: 'algebraic', value: 'a*x^2/2 + b*x + y0' },
         ],
         parts: [
             {
@@ -64,6 +66,7 @@ export const MATHS_TEMPLATES = {
                 type: 'algebraic',
                 text: 'Find \\(y(x)\\):',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
@@ -91,10 +94,10 @@ export const MATHS_TEMPLATES = {
             { name: 'b22', type: 'rand', value: 'rand(5)+1' },
             { name: 'A', type: 'algebraic', value: 'matrix([a11, a12], [a21, a22])' },
             { name: 'B', type: 'algebraic', value: 'matrix([b11, b12], [b21, b22])' },
-            { name: 'ans1', type: 'algebraic', value: 'A + B' },
-            { name: 'ans2', type: 'algebraic', value: 'A . B' },
+            { name: 'ta1', type: 'algebraic', value: 'A + B' },
+            { name: 'ta2', type: 'algebraic', value: 'A . B' },
             { name: 'det_val', type: 'calc', value: 'a11 * a22 - a12 * a21' },
-            { name: 'ans3', type: 'algebraic', value: 'determinant(A)' },
+            { name: 'ta3', type: 'algebraic', value: 'determinant(A)' },
         ],
         parts: [
             {
@@ -102,6 +105,7 @@ export const MATHS_TEMPLATES = {
                 type: 'matrix',
                 text: 'Calculate \\(A + B\\):',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: { correct: 'Correct! Add corresponding elements.', incorrect: 'Add element by element: (A+B)_{ij} = A_{ij} + B_{ij}.' },
@@ -111,6 +115,7 @@ export const MATHS_TEMPLATES = {
                 type: 'matrix',
                 text: 'Calculate \\(A \\cdot B\\) (matrix product):',
                 answer: 'ans2',
+                teacherAnswer: 'ta2',
                 grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: { correct: 'Correct!', incorrect: 'Row of A times column of B: (AB)_{ij} = sum of A_{ik} * B_{kj}.' },
@@ -120,6 +125,7 @@ export const MATHS_TEMPLATES = {
                 type: 'numerical',
                 text: 'Calculate \\(\\det(A)\\):',
                 answer: 'ans3',
+                teacherAnswer: 'ta3',
                 grading: { tightTol: 0.01, wideTol: 0.1, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: { correct: 'Correct!', incorrect: 'For a 2x2 matrix: det = a11*a22 - a12*a21.' },

@@ -184,7 +184,21 @@ export function validateQuestionData(data) {
         const label = String.fromCharCode(97 + idx);
 
         if (!part.answer || !part.answer.trim()) {
-            issues.push({ level: 'error', message: `Part (${label}): Answer variable is required.` });
+            issues.push({ level: 'error', message: `Part (${label}): Answer input name is missing.` });
+        }
+
+        // A2: gradeable parts must name a teacher-answer variable distinct
+        // from the student input name (sans === tans marks anything correct).
+        const needsTeacherAnswer = ['numerical', 'algebraic', 'units', 'matrix', 'string', 'jsxgraph'];
+        if (needsTeacherAnswer.includes(part.type)) {
+            const ta = (part.teacherAnswer || '').trim();
+            if (!ta) {
+                issues.push({ level: 'error', message: `Part (${label}): Answer variable is required — choose the variable that holds the correct answer.` });
+            } else if (ta === part.answer) {
+                issues.push({ level: 'error', message: `Part (${label}): The answer variable must be different from the student input name "${part.answer}".` });
+            } else if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(ta) && !(data.variables || []).some(v => v.name === ta)) {
+                issues.push({ level: 'warning', message: `Part (${label}): Answer variable "${ta}" is not defined in the Variables section.` });
+            }
         }
 
         if (part.type === 'radio') {
@@ -237,10 +251,25 @@ export function validateQuestionData(data) {
     });
 
     // Check variable expressions
+    const inputNames = new Set((data.parts || []).map(p => p.answer).filter(Boolean));
     (data.variables || []).forEach(v => {
         const nameErr = validateVariableName(v.name);
         if (nameErr) {
             issues.push({ level: 'error', message: `Variable "${v.name}": ${nameErr}` });
+        }
+        // A2: input names are a reserved namespace — a variable named like a
+        // student input silently breaks grading (STACK forbids writing to
+        // input names; the edit form blocks the next save after import).
+        if (inputNames.has(v.name)) {
+            issues.push({
+                level: 'error',
+                message: `Variable "${v.name}" has the same name as a student answer box — rename it (for example "ta_${v.name}"). Answer-box names are reserved.`,
+            });
+        } else if (/^ans\d+$/.test(v.name)) {
+            issues.push({
+                level: 'error',
+                message: `Variable "${v.name}": names like "ans1", "ans2" are reserved for student answer boxes. Use a different name (for example "ta${v.name.slice(3)}").`,
+            });
         }
         const exprErr = validateMaximaExpression(v.value);
         if (exprErr) {

@@ -4,6 +4,7 @@ import { generateUnitsPRT } from '../../generators/prts/units-prt.js';
 describe('Units PRT Generator (BUG 2 Fix)', () => {
     const basePart = {
         answer: 'ans1',
+        teacherAnswer: 'ta1',
         grading: {
             tightTol: 0.05,
             wideTol: 0.1,

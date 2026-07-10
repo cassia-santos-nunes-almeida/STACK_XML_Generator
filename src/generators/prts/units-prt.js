@@ -2,6 +2,7 @@
 // Uses UnitsAbsolute answer test which validates both numeric value AND units
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement } from '../xml-helpers.js';
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates the PRT XML for a units answer part.
@@ -19,6 +20,7 @@ export function generateUnitsPRT(part, prtName) {
     const g = part.grading;
     const fb = part.feedback || {};
     const answer = part.answer;
+    const teacherAnswer = requireTeacherAnswer(part);
     const hasSigFigs = g.checkSigFigs && g.sigFigs > 0;
 
     let nodes = '';
@@ -29,7 +31,7 @@ export function generateUnitsPRT(part, prtName) {
         <name>0</name>
         <answertest>${ANSWER_TESTS.UNITS}</answertest>
         <sans>${answer}</sans>
-        <tans>${answer}</tans>
+        <tans>${teacherAnswer}</tans>
         <testoptions>${g.tightTol || 0.05}</testoptions>
         <quiet>0</quiet>
         <truescoremode>${SCORE_MODES.SET}</truescoremode>
@@ -53,7 +55,7 @@ export function generateUnitsPRT(part, prtName) {
         <name>1</name>
         <answertest>${ANSWER_TESTS.NUM_SIG_FIGS}</answertest>
         <sans>${answer}</sans>
-        <tans>${answer}</tans>
+        <tans>${teacherAnswer}</tans>
         <testoptions>${g.sigFigs}</testoptions>
         <quiet>0</quiet>
         <truescoremode>${SCORE_MODES.ADD}</truescoremode>

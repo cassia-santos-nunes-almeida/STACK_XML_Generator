@@ -4,10 +4,10 @@ import { generateStackXML } from '../../generators/xml-generator.js';
 describe('XML Generator Integration', () => {
     const sampleData = {
         name: 'Test Question',
-        questionText: 'Calculate the value of \\({@ans1@}\\).',
+        questionText: 'Calculate the value of \\({@ta1@}\\).',
         variables: [
             { name: 'a', type: 'rand', value: 'rand(10)+1' },
-            { name: 'ans1', type: 'calc', value: 'a * 2' },
+            { name: 'ta1', type: 'calc', value: 'a * 2' },
         ],
         parts: [
             {
@@ -15,6 +15,7 @@ describe('XML Generator Integration', () => {
                 type: 'numerical',
                 text: 'Answer:',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: {
                     tightTol: 0.05,
                     wideTol: 0.20,
@@ -31,7 +32,7 @@ describe('XML Generator Integration', () => {
             },
         ],
         images: [],
-        generalFeedback: 'The answer is {@ans1@}.',
+        generalFeedback: 'The answer is {@ta1@}.',
         hints: ['Think about it.'],
     };
 
@@ -54,7 +55,7 @@ describe('XML Generator Integration', () => {
         const xml = generateStackXML(sampleData);
         expect(xml).toContain('<questionvariables>');
         expect(xml).toContain('a: rand(10)+1;');
-        expect(xml).toContain('ans1: a * 2;');
+        expect(xml).toContain('ta1: a * 2;');
     });
 
     it('includes input for numerical type', () => {
@@ -73,7 +74,7 @@ describe('XML Generator Integration', () => {
     it('includes general feedback', () => {
         const xml = generateStackXML(sampleData);
         expect(xml).toContain('<generalfeedback');
-        expect(xml).toContain('The answer is {@ans1@}.');
+        expect(xml).toContain('The answer is {@ta1@}.');
     });
 
     it('includes hints', () => {
@@ -144,6 +145,7 @@ describe('XML Generator Integration', () => {
                 type: 'units',
                 text: 'Speed:',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0.05, wideTol: 0.1, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '', feedback: {},
             }],
@@ -154,7 +156,7 @@ describe('XML Generator Integration', () => {
         expect(xml).not.toMatch(/<prt>[\s\S]*?<answertest>AlgEquiv<\/answertest>/);
     });
 
-    it('emits tans_ alias in questionvariables when checkPowerOf10 is enabled', () => {
+    it('p10 feedbackvariables reference the teacher-answer variable, no alias (A2)', () => {
         const p10Data = {
             ...sampleData,
             parts: [{
@@ -163,11 +165,12 @@ describe('XML Generator Integration', () => {
             }],
         };
         const xml = generateStackXML(p10Data);
-        expect(xml).toContain('tans_ans1: ans1;');
+        expect(xml).toContain('p10_safe_tans: if is(ta1 = 0) then 1 else ta1;');
+        expect(xml).not.toContain('tans_ans1');
     });
 
-    it('does NOT emit tans_ alias when checkPowerOf10 is disabled', () => {
+    it('never emits the tans_ alias hack (A2)', () => {
         const xml = generateStackXML(sampleData);
-        expect(xml).not.toContain('tans_ans1');
+        expect(xml).not.toContain('tans_');
     });
 });

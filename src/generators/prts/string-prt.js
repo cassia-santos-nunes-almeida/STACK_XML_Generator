@@ -2,6 +2,7 @@
 // Uses String answer test for literal text matching
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement } from '../xml-helpers.js';
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates the PRT XML for a string answer part.
@@ -16,13 +17,14 @@ import { feedbackElement } from '../xml-helpers.js';
 export function generateStringPRT(part, prtName) {
     const fb = part.feedback || {};
     const caseSensitive = part.grading?.caseSensitive !== false; // default true
+    const teacherAnswer = requireTeacherAnswer(part);
 
     return `
       <node>
         <name>0</name>
         <answertest>${caseSensitive ? ANSWER_TESTS.STRING : ANSWER_TESTS.STRING_SLOPPY}</answertest>
         <sans>${part.answer}</sans>
-        <tans>${part.answer}</tans>
+        <tans>${teacherAnswer}</tans>
         <testoptions></testoptions>
         <quiet>0</quiet>
         <truescoremode>${SCORE_MODES.SET}</truescoremode>

@@ -1,4 +1,5 @@
 // Input generator for units answer type
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates <input> XML for a units answer (value + physical unit).
@@ -6,11 +7,12 @@
  * @returns {string} XML string
  */
 export function generateUnitsInput(part) {
+    const teacherAnswer = requireTeacherAnswer(part);
     return `
     <input>
       <name>${part.answer}</name>
       <type>units</type>
-      <tans>${part.answer}</tans>
+      <tans>${teacherAnswer}</tans>
       <boxsize>15</boxsize>
       <strictsyntax>1</strictsyntax>
       <insertstars>1</insertstars>

@@ -1,4 +1,5 @@
 // Input generator for numerical answer type
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates <input> XML for a numerical answer.
@@ -6,11 +7,12 @@
  * @returns {string} XML string
  */
 export function generateNumericalInput(part) {
+    const teacherAnswer = requireTeacherAnswer(part);
     return `
     <input>
       <name>${part.answer}</name>
       <type>numerical</type>
-      <tans>${part.answer}</tans>
+      <tans>${teacherAnswer}</tans>
       <boxsize>15</boxsize>
       <strictsyntax>1</strictsyntax>
       <insertstars>0</insertstars>

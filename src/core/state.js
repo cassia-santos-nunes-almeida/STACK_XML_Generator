@@ -4,6 +4,7 @@
 import { parseStackXML } from '../parsers/xml-parser.js';
 import { evaluatePreviewValue } from '../parsers/variable-parser.js';
 import { DEFAULT_GRADING } from './constants.js';
+import { migrateLegacyTeacherAnswers } from './migrate-teacher-answer.js';
 
 export default class StateManager {
     constructor() {
@@ -167,6 +168,7 @@ export default class StateManager {
             type: 'numerical',
             text: `Part ${String.fromCharCode(96 + id)}:`,
             answer: 'ans' + id,
+            teacherAnswer: '',
             grading: { ...DEFAULT_GRADING },
             options: [],
             graphCode: '',
@@ -248,9 +250,12 @@ export default class StateManager {
         try {
             let parsed = JSON.parse(jsonString);
             parsed = this._normalize(parsed);
+            const notices = parsed.importNotices || [];
+            delete parsed.importNotices;
             this.data = parsed;
             this.generateSampleValues();
             this.notify();
+            return notices;
         } catch (e) {
             console.error(e);
             throw new Error('Failed to load JSON: ' + e.message);
@@ -261,9 +266,12 @@ export default class StateManager {
         try {
             let data = parseStackXML(xmlString);
             data = this._normalize(data);
+            const notices = data.importNotices || [];
+            delete data.importNotices;
             this.data = data;
             this.generateSampleValues();
             this.notify();
+            return notices;
         } catch (e) {
             console.error(e);
             throw new Error('Failed to load XML: ' + e.message);
@@ -380,6 +388,7 @@ export default class StateManager {
             if (!p.text) p.text = `Part ${String.fromCharCode(97 + idx)}:`;
             if (!p.id) p.id = idx + 1;
             if (!p.answer) p.answer = `ans${p.id}`;
+            if (p.teacherAnswer === undefined) p.teacherAnswer = '';
             if (p.prerequisite === undefined) p.prerequisite = null;
             if (p.notesAutoCredit === undefined) p.notesAutoCredit = true;
             if (p.notesRequireImage === undefined) p.notesRequireImage = false;
@@ -388,6 +397,14 @@ export default class StateManager {
 
             return p;
         });
+
+        // A2: heal legacy input-name/variable collisions (old JSON saves);
+        // idempotent for already-migrated data. Notices surface via
+        // data.importNotices (loadFromXml strips and returns them).
+        const notices = migrateLegacyTeacherAnswers(data);
+        if (notices.length > 0) {
+            data.importNotices = [...(data.importNotices || []), ...notices];
+        }
 
         return data;
     }

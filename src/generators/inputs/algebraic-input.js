@@ -1,4 +1,5 @@
 // Input generator for algebraic answer type
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates <input> XML for an algebraic (symbolic) answer.
@@ -6,11 +7,12 @@
  * @returns {string} XML string
  */
 export function generateAlgebraicInput(part) {
+    const teacherAnswer = requireTeacherAnswer(part);
     return `
     <input>
       <name>${part.answer}</name>
       <type>algebraic</type>
-      <tans>${part.answer}</tans>
+      <tans>${teacherAnswer}</tans>
       <boxsize>20</boxsize>
       <strictsyntax>1</strictsyntax>
       <insertstars>0</insertstars>

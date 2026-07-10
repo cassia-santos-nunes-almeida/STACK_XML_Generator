@@ -7,7 +7,7 @@ export const ENGINEERING_TEMPLATES = {
         variables: [
             { name: 'L', type: 'rand', value: 'rand(10)+1' },
             { name: 'I', type: 'rand', value: 'rand(5)+1' },
-            { name: 'ans1', type: 'calc', value: '0.5 * L * I * I' },
+            { name: 'ta1', type: 'calc', value: '0.5 * L * I * I' },
         ],
         parts: [
             {
@@ -15,6 +15,7 @@ export const ENGINEERING_TEMPLATES = {
                 type: 'numerical',
                 text: 'Energy (Joules):',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0.05, wideTol: 0.20, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
@@ -24,7 +25,7 @@ export const ENGINEERING_TEMPLATES = {
                 },
             },
         ],
-        generalFeedback: 'The energy stored in an inductor is given by:\\[E = \\frac{1}{2}LI^2\\]Substituting \\(L = {@L@}\\) H and \\(I = {@I@}\\) A:\\[E = \\frac{1}{2} \\times {@L@} \\times {@I@}^2 = {@ans1@} \\text{ J}\\]',
+        generalFeedback: 'The energy stored in an inductor is given by:\\[E = \\frac{1}{2}LI^2\\]Substituting \\(L = {@L@}\\) H and \\(I = {@I@}\\) A:\\[E = \\frac{1}{2} \\times {@L@} \\times {@I@}^2 = {@ta1@} \\text{ J}\\]',
         hints: ['What is the formula for energy stored in an inductor?', 'Remember: E = (1/2) L I^2. Make sure to square the current, not the inductance.'],
         images: [],
     },
@@ -37,8 +38,8 @@ export const ENGINEERING_TEMPLATES = {
             { name: 'V', type: 'rand', value: 'rand([5, 9, 12, 24])' },
             { name: 'I_val', type: 'calc', value: 'V / R' },
             { name: 'P_val', type: 'calc', value: 'V * V / R' },
-            { name: 'ans1', type: 'algebraic', value: 'V / R' },
-            { name: 'ans2', type: 'algebraic', value: 'V^2 / R' },
+            { name: 'ta1', type: 'algebraic', value: 'V / R' },
+            { name: 'ta2', type: 'algebraic', value: 'V^2 / R' },
         ],
         parts: [
             {
@@ -46,6 +47,7 @@ export const ENGINEERING_TEMPLATES = {
                 type: 'units',
                 text: 'Calculate the current through the resistor (include units):',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0.001, wideTol: 0.01, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
@@ -58,6 +60,7 @@ export const ENGINEERING_TEMPLATES = {
                 type: 'units',
                 text: 'Calculate the power dissipated by the resistor (include units):',
                 answer: 'ans2',
+                teacherAnswer: 'ta2',
                 grading: { tightTol: 0.01, wideTol: 0.05, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: true, powerOf10Penalty: 0.5 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
@@ -77,8 +80,8 @@ export const ENGINEERING_TEMPLATES = {
         variables: [
             { name: 'R1', type: 'rand', value: 'rand([100, 220, 330, 470])' },
             { name: 'R2', type: 'rand', value: 'rand([100, 220, 330, 470])' },
-            { name: 'ans1', type: 'calc', value: 'R1 + R2' },
-            { name: 'ans2', type: 'calc', value: '(R1 * R2) / (R1 + R2)' },
+            { name: 'ta1', type: 'calc', value: 'R1 + R2' },
+            { name: 'ta2', type: 'calc', value: '(R1 * R2) / (R1 + R2)' },
         ],
         parts: [
             {
@@ -86,6 +89,7 @@ export const ENGINEERING_TEMPLATES = {
                 type: 'numerical',
                 text: 'Series connection (\\(\\Omega\\)):',
                 answer: 'ans1',
+                teacherAnswer: 'ta1',
                 grading: { tightTol: 0.01, wideTol: 0.1, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: { correct: 'Correct! Series: \\(R_{eq} = R_1 + R_2\\).' },
@@ -95,6 +99,7 @@ export const ENGINEERING_TEMPLATES = {
                 type: 'numerical',
                 text: 'Parallel connection (\\(\\Omega\\)):',
                 answer: 'ans2',
+                teacherAnswer: 'ta2',
                 grading: { tightTol: 0.05, wideTol: 0.2, checkSigFigs: true, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '',
                 feedback: {
@@ -103,7 +108,7 @@ export const ENGINEERING_TEMPLATES = {
                 },
             },
         ],
-        generalFeedback: 'Series: \\(R_{eq} = R_1 + R_2 = {@R1@} + {@R2@} = {@ans1@} \\; \\Omega\\)<br>Parallel: \\(R_{eq} = \\frac{R_1 \\cdot R_2}{R_1 + R_2} = \\frac{{@R1@} \\cdot {@R2@}}{{@R1@} + {@R2@}} = {@ans2@} \\; \\Omega\\)',
+        generalFeedback: 'Series: \\(R_{eq} = R_1 + R_2 = {@R1@} + {@R2@} = {@ta1@} \\; \\Omega\\)<br>Parallel: \\(R_{eq} = \\frac{R_1 \\cdot R_2}{R_1 + R_2} = \\frac{{@R1@} \\cdot {@R2@}}{{@R1@} + {@R2@}} = {@ta2@} \\; \\Omega\\)',
         hints: ['For series: just add the resistances.', 'For parallel: use the product-over-sum formula.'],
         images: [],
     },

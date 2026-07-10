@@ -95,12 +95,17 @@ function initApp() {
         reader.onload = (ev) => {
             try {
                 const content = ev.target.result;
+                let notices = [];
                 if (file.name.endsWith('.xml')) {
-                    state.loadFromXml(content);
+                    notices = state.loadFromXml(content) || [];
                     showNotification('XML file imported successfully.', 'success');
                 } else {
-                    state.loadFromJson(content);
+                    notices = state.loadFromJson(content) || [];
                     showNotification('JSON file loaded successfully.', 'success');
+                }
+                // A2: legacy-migration notices (plain language, blocking read)
+                if (notices.length > 0) {
+                    alert('This file was updated during import:\n\n' + notices.map(n => '- ' + n).join('\n'));
                 }
             } catch (err) {
                 showNotification('Error: ' + err.message, 'error');

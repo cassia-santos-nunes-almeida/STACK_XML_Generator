@@ -6,9 +6,9 @@ describe('Companion Question Generator', () => {
     const baseData = {
         name: 'Test Question',
         questionText: 'Calculate something.',
-        variables: [],
+        variables: [{ name: 'ta1', type: 'calc', value: '42' }],
         parts: [{
-            id: 1, type: 'numerical', text: 'Answer:', answer: 'ans1',
+            id: 1, type: 'numerical', text: 'Answer:', answer: 'ans1', teacherAnswer: 'ta1',
             grading: { tightTol: 0.05, wideTol: 0.20, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
             options: [], graphCode: '', gradingCode: '', feedback: {},
         }],
@@ -267,7 +267,7 @@ describe('Companion Question Generator', () => {
                 ...baseData,
                 examMode: true,
                 parts: [{
-                    id: 1, type: 'algebraic', text: 'Simplify:', answer: 'ans1',
+                    id: 1, type: 'algebraic', text: 'Simplify:', answer: 'ans1', teacherAnswer: 'ta1',
                     grading: {}, options: [], graphCode: '', gradingCode: '', feedback: {},
                 }],
             };

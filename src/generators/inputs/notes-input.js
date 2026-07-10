@@ -1,5 +1,6 @@
 // Input generator for notes/reasoning answer type
 // Uses STACK's 'notes' input type for student working that is teacher-reviewed
+import { notesTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates <input> XML for a notes/reasoning part.
@@ -11,11 +12,12 @@
  */
 export function generateNotesInput(part) {
     const boxSize = part.notesBoxSize || 6;
+    const teacherAnswer = notesTeacherAnswer(part);
     return `
     <input>
       <name>${part.answer}</name>
       <type>notes</type>
-      <tans>${part.answer}</tans>
+      <tans>${teacherAnswer}</tans>
       <boxsize>${boxSize}</boxsize>
       <strictsyntax>0</strictsyntax>
       <insertstars>0</insertstars>

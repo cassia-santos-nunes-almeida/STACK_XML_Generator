@@ -2,6 +2,7 @@
 import { cdata } from './xml-helpers.js';
 import { generateRadioVariable } from './inputs/radio-input.js';
 import { INPUT_TYPES } from '../core/constants.js';
+import { notesTeacherAnswer } from './teacher-answer.js';
 
 /**
  * Generates the question variables XML block.
@@ -31,35 +32,18 @@ export function generateQuestionVariables(data) {
         }
     });
 
-    // Teacher-answer aliases for power-of-10 detection and prerequisite checking
-    // In PRT feedbackvariables, the student input shadows the question variable with
-    // the same name (e.g., ans1). This alias captures the teacher answer before that.
-    const needsTansAlias = new Set();
-    (data.parts || []).forEach(p => {
-        if (p.grading?.checkPowerOf10 && p.answer) {
-            needsTansAlias.add(p.answer);
-        }
-    });
-    // Also add aliases for parts that are prerequisites (needed by prerequisite check)
-    (data.parts || []).forEach(p => {
-        if (p.prerequisite) {
-            const prereqPart = (data.parts || []).find(pp => pp.id === p.prerequisite);
-            if (prereqPart && (prereqPart.type === 'numerical' || prereqPart.type === 'units')) {
-                needsTansAlias.add(prereqPart.answer);
-            }
-        }
-    });
-    needsTansAlias.forEach(answer => {
-        lines.push(`tans_${answer}: ${answer};`);
-    });
+    // A2: the old `tans_<input>` alias hack is gone — teacher answers live in
+    // their own variables (taN), so PRT feedbackvariables reference them
+    // directly and no input name is ever written in questionvariables.
 
-    // Notes parts need a placeholder answer variable
+    // Notes parts need a placeholder teacher-answer variable for <tans>
     (data.parts || []).forEach(p => {
         if (p.type === INPUT_TYPES.NOTES && p.answer) {
+            const ta = notesTeacherAnswer(p);
             // Only add if user hasn't defined this variable themselves
-            const userDefined = (data.variables || []).some(v => v.name === p.answer);
+            const userDefined = (data.variables || []).some(v => v.name === ta);
             if (!userDefined) {
-                lines.push(`${p.answer}: "Your reasoning here";`);
+                lines.push(`${ta}: "Your reasoning here";`);
             }
         }
     });

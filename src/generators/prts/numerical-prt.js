@@ -2,6 +2,7 @@
 // Implements: NumAbsolute (wide + tight tolerance), NumSigFigs, Power-of-10 check
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement } from '../xml-helpers.js';
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates the PRT XML for a numerical answer part.
@@ -20,6 +21,7 @@ export function generateNumericalPRT(part, prtName) {
     const g = part.grading;
     const fb = part.feedback || {};
     const answer = part.answer;
+    const teacherAnswer = requireTeacherAnswer(part);
 
     let feedbackVars = '';
     let nodes = '';
@@ -30,14 +32,14 @@ export function generateNumericalPRT(part, prtName) {
     const hasPowerOf10 = g.checkPowerOf10;
 
     if (hasPowerOf10) {
-        // Power-of-10 detection in feedback variables
-        // Uses tans_<answer> alias (defined in questionvariables) for the teacher answer,
-        // because the student input shadows <answer> in PRT context.
+        // Power-of-10 detection in feedback variables.
+        // References the teacher-answer variable (taN) directly — post-A2 no
+        // input name is ever written in questionvariables, so nothing shadows.
         feedbackVars = `
       <feedbackvariables>
         <text><![CDATA[
 /* Power of 10 detection: check if student is off by factor of 10 or 0.1 */
-p10_safe_tans: if is(tans_${answer} = 0) then 1 else tans_${answer};
+p10_safe_tans: if is(${teacherAnswer} = 0) then 1 else ${teacherAnswer};
 p10_ratio: ${answer} / p10_safe_tans;
 is_p10_high: is(abs(p10_ratio - 10) < 1);
 is_p10_low: is(abs(p10_ratio - 0.1) < 0.01);
@@ -63,7 +65,7 @@ is_p10_error: is_p10_high or is_p10_low;
             id: 0,
             answerTest: ANSWER_TESTS.NUM_ABSOLUTE,
             sans: answer,
-            tans: answer,
+            tans: teacherAnswer,
             testOptions: String(g.wideTol),
             trueScore: 0.5,
             trueScoreMode: SCORE_MODES.SET,
@@ -84,7 +86,7 @@ is_p10_error: is_p10_high or is_p10_low;
             id: 1,
             answerTest: ANSWER_TESTS.NUM_ABSOLUTE,
             sans: answer,
-            tans: answer,
+            tans: teacherAnswer,
             testOptions: String(g.tightTol),
             trueScore: 1,
             trueScoreMode: SCORE_MODES.SET,
@@ -108,7 +110,7 @@ is_p10_error: is_p10_high or is_p10_low;
             id: 0,
             answerTest: tol > 0 ? ANSWER_TESTS.NUM_ABSOLUTE : ANSWER_TESTS.ALG_EQUIV,
             sans: answer,
-            tans: answer,
+            tans: teacherAnswer,
             testOptions: tol > 0 ? String(tol) : '',
             trueScore: 1,
             trueScoreMode: SCORE_MODES.SET,
@@ -131,7 +133,7 @@ is_p10_error: is_p10_high or is_p10_low;
             id: sigFigsNodeId,
             answerTest: ANSWER_TESTS.NUM_SIG_FIGS,
             sans: answer,
-            tans: answer,
+            tans: teacherAnswer,
             testOptions: String(g.sigFigs),
             trueScore: 0,
             trueScoreMode: SCORE_MODES.ADD,

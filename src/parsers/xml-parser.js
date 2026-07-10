@@ -2,6 +2,7 @@
 // FIXES BUG 4: MCQ round-trip now correctly recovers options from ta_ansX variables
 import { INPUT_TYPES, DEFAULT_GRADING } from '../core/constants.js';
 import { detectVariableType, parseVariableDefinition } from './variable-parser.js';
+import { migrateLegacyTeacherAnswers } from '../core/migrate-teacher-answer.js';
 
 const SIMPLE_TYPE_MAP = {
     numerical: INPUT_TYPES.NUMERICAL,
@@ -185,6 +186,11 @@ export function parseStackXML(xmlString) {
             type: INPUT_TYPES.NUMERICAL,
             text: partTexts[name] || '',
             answer: name,
+            // A2: <tans> names the teacher-answer variable. A tans equal to
+            // the input name is the legacy self-comparison defect — leave
+            // teacherAnswer empty here and let migrateLegacyTeacherAnswers
+            // heal it (rename colliding qv, rewrite references, notice).
+            teacherAnswer: tans && tans.trim() !== name ? tans.trim() : '',
             options: [],
             // Start detection-driven grading flags OFF: analyzePRT switches
             // them on when the corresponding node/fv is actually present.
@@ -232,6 +238,11 @@ export function parseStackXML(xmlString) {
 
     // Sort parts by ID
     state.parts.sort((a, b) => a.id - b.id);
+
+    // A2: heal legacy input-name/variable collisions (rename + rewrite +
+    // plain-language notice for the UI).
+    const notices = migrateLegacyTeacherAnswers(state);
+    if (notices.length > 0) state.importNotices = notices;
 
     return state;
 }

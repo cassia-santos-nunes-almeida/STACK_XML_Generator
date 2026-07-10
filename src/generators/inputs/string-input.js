@@ -1,4 +1,5 @@
 // Input generator for string (text) answer type
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Generates <input> XML for a string (text) answer.
@@ -6,11 +7,12 @@
  * @returns {string} XML string
  */
 export function generateStringInput(part) {
+    const teacherAnswer = requireTeacherAnswer(part);
     return `
     <input>
       <name>${part.answer}</name>
       <type>string</type>
-      <tans>${part.answer}</tans>
+      <tans>${teacherAnswer}</tans>
       <boxsize>20</boxsize>
       <strictsyntax>0</strictsyntax>
       <insertstars>0</insertstars>

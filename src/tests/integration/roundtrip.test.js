@@ -6,16 +6,17 @@ import { parseStackXML } from '../../parsers/xml-parser.js';
 // Canonical test data for roundtrip testing
 const numericalData = {
     name: 'Roundtrip Numerical',
-    questionText: 'Calculate \\({@ans1@}\\).',
+    questionText: 'Calculate \\({@ta1@}\\).',
     variables: [
         { name: 'a', type: 'rand', value: 'rand(10)+1' },
-        { name: 'ans1', type: 'calc', value: 'a * 2' },
+        { name: 'ta1', type: 'calc', value: 'a * 2' },
     ],
     parts: [{
         id: 1,
         type: 'numerical',
         text: 'Your answer:',
         answer: 'ans1',
+        teacherAnswer: 'ta1',
         grading: {
             tightTol: 0.05, wideTol: 0.20,
             checkSigFigs: true, sigFigs: 3, penalty: 0.1,
@@ -24,7 +25,7 @@ const numericalData = {
         options: [], graphCode: '', gradingCode: '', feedback: {},
     }],
     images: [],
-    generalFeedback: 'The answer is {@ans1@}.',
+    generalFeedback: 'The answer is {@ta1@}.',
     hints: ['Think carefully.'],
 };
 
@@ -43,7 +44,13 @@ describe('Roundtrip: Numerical', () => {
         const result = roundtrip(numericalData);
         const varNames = result.variables.map(v => v.name);
         expect(varNames).toContain('a');
-        expect(varNames).toContain('ans1');
+        expect(varNames).toContain('ta1');
+    });
+
+    it('recovers teacherAnswer from <tans> (A2)', () => {
+        const result = roundtrip(numericalData);
+        expect(result.parts[0].teacherAnswer).toBe('ta1');
+        expect(result.importNotices).toBeUndefined();
     });
 
     it('preserves part type and answer', () => {
@@ -61,7 +68,7 @@ describe('Roundtrip: Numerical', () => {
 
     it('preserves general feedback', () => {
         const result = roundtrip(numericalData);
-        expect(result.generalFeedback).toContain('The answer is {@ans1@}.');
+        expect(result.generalFeedback).toContain('The answer is {@ta1@}.');
     });
 
     it('preserves hints', () => {
@@ -100,6 +107,42 @@ describe('Roundtrip: byte stability + legacy healing (A1)', () => {
     });
 });
 
+describe('Legacy import auto-migration (A2)', () => {
+    function legacyXml() {
+        // Reconstruct the pre-A2 shape: model answer lives in a variable
+        // named like the input, and tans self-references the input.
+        return generateStackXML(numericalData)
+            .replaceAll('<tans>ta1</tans>', '<tans>ans1</tans>')
+            .replaceAll('ta1: a * 2;', 'ans1: a * 2;')
+            .replaceAll('{@ta1@}', '{@ans1@}');
+    }
+
+    it('renames the colliding variable, rewrites references, sets teacherAnswer', () => {
+        const result = parseStackXML(legacyXml());
+        const varNames = result.variables.map(v => v.name);
+        expect(varNames).toContain('ta1');
+        expect(varNames).not.toContain('ans1');
+        expect(result.parts[0].teacherAnswer).toBe('ta1');
+        expect(result.parts[0].answer).toBe('ans1');
+        expect(result.generalFeedback).toContain('{@ta1@}');
+    });
+
+    it('returns a plain-language notice', () => {
+        const result = parseStackXML(legacyXml());
+        expect(result.importNotices).toHaveLength(1);
+        expect(result.importNotices[0]).toMatch(/renamed to "ta1"/);
+    });
+
+    it('re-export after migration emits no self-comparing tans', () => {
+        const result = parseStackXML(legacyXml());
+        delete result.importNotices;
+        const healed = generateStackXML(result);
+        expect(healed).toContain('<sans>ans1</sans>');
+        expect(healed).toContain('<tans>ta1</tans>');
+        expect(healed).not.toContain('<tans>ans1</tans>');
+    });
+});
+
 describe('Roundtrip: Numerical with Power-of-10', () => {
     const p10Data = {
         ...numericalData,
@@ -115,7 +158,9 @@ describe('Roundtrip: Numerical with Power-of-10', () => {
         expect(result.parts[0].grading.checkPowerOf10).toBe(true);
     });
 
-    it('filters out tans_ alias from variables', () => {
+    it('has no tans_ alias anywhere (A2)', () => {
+        const xml = generateStackXML(p10Data);
+        expect(xml).not.toContain('tans_');
         const result = roundtrip(p10Data);
         const varNames = result.variables.map(v => v.name);
         expect(varNames).not.toContain('tans_ans1');
@@ -213,7 +258,7 @@ describe('Roundtrip: JSXGraph', () => {
         ...numericalData,
         name: 'JSXGraph Test',
         parts: [{
-            id: 1, type: 'jsxgraph', text: 'Draw:', answer: 'ans1',
+            id: 1, type: 'jsxgraph', text: 'Draw:', answer: 'ans1', teacherAnswer: 'ta1',
             grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
             options: [],
             graphCode: 'var board = JXG.JSXGraph.initBoard(divid, {axis:true});',
@@ -239,12 +284,12 @@ describe('Roundtrip: Multi-part', () => {
         name: 'Multi-Part Test',
         parts: [
             {
-                id: 1, type: 'numerical', text: 'Part a:', answer: 'ans1',
+                id: 1, type: 'numerical', text: 'Part a:', answer: 'ans1', teacherAnswer: 'ta1',
                 grading: { tightTol: 0.05, wideTol: 0.2, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '', feedback: {},
             },
             {
-                id: 2, type: 'algebraic', text: 'Part b:', answer: 'ans2',
+                id: 2, type: 'algebraic', text: 'Part b:', answer: 'ans2', teacherAnswer: 'ta1',
                 grading: { tightTol: 0, wideTol: 0, checkSigFigs: false, sigFigs: 3, penalty: 0, checkPowerOf10: false, powerOf10Penalty: 0 },
                 options: [], graphCode: '', gradingCode: '', feedback: {},
             },

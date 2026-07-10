@@ -51,13 +51,11 @@ function renderPart(part, idx, variables, allParts) {
                 <label>Part Text / Instruction</label>
                 <textarea class="part-text" rows="2" data-idx="${idx}" placeholder="${part.type === 'notes' ? 'Explain your reasoning for the answer above...' : 'What should the student calculate?'}">${escapeHtml(part.text || '')}</textarea>
             </div>
-            ${part.type !== 'notes' ? `
+            ${part.type !== 'notes' && part.type !== 'radio' ? `
             <div class="form-group">
-                <label>Answer Variable <span class="tooltip" title="The variable holding the correct answer (must be defined in Variables section)">?</span></label>
-                <input type="text" class="part-ans" value="${escapeAttr(part.answer || '')}" data-idx="${idx}" placeholder="e.g., ans1">
-            </div>` : `
-            <input type="hidden" class="part-ans" value="${escapeAttr(part.answer || '')}" data-idx="${idx}">
-            `}
+                <label>Answer Variable <span class="tooltip" title="The variable holding the correct answer (must be defined in Variables section). The student's answer box itself is named automatically (${escapeAttr(part.answer || '')}).">?</span></label>
+                <input type="text" class="part-ans" value="${escapeAttr(part.teacherAnswer || '')}" data-idx="${idx}" placeholder="e.g., ta${part.id || idx + 1}">
+            </div>` : ''}
 
             ${renderTypeSpecificUI(part, idx)}
             ${renderGradingConfig(part, idx)}
@@ -382,9 +380,10 @@ function attachPartEvents(container, parts, handlers) {
         el.addEventListener('input', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'text', el.value));
     });
 
-    // Answer variable change
+    // Answer variable change (A2: edits the teacher-answer variable — the
+    // student input name is system-managed and never edited here)
     container.querySelectorAll('.part-ans').forEach(el => {
-        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'answer', el.value));
+        el.addEventListener('change', () => handlers.onUpdatePart(parseInt(el.dataset.idx), 'teacherAnswer', el.value.trim()));
     });
 
     // Delete part

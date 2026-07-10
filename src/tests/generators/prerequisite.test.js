@@ -4,14 +4,14 @@ import { generatePRT } from '../../generators/prts/prt-factory.js';
 import { generateStackXML } from '../../generators/xml-generator.js';
 
 const partA = {
-    id: 1, type: 'numerical', text: 'Part a:', answer: 'ans1',
+    id: 1, type: 'numerical', text: 'Part a:', answer: 'ans1', teacherAnswer: 'ta1',
     grading: { tightTol: 0.05, wideTol: 0.2, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
     options: [], graphCode: '', gradingCode: '', feedback: {},
     prerequisite: null, notesAutoCredit: true, notesRequireImage: false, notesBoxSize: 6, notesSyntaxHint: '',
 };
 
 const partB = {
-    id: 2, type: 'numerical', text: 'Part b:', answer: 'ans2',
+    id: 2, type: 'numerical', text: 'Part b:', answer: 'ans2', teacherAnswer: 'ta2',
     grading: { tightTol: 0.05, wideTol: 0.2, checkSigFigs: false, sigFigs: 3, penalty: 0.1, checkPowerOf10: false, powerOf10Penalty: 0 },
     options: [], graphCode: '', gradingCode: '', feedback: {},
     prerequisite: 1,
@@ -150,8 +150,8 @@ describe('Prerequisite in Full XML Generation', () => {
         questionText: 'Multi-step problem.',
         variables: [
             { name: 'a', type: 'rand', value: 'rand(10)+1' },
-            { name: 'ans1', type: 'calc', value: 'a * 2' },
-            { name: 'ans2', type: 'calc', value: 'a * 3' },
+            { name: 'ta1', type: 'calc', value: 'a * 2' },
+            { name: 'ta2', type: 'calc', value: 'a * 3' },
         ],
         parts: [partA, partB],
         images: [],
@@ -165,9 +165,11 @@ describe('Prerequisite in Full XML Generation', () => {
         expect(xml).toContain('You must answer part (a) correctly');
     });
 
-    it('generates tans_ alias for prerequisite part', () => {
+    it('prerequisite check compares input against the teacher-answer variable (A2)', () => {
         const xml = generateStackXML(fullData);
-        expect(xml).toContain('tans_ans1: ans1;');
+        expect(xml).toContain('prereq_diff: abs(ans1 - ta1);');
+        // The old tans_ alias hack must be gone
+        expect(xml).not.toContain('tans_');
     });
 
     it('generates prerequisite gate in PRT', () => {

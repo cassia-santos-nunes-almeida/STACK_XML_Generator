@@ -50,8 +50,9 @@ export function renderPreview(previewBox, liveVarsEl, validationBox, data, previ
             partsHtml += '</div>';
         } else if (p.type === 'jsxgraph') {
             const isVector = p.graphPreset === 'vectorDraw';
-            const vectorInfo = isVector && p.answer && previewValues[p.answer] !== undefined
-                ? `<br><small>Expected answer: <code>${escapeHtml(String(previewValues[p.answer]))}</code></small>` : '';
+            const taName = p.teacherAnswer || p.answer;
+            const vectorInfo = isVector && taName && previewValues[taName] !== undefined
+                ? `<br><small>Expected answer: <code>${escapeHtml(String(previewValues[taName]))}</code></small>` : '';
             partsHtml += `<div class="preview-graph-placeholder">
                 <strong>JSXGraph Interactive Area</strong>${isVector ? ' (Vector Drawing)' : ''}<br>
                 <small>Students will interact with the graph here. Preview available in Moodle.</small>${vectorInfo}
@@ -115,8 +116,9 @@ export function renderPreview(previewBox, liveVarsEl, validationBox, data, previ
  * Attempts to parse the answer variable value to determine matrix dimensions.
  */
 function renderMatrixPreview(part, previewValues) {
-    const ansVal = part.answer && previewValues[part.answer] !== undefined
-        ? String(previewValues[part.answer]) : '';
+    const taName = part.teacherAnswer || part.answer;
+    const ansVal = taName && previewValues[taName] !== undefined
+        ? String(previewValues[taName]) : '';
 
     // Try to parse matrix dimensions from expressions like "matrix([a11, a12], [a21, a22])"
     // or substituted values like "matrix([(3), (2)], [(1), (4)])"

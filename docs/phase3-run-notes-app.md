@@ -137,8 +137,8 @@ inherit a checked base):
 
 | Item | Commit | Tests |
 |---|---|---|
-| A1 (+X2 JSON) | pending | pending |
-| A2 | pending | pending |
+| A1 (+X2 JSON) | b20162c | 244/244 green; 14 template exports parse clean under PowerShell [xml]; only canonical answertests emitted; byte-stable roundtrip + legacy-heal pinned |
+| A2 | (this commit) | 279/279 green; template invariant suite (no tans equals an input name, qv never writes an input name); legacy XML auto-migration pinned incl. notice + healed re-export; behavioural: 14 exports, 0 parse failures, 0 self-tans, 0 `tans_` |
 | A4 | pending | pending |
 | A3 | pending | pending |
 | A11 | pending | pending |

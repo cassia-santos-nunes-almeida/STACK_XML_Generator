@@ -3,6 +3,7 @@
 // before allowing the current part's grading to proceed
 import { ANSWER_TESTS, SCORE_MODES, DEFAULT_FEEDBACK } from '../../core/constants.js';
 import { feedbackElement } from '../xml-helpers.js';
+import { requireTeacherAnswer } from '../teacher-answer.js';
 
 /**
  * Wraps a PRT body with a prerequisite check.
@@ -118,8 +119,11 @@ function buildPrereqFeedbackVars(prereqPart) {
         case 'numerical':
         case 'units': {
             const tol = prereqPart.grading?.tightTol || 0.05;
+            // A2: compare the prerequisite input against its teacher-answer
+            // variable directly (the old tans_ alias hack is gone).
+            const prereqTa = requireTeacherAnswer(prereqPart);
             return `/* Prerequisite check: verify part (${String.fromCharCode(96 + prereqPart.id)}) answer */
-prereq_diff: abs(${answer} - tans_${answer});
+prereq_diff: abs(${answer} - ${prereqTa});
 prereq_passed: is(prereq_diff < ${tol});`;
         }
         case 'algebraic':

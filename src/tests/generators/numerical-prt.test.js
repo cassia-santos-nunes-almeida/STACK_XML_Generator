@@ -4,6 +4,7 @@ import { generateNumericalPRT } from '../../generators/prts/numerical-prt.js';
 describe('Numerical PRT Generator', () => {
     const basePart = {
         answer: 'ans1',
+        teacherAnswer: 'ta1',
         grading: {
             tightTol: 0.05,
             wideTol: 0.20,
@@ -89,21 +90,27 @@ describe('Numerical PRT Generator', () => {
         expect(xml).toContain('<tans>true</tans>');
     });
 
-    it('uses tans_ alias for teacher answer in p10 ratio (not student input)', () => {
+    it('uses the teacher-answer variable in p10 ratio (not student input) (A2)', () => {
         const part = {
             ...basePart,
             grading: { ...basePart.grading, checkPowerOf10: true },
         };
         const xml = generateNumericalPRT(part, 'prt1');
 
-        // Must reference tans_ans1 for the teacher answer
-        expect(xml).toContain('tans_ans1');
-        // The safe_tans must use the alias
-        expect(xml).toMatch(/p10_safe_tans:.*tans_ans1/);
+        // The safe_tans must use the teacher-answer variable directly
+        expect(xml).toMatch(/p10_safe_tans:.*if is\(ta1 = 0\) then 1 else ta1/);
         // The ratio must be: student_input / safe_teacher_answer
         expect(xml).toMatch(/p10_ratio:\s*ans1\s*\/\s*p10_safe_tans/);
-        // Must NOT have the old bug pattern (ans1 / ans1)
+        // Must NOT have the old bug pattern (ans1 / ans1) or the alias hack
         expect(xml).not.toMatch(/p10_safe_tans:.*if is\(ans1 = 0\) then 1 else ans1/);
+        expect(xml).not.toContain('tans_ans1');
+    });
+
+    it('node tans is the teacher-answer variable, never the input (A2)', () => {
+        const xml = generateNumericalPRT(basePart, 'prt1');
+        expect(xml).toContain('<sans>ans1</sans>');
+        expect(xml).toContain('<tans>ta1</tans>');
+        expect(xml).not.toContain('<tans>ans1</tans>');
     });
 
     it('does NOT include power-of-10 check when disabled', () => {

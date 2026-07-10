@@ -7,12 +7,12 @@ import { generatePresetGraphCode } from '../../generators/graph-presets.js';
 
 describe('Algebraic PRT', () => {
     it('uses AlgEquiv test', () => {
-        const xml = generateAlgebraicPRT({ answer: 'ans1', feedback: {} }, 'prt1');
+        const xml = generateAlgebraicPRT({ answer: 'ans1', teacherAnswer: 'ta1', feedback: {} }, 'prt1');
         expect(xml).toContain('<answertest>AlgEquiv</answertest>');
     });
 
     it('has single node (0)', () => {
-        const xml = generateAlgebraicPRT({ answer: 'ans1', feedback: {} }, 'prt1');
+        const xml = generateAlgebraicPRT({ answer: 'ans1', teacherAnswer: 'ta1', feedback: {} }, 'prt1');
         expect(xml).toContain('<name>0</name>');
         expect(xml).not.toContain('<name>1</name>');
     });
@@ -20,7 +20,7 @@ describe('Algebraic PRT', () => {
 
 describe('Matrix PRT', () => {
     it('uses AlgEquiv for matrix comparison', () => {
-        const xml = generateMatrixPRT({ answer: 'ans1', feedback: {} }, 'prt1');
+        const xml = generateMatrixPRT({ answer: 'ans1', teacherAnswer: 'ta1', feedback: {} }, 'prt1');
         expect(xml).toContain('<answertest>AlgEquiv</answertest>');
     });
 });
@@ -29,6 +29,7 @@ describe('String PRT', () => {
     it('uses String test for case-sensitive matching', () => {
         const xml = generateStringPRT({
             answer: 'ans1',
+            teacherAnswer: 'ta1',
             grading: { caseSensitive: true },
             feedback: {},
         }, 'prt1');
@@ -38,6 +39,7 @@ describe('String PRT', () => {
     it('uses StringSloppy for case-insensitive matching', () => {
         const xml = generateStringPRT({
             answer: 'ans1',
+            teacherAnswer: 'ta1',
             grading: { caseSensitive: false },
             feedback: {},
         }, 'prt1');

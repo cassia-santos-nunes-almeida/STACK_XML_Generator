@@ -10,6 +10,7 @@ import { generateInput } from '../../generators/inputs/input-factory.js';
 
 const basePart = {
     answer: 'ans1',
+    teacherAnswer: 'ta1',
     type: 'numerical',
     grading: {},
     options: [],
@@ -26,10 +27,18 @@ describe('Numerical Input', () => {
         expect(xml).toContain('<type>numerical</type>');
     });
 
-    it('uses answer variable for name and tans', () => {
+    it('uses input name for name and teacher-answer variable for tans (A2)', () => {
         const xml = generateNumericalInput(part);
         expect(xml).toContain('<name>ans1</name>');
-        expect(xml).toContain('<tans>ans1</tans>');
+        expect(xml).toContain('<tans>ta1</tans>');
+    });
+
+    it('throws when the teacher answer is missing (A2 guard)', () => {
+        expect(() => generateNumericalInput({ ...part, teacherAnswer: '' })).toThrow(/answer variable/i);
+    });
+
+    it('throws when the teacher answer equals the input name (A2 guard)', () => {
+        expect(() => generateNumericalInput({ ...part, teacherAnswer: 'ans1' })).toThrow(/different/i);
     });
 
     it('allows floats (forbidfloat=0)', () => {
@@ -70,9 +79,9 @@ describe('Units Input', () => {
         expect(xml).toContain('<insertstars>1</insertstars>');
     });
 
-    it('uses answer variable for tans', () => {
+    it('uses teacher-answer variable for tans (A2)', () => {
         const xml = generateUnitsInput(part);
-        expect(xml).toContain('<tans>ans1</tans>');
+        expect(xml).toContain('<tans>ta1</tans>');
     });
 });
 
