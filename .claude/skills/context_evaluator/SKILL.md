@@ -53,10 +53,23 @@ When information conflicts, follow this priority order:
 If you detect a conflict between the user's instruction and a context file,
 follow the user and flag the discrepancy so the file can be updated.
 
+## Repo-native fallback (no SESSION.md family)
+
+Newer repos deliberately do NOT use the SESSION.md / context.md /
+PATTERNS.md / decisions-log.md family. If those files are absent, this is
+NOT a first-session setup — route to the repo's actual state sources
+instead: `git status -sb` + `git log --oneline -5`, `docs/decisions.md`,
+`docs/plans/`, `docs/reviews/`, `.remember/` history, and the repo
+CLAUDE.md's own session-start rule. The workspace rule applies: the repo
+outranks memory files, handoffs, and this skill's file list. Offer the
+First Session template setup only when the project genuinely has no state
+sources at all. (verified 2026-07-04; promoted from L-2026-07-04-32)
+
 ## First Session
 
 If context files are missing, empty, or contain only template placeholders
-(like `[Project Name]` or `YYYY-MM-DD`), this is a new project setup:
+(like `[Project Name]` or `YYYY-MM-DD`) — AND the repo-native fallback
+above found no state sources either — this is a new project setup:
 
 1. Ask the user to briefly describe their project, goals, and constraints
 2. Draft initial `context.md` and `SESSION.md` content

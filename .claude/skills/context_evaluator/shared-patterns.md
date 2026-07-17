@@ -155,6 +155,36 @@ Do NOT attempt to shorten filenames to work around this — Moodle-exported file
 **Scope:** All sessions, all skills.
 **First seen:** /insights audit, April 2026.
 
+### P-TEST-02 — vitest green ≠ tsc green: per-task type-check on signature changes
+**Pattern:** Vitest transforms via esbuild and never type-checks, so a task passed its own tests while breaking `tsc -b` (a destructured-but-now-unused parameter under `noUnusedParameters`, TS6133). Deferring types to an end-of-batch build gate ships broken intermediate commits and hides which task caused the red.
+**Rule:** Any task that changes a function/component signature, props type, or export surface runs `npx tsc -b --noEmit` as part of ITS OWN verification — never rely on later tasks' gates to catch it. (verified 2026-07-17)
+**Scope:** All TypeScript + vitest repos, both machines.
+**First seen:** Eng-Physics-LAB physics-truth-batch Task 4, 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-26.
+
+### P-TEST-03 — Spine-composition changes verify the FULL shared test tree
+**Pattern:** A task wired a new section into the curriculum spine and re-ran only its curated suite list; a positional pin in a file no curated list named (`CourseNavigation.test.tsx` pinning a Part-boundary title) sat red through several "green" tasks, caught only when a later implementer stash-diffed to classify the failure.
+**Rule:** Any task that reorders, renumbers, or reparents curriculum-spine / config-derived-nav entries runs the ENTIRE shared test tree (or the full suite) in its OWN verification. A curated verify list is a hypothesis about blast radius; a spine change invalidates the hypothesis. (verified 2026-07-17)
+**Scope:** EM-CA-LAB and Eng-Physics-LAB section-adds; any repo with a config-derived nav spine.
+**First seen:** EM-CA-LAB math-prereqs Task 3, 2026-07-04. Promoted from LESSONS-INBOX L-2026-07-04-29.
+
+### P-TEST-04 — Page audits measure the real scroll container and enumerate hidden panes
+**Pattern:** Two silent undercount traps invalidated an automated page audit twice: (1) app-shell layouts scroll inside a container (`#main-content`, h-screen shell) — window scrollHeight equals the viewport and `window.scrollTo` is a no-op, so scroll-mounted content never rendered; (2) default-tab-only passes missed everything in non-default tab panes (9 of 36 prediction gates invisible; "0 gates" reported for a section that had them).
+**Rule:** Before trusting any per-page metric from a scripted audit: identify the actual overflow container and scroll THAT, and iterate every `[role=tab]` pane. (verified 2026-07-17)
+**Scope:** All repos, any page-measurement or UX-audit script, both machines.
+**First seen:** EM-CA-LAB audit Dimension D, 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-22.
+
+### P-TEST-05 — Playwright console-noise filters must also key on msg.location().url
+**Pattern:** Browser console errors for failed resource loads carry generic text ("Failed to load resource: … 404") with the URL only in `msg.location().url` — a noise allowlist tested against `msg.text()` matched nothing, and a pre-existing `/_vercel/insights` 404 registered as a console-error failure on all 29 routes despite the filter naming that exact path.
+**Rule:** In scripted browser walkthroughs, match noise allowlists against BOTH `msg.text()` and `msg.location().url`. (verified 2026-07-17)
+**Scope:** All repos using scripted browser walkthroughs, both machines.
+**First seen:** EM-CA-LAB math-prereqs Phase-3 walkthrough, 2026-07-04. Promoted from LESSONS-INBOX L-2026-07-04-30.
+
+### P-TEST-06 — A behavior fix can falsify nearby prose; sweep descriptions of the old behavior
+**Pattern:** A correct physics/behavior fix made an adjacent explainer factually false ("the simulated value and this formula do not match" — after the fix, they matched) with zero test failures: nothing pins prose, so no gate goes red. Same class hit a test docstring citing a superseded convention.
+**Rule:** When a fix changes a displayed value, formula, or observable behavior in teaching content, grep the surrounding section prose, captions, hints, AND test docstrings for text describing the pre-fix behavior — and make that sweep an explicit step of the fix task (add the prose files to the task's file list), never an afterthought. (verified 2026-07-17)
+**Scope:** All teaching-content repos (EM-CA-LAB, Eng-Physics-LAB, EM-AC-STACK-Assessments, EM-CA-Course), both machines.
+**First seen:** EM-CA-LAB physics-truth-batch Task 7 (Antennas), 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-25.
+
 ---
 
 ## Writing Quality (P-WRITE)
@@ -263,6 +293,56 @@ Don't spawn at all when a known path/symbol answers via direct Read/Grep — unl
 **Scope:** All repos, all sessions spawning subagents, any mechanism. On UNC-mapped setups P-ENV-05 additionally restricts subagents to read/analyze. Premise to re-verify after Claude Code upgrades: subagents still cannot see the conversation. Deliberately dropped from the retired skill (superseded by superpowers + harness docs): agent-type table, model selection, foreground/background + parallel/sequential mechanics — including "no placeholders in parallel calls" and ">3 subagents on one question → reformulate"; re-capture individually if they recur.
 **First seen:** Distilled from core/subagent-orchestration/SKILL.md at its sequenced retirement (audit decision #4, 2026-07-03). Promoted from LESSONS-INBOX L-2026-07-03-18.
 
+### P-EXEC-13 — Parallel Bash calls share ONE persisted shell cwd
+**Pattern:** A same-turn parallel pair of `git push` calls (one per repo) both ran in the repo the sibling had `cd`'d into first — the second printed "Everything up-to-date", a success-shaped output, while the other repo sat unpushed. Caught only because the push output named the wrong remote URL. Earlier the same session, a relative-path `tail` failed because cwd had moved to the sibling repo.
+**Rule:** The Bash tool's working directory persists across calls and is shared by parallel calls in one batch. Any repo-relative command (git push/status/log, npm test, relative-path reads) starts with its own `cd <absolute repo path> &&` or uses absolute paths throughout. Treat a same-turn parallel batch as ONE shell, not N isolated shells. (verified 2026-07-17)
+**Scope:** All repos, both machines (harness behavior).
+**First seen:** STACK Phase-3 close, 2026-07-10/11. Promoted from LESSONS-INBOX L-2026-07-11-34.
+
+### P-EXEC-14 — Preflight a reviewed plan against HEAD before executing it
+**Pattern:** A plan that passed adversarial review at WRITE time still shipped 3 gate-breakers invisible at plan-review altitude: an edit that orphaned a parameter under `noUnusedParameters` (build red), a helper export tripping an error-severity lint rule, and a caveat the fix itself turned factually false. Line drift was zero — the value was gate-interaction hunting, not line re-location.
+**Rule:** Before Task 1 of any reviewed plan, run a bounded read-only preflight against the EXECUTION tree: (a) verify every file:line claim by content, and (b) hunt gate interactions plan review structurally cannot see — compiler flags, lint rules, and prose/comments the change turns false. Budget ONE round; fold only file-verified defects into the plan, then execute without re-litigating. (verified 2026-07-17)
+**Scope:** All repos, any plan-execution session, both machines.
+**First seen:** EM-CA-LAB physics-truth-batch preflight, 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-24.
+
+### P-EXEC-15 — Patch source files with the Edit tool, never shell-quoted interpreter one-liners
+**Pattern:** A regex patch applied via `py -c` under bash double quotes crossed TWO escaping layers (shell quote + language string literal): `\b` silently became a literal backspace (\x08) inside a committed regex, caught only by eslint's no-control-regex.
+**Rule:** Targeted source edits go through the harness Edit tool (literal text, no quoting layers). If a file genuinely cannot be Edit-matched (invisible characters), use an interpreter SCRIPT that manipulates codepoints explicitly (`chr(8)`), never escape sequences through shell quoting. (verified 2026-07-17)
+**Scope:** All repos, both machines.
+**First seen:** Eng-Physics-LAB PR9, 2026-07-05. Promoted from LESSONS-INBOX L-2026-07-05-33b.
+
+---
+
+## Planning (P-PLAN)
+
+### P-PLAN-01 — Revising a plan's content strings requires re-checking its embedded test snippets
+**Pattern:** A plan embedded both content strings AND verbatim test code — two copies of one truth. A review fold-in reworded a content sentence but left the plan's own test regex pinning the OLD wording, shipping an internally contradictory mandate (sentence verbatim-bound, regex unsatisfiable) the executor had to escalate mid-task. Same class: a mandated test MOCK whose accompanying comment described behavior the mock shape cannot produce (a `render: vi.fn()` that never throws, described as "passes raw LaTeX through").
+**Rule:** Any revision to a plan's content string (adversarial fold-in, mid-flight amendment) immediately re-checks the plan's own embedded test snippets and mock comments against the new string, before the plan is handed to an executor. (verified 2026-07-17)
+**Scope:** All repos using verbatim implementation plans (writing-plans style), both machines.
+**First seen:** EM-CA-LAB math-prereqs, 2026-07-04. Promoted from LESSONS-INBOX L-2026-07-04-31.
+
+---
+
+## Multi-Agent Orchestration (P-AGENT)
+
+### P-AGENT-01 — Workflow-script args can arrive JSON-stringified; missing interpolations become literal "undefined"
+**Pattern:** In a Workflow-tool script, `args` passed as a JSON object reached the script as a STRING (so `args.x` was undefined), and the template literal silently embedded the text "undefined" into subagent prompts — 3 agents critiqued nothing (2 fully blocked). The guard, added afterwards, caught the same class in the next workflow before burning 8 agents.
+**Rule:** Guard every Workflow script: `const A = typeof args === 'string' ? JSON.parse(args) : args` plus an explicit non-empty assertion (throw) before any `agent()` call. Prefer not passing bulky payloads via args at all — inline constants in the script, or have agents Read a scratchpad file against an ID list. (verified 2026-07-17)
+**Scope:** Any session using the Workflow tool, all repos, both machines.
+**First seen:** EM-CA-LAB audit workflows wf_dbe6910a / wf_ee8bd77e, 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-20.
+
+### P-AGENT-02 — Numeric goldens in agent prompts: instruct recompute-and-verify, never transcribe
+**Pattern:** Two orchestrator-supplied hand-computed goldens were WRONG (soundSpeed(293)=342.91 not 342.94; example k=39.478 vs shipped k=40) and were caught only because the foundation agents recomputed from first principles — a transcribing agent would have pinned falsehoods green.
+**Rule:** When an orchestrator supplies numeric goldens/constants in a subagent prompt, instruct the agent to RECOMPUTE and pin the true value, flagging any mismatch — never to transcribe the prompt's number into a test. (verified 2026-07-17)
+**Scope:** All multi-agent runs, all repos, both machines.
+**First seen:** Eng-Physics-LAB M3 run, 2026-07-15/16. Promoted from LESSONS-INBOX L-2026-07-16-42.
+
+### P-AGENT-03 — Parallel foundation agents diverge on shared seams; reconcile BEFORE the consumer builds
+**Pattern:** Two parallel agents authored coupled artifacts from one spec (a physics layer and a content layer meeting at a numeric-problem shape) and made different reasonable interpretations of the seam (z·e/eV vs macroscopic µC/J). Where the orchestrator diffed the reports and issued a binding ruling in the consumer's prompt, the build shipped clean; where it did not (a two-battery challenge vs a single-battery builder), the mismatch reached review as a fix-first blocker.
+**Rule:** After parallel agents author coupled artifacts, the orchestrator diffs their reports for shared-seam divergences and issues an explicit BINDING reconciliation in the consumer agent's prompt — never let the consumer discover and improvise mid-build. (verified 2026-07-17)
+**Scope:** Any multi-agent build workflow, all repos, both machines.
+**First seen:** EM-CA-LAB M1 PR15 / PR17, 2026-07-11. Promoted from LESSONS-INBOX L-2026-07-13-37.
+
 ---
 
 ## Template for New Entries
@@ -276,7 +356,7 @@ Don't spawn at all when a known path/symbol answers via direct Read/Grep — unl
 ```
 
 To add a new entry:
-1. Pick the correct category (MSG, ENV, TEST, WRITE, CLOSE, EXEC) or create a new one.
+1. Pick the correct category (MSG, ENV, TEST, WRITE, CLOSE, EXEC, PLAN, AGENT) or create a new one.
 2. Use the next available number in that category.
 3. Fill in all four fields. Be concrete — avoid vague language.
 4. Never renumber existing entries. If an entry is retired, mark it `[RETIRED]`.
