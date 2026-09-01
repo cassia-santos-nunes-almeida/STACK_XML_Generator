@@ -343,6 +343,12 @@ Don't spawn at all when a known path/symbol answers via direct Read/Grep — unl
 **Scope:** Any multi-agent build workflow, all repos, both machines.
 **First seen:** EM-CA-LAB M1 PR15 / PR17, 2026-07-11. Promoted from LESSONS-INBOX L-2026-07-13-37.
 
+### P-AGENT-04 — Subagent model tier must be EXPLICIT on every spawn; omission inherits the session model
+**Pattern:** Agent-tool and Workflow `agent()` calls inherit the SESSION model when no `model` override is passed. Two 4-lens review workflows (22 + 41 agents, ~1.9M + ~4.2M subagent tokens) and two preflights ran at the session tier by omission; the owner caught it mid-run and paused to preserve quota — high-value reviews (53 confirmed findings) priced one tier above intent.
+**Rule:** Under the hybrid-split preference (session model orchestrates and keeps judgment; subagents one tier below), every spawn — preflight Explore agents, review finders, adversarial verifiers — passes the tier explicitly. Judgment/synthesis stays in the main loop; mechanical+scoped work gets the override. Check the first spawn of any session against the current session model — "one tier below" is relative and moves when the session model does (Claude 5 lineup: Haiku 4.5 < Sonnet 5 < Opus 5 < Fable 5).
+**Scope:** Any session spawning subagents (Agent tool or Workflow), all repos, all machines.
+**First seen:** Eng-Physics-LAB Phase-C C9a, 2026-08-22/23. Promoted from LESSONS-INBOX L-2026-08-23-A.
+
 ---
 
 ## Template for New Entries
