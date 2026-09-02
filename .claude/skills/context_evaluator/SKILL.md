@@ -27,7 +27,9 @@ the appropriate protocol. Search by heading name — look for
 
 ## Context Files
 
-Read these files at session start (§4 protocol):
+Read these files at session start (find them under the session-start heading
+in the project's CLAUDE.md — by heading name, never by section number, per
+P-EXEC-04):
 
 | File | Purpose | Update rate |
 |------|---------|-------------|
@@ -37,6 +39,11 @@ Read these files at session start (§4 protocol):
 | `PATTERNS.md` | Permanent hard rules and conventions | When mistakes are captured |
 | `personal-preferences.md` | How to communicate with this user (cross-project) | Rarely |
 | `shared-patterns.md` | Cross-project rules (synced from my-claude-skills) | When sync runs |
+
+Locations differ by channel: in a CLI repo the last two ship inside the
+deployed skill folder (`.claude/skills/context_evaluator/`), NOT at the repo
+root — the project's own CLAUDE.md names the exact paths. Not finding them at
+the root is a path error, not a missing-context-files finding.
 
 Do not summarise context files back to the user — start working immediately.
 
@@ -59,7 +66,8 @@ Newer repos deliberately do NOT use the SESSION.md / context.md /
 PATTERNS.md / decisions-log.md family. If those files are absent, this is
 NOT a first-session setup — route to the repo's actual state sources
 instead: `git status -sb` + `git log --oneline -5`, `docs/decisions.md`,
-`docs/plans/`, `docs/reviews/`, `.remember/` history, and the repo
+`docs/plans/`, `docs/reviews/`, `.remember/` history, the session's persistent
+memory directory when it has one, and the repo
 CLAUDE.md's own session-start rule. The workspace rule applies: the repo
 outranks memory files, handoffs, and this skill's file list. Offer the
 First Session template setup only when the project genuinely has no state
@@ -68,7 +76,7 @@ sources at all. (verified 2026-07-04; promoted from L-2026-07-04-32)
 ## First Session
 
 If context files are missing, empty, or contain only template placeholders
-(like `[Project Name]` or `YYYY-MM-DD`) — AND the repo-native fallback
+(like `[Project Name]`, `__PROJECT_NAME__`, or `YYYY-MM-DD`) — AND the repo-native fallback
 above found no state sources either — this is a new project setup:
 
 1. Ask the user to briefly describe their project, goals, and constraints
@@ -76,7 +84,7 @@ above found no state sources either — this is a new project setup:
 3. Provide in copy-paste-ready format
 4. Then proceed with whatever the user actually came to work on
 
-Do not force a lengthy setup process. Get the basics, draft the files, start working.
+Do not force a lengthy setup process.
 
 Templates for new projects: `templates/` directory in this skill folder.
 
@@ -90,7 +98,7 @@ When triggered ("health check", "audit my files"), review all context files:
 4. Is there anything that looks like a sensitive value that shouldn't be here?
 5. Is `personal-preferences.md` free of project-specific content?
 6. What important things from recent sessions are NOT captured yet?
-7. Is `decisions-log.md` getting too long? Suggest archiving foundational decisions into `context.md`.
+7. Is `decisions-log.md` past the growth threshold? If so, run the Growth Management section.
 
 ## Growth Management
 

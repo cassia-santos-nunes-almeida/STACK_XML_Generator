@@ -30,14 +30,9 @@ See also:
 
 ## When to use
 
-Trigger on any of:
-
-- "propagate skill", "propagate the change"
-- "sync skill across projects", "sync to projects"
-- "roll out X to all repos", "standardize X across repos"
-- "push the my-skills repo change out", "update all projects with X"
-- "sync the ecosystem"
-- equivalents in Portuguese or Finnish if the user code-switches
+Trigger on the phrases in the frontmatter description, plus
+"propagate the change" and "sync to projects" — and on their
+equivalents in Portuguese or Finnish if the user code-switches.
 
 **Do NOT use this skill for:**
 - A single-project edit — use normal `Edit` / `Write`.
@@ -60,11 +55,25 @@ bash my-claude-skills/scripts/check-impact.sh <skill-name>
 
 This lists every project that depends on the skill and every file that
 will be synced. If the scope surprises the user, abort and reduce
-scope before touching files.
+scope before touching files. Where the harness offers AskUserQuestion,
+put that decision to the user as a question (proceed all projects /
+scope to one project / abort) instead of narrating the scope and
+continuing; treat a missing or empty answer as unanswered and re-ask it
+singly, never as approval.
 
-For changes to `patterns/shared-patterns.md` or to
-`core/context-evaluator/templates/`, impact is every project in
-`sync-config.json` — state that explicitly.
+`check-impact.sh` reads only the `skills` map, so two sources need a
+different check:
+
+- `patterns/shared-patterns.md` — synced via each project's
+  `sharedPatterns` entry, which `check-impact.sh` cannot see: it answers
+  "not synced to any project", a false negative. Get the real list from
+  `sync-config.json` (grep `sharedPatterns`) or `--audit`, and state it
+  explicitly. As of 2026-09 that is every project except
+  `my-claude-skills` — re-read the config rather than trusting this line.
+- `core/context-evaluator/templates/` — synced to NO project; they are
+  inputs to `bootstrap-project.sh` only (Step 2). Editing them changes
+  future bootstraps, not existing repos — say so rather than implying a
+  sync is pending.
 
 ### Step 2 — Edit the CANONICAL source
 
@@ -110,11 +119,23 @@ dependency:
 bash my-claude-skills/scripts/sync-to-projects.sh --verify <ProjectName>
 ```
 
-Preview with `--dry-run` (no `--verify` — they are mutually
-exclusive since dry-run writes nothing to verify):
+Preview with `--dry-run`. The three modes — `--dry-run`, `--verify`,
+`--audit` — are mutually exclusive; combining them exits 2.
 
 ```bash
 bash my-claude-skills/scripts/sync-to-projects.sh --dry-run
+```
+
+`--audit` is the read-only counterpart: it re-hashes EVERY configured
+file, not just the ones a sync copied, and reports DRIFT / MISSING /
+UNMANAGED plus machine-profile heading drift. Run it whenever a source
+outside `core/`/`personal/` changed (shared-patterns.md is the usual
+case) or a consumer may have gone stale — on 2026-09-01 `--audit` was
+what surfaced five consumers left behind by a shared-patterns edit that
+skipped the sync.
+
+```bash
+bash my-claude-skills/scripts/sync-to-projects.sh --audit
 ```
 
 ### Step 4 — Self-audit BEFORE handing off
@@ -133,43 +154,35 @@ to claude.ai uploads (i.e., the user will pull a fresh `.skill` from
 and re-run until clean. Use `--strict` to fail on any problem (CI /
 pre-release contexts).
 
-Then produce a short audit in this exact shape:
+Then report the propagation under these five headings, keeping the
+headings literal (they are the audit trail) and giving one line per
+project wherever the fact is per project:
 
 ```
-Canonical changes:
-- <canonical/file/path>: <what changed, one line>
-
-Projects synced:
-- <ProjectName>: <N new, M updated, K unchanged>
-
-Verification:
-- <ProjectName>: all N verified  |  <ProjectName>: FAIL — <reason>
-
-ZIP freshness:
-- 0 stale, 0 missing  |  N stale (rebuilt — list)  |  N stale (deferred — reason)
-
-Gaps:
-- <ProjectName>: <skipped, reason>
-- "None" if every project in scope synced and verified clean.
+Canonical changes:  each file, one line on what changed
+Projects synced:    per project — new / updated / unchanged
+Verification:       per project — all N verified, or FAIL and why
+ZIP freshness:      clean | rebuilt (list) | deferred (reason)
+Gaps:               per project skipped, and why
 ```
 
-Surface gaps explicitly before hand-off. Do not suppress failures to
-make the propagation look clean.
+"Gaps: None" is permitted ONLY when every project in scope synced and
+verified clean. A single aggregate line in place of per-project rows
+does not satisfy this. Surface gaps explicitly before hand-off; do not
+suppress failures to make the propagation look clean.
 
 ### Step 5 — Hand off to close-session
 
 **propagate-skill does not commit or push.** Invoke `close-session`
-(or wait for the user to say "commit and push") to:
+(or wait for the user to say "commit and push"); it owns the multi-repo
+status scan, the per-repo commit and push, the push verification, and
+the Asked / Shipped / Gaps / Tested audit. Two constraints this step
+carries into it:
 
-- Run `git status` in every touched project, including
-  `my-claude-skills` itself.
-- Stage + commit + push per-repo, delegating to
-  `commit-commands:commit-push-pr`.
-- Produce the Asked / Shipped / Gaps / Tested audit.
-- Confirm each push succeeded.
-
-Each affected repo gets its own commit — do not bundle multiple
-projects into a single commit (each repo is independent).
+- `my-claude-skills` is itself one of the touched repos — its own
+  `.claude/skills/` copies change on every sync run.
+- Each affected repo gets its own commit — never bundle multiple
+  projects into one commit (each repo is independent).
 
 ## Anti-patterns to avoid
 
@@ -201,7 +214,9 @@ projects into a single commit (each repo is independent).
 - **Subagents (per P-EXEC-12 in shared-patterns)** — may parallelise
   per-project behavioural tests AFTER sync (e.g. run each project's
   test suite in parallel). Do NOT delegate file writes to sub-agents on
-  UNC paths (P-ENV-05); sub-agents read/analyse only.
+  UNC paths (P-ENV-05); sub-agents read/analyse only. Pass the model
+  tier EXPLICITLY on every spawn (P-AGENT-04) — an omitted tier inherits
+  the session model, and this fan-out is one spawn per consumer repo.
 - **`context-evaluator`** — may log new PATTERNS entries discovered
   during propagation (e.g. a verification failure that reveals an
   environment quirk). Runs at session close, after this skill.
@@ -214,19 +229,42 @@ projects into a single commit (each repo is independent).
 - `scripts/sync-config.json` — project → skill manifest. Adding a new
   skill to a project = adding an entry here + running sync.
 - `scripts/check-skill-edit.sh` — PostToolUse hook that warns when
-  someone edits a synced copy inside a project repo.
+  someone edits a synced copy inside a project repo. Registered in the
+  five consumer repos, NOT in `my-claude-skills` itself — an edit to
+  `my-claude-skills/.claude/skills/<skill>/` gets no warning.
+- `scripts/check-machine-drift.sh` — machine-profile heading drift; runs
+  inside `--audit`.
+- `scripts/build-skills.sh` — ZIP rebuild for the claude.ai channel
+  (Step 4).
 - `scripts/bootstrap-project.sh` — for brand-new projects; this skill
   handles already-bootstrapped projects only.
 
-## Full propagation flow, combined
+## Optional — standing drift watch (Claude Code, LOCAL machine only)
 
-For a typical "improve a shared skill" session:
+A propagate session cannot catch a source edited in some OTHER session
+that skipped the sync — on 2026-08-31 a shared-patterns promotion left
+five consumers stale for a day. A recurring LOCAL job running
+`bash scripts/sync-to-projects.sh --audit` and reporting only on a
+non-zero exit turns that miss into an alert.
 
-1. User: "propagate the improved stop-slop guidance to all repos."
-2. Run `bash scripts/check-impact.sh stop-slop` → surface scope.
-3. Edit source in the my-skills repo in `personal/stop-slop/`.
-4. Run `bash scripts/sync-to-projects.sh --verify` → per-project sync
-   + verification output.
-5. Produce Step 4 audit.
-6. Hand off to `close-session` — it commits + pushes each touched
-   repo independently.
+It must run where the sibling project repos are checked out. A
+configured project whose directory is missing exits 4 by design, so a
+cloud routine holding only this repo would alarm on every run and train
+you to ignore the channel. Owner-optional and owner-paced — the manual
+`--audit` in Step 3 covers the same ground on demand.
+
+## Command paths — check your CWD first
+
+The `bash` lines above are written from the WORKSPACE ROOT
+(`Documents/GitHub`), where ops sessions run. From inside
+`my-claude-skills` — the usual case, since the sources you edit live
+there — drop the prefix or nothing resolves:
+
+```bash
+bash scripts/check-impact.sh <skill-name>
+bash scripts/sync-to-projects.sh --verify
+bash scripts/check-zip-freshness.sh
+```
+
+`build-skills.sh` resolves its argument against the repo root, so
+`scripts/build-skills.sh core/<skill>` works from either CWD.

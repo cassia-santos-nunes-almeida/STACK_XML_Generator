@@ -10,7 +10,7 @@ use the generated output in Moodle.
 questions by hand, iframe architecture, `custom_bind` API details, and
 manual post-export editing guidance) live in the EM-AC-STACK-Assessments
 repository at:
-`.claude/skill/stack-xml-generator/references/jsxgraph-conventions.md`
+`.claude/skills/stack-xml-generator/references/jsxgraph-conventions.md`
 
 Read this file to understand the generator. Read the companion file to
 understand the STACK platform conventions the generator targets.

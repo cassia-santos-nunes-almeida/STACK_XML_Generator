@@ -212,9 +212,12 @@ Since the JSXGraph block runs in an iframe, any HTML tables or display elements 
 var boardDiv = document.getElementById(divid);
 var tableWrapper = document.createElement('div');
 tableWrapper.innerHTML = '<table>...</table>';
+// Insert into the board's PARENT, AFTER the board — JSXGraph rewrites
+// the contents of its own div on redraw and would destroy the wrapper.
 boardDiv.parentNode.insertBefore(tableWrapper, boardDiv.nextSibling);
 
-// Use class+data-attribute selectors (avoids ID collisions across instances)
+// Class + data-attribute selectors scoped to the wrapper — never `id`,
+// which collides when a quiz renders two instances of the same question.
 var cells = tableWrapper.querySelectorAll('.my-class[data-i="0"]');
 ```
 
@@ -236,18 +239,13 @@ Reference: P-STACK-17.
 
 ## Serialization Format
 
-Serialize points as a Maxima-compatible nested list string:
-```javascript
-// Output: "[[1,22.5],[3,28.125],[5,29.53],[7,29.88]]"
-function serializePoints() {
-    var sorted = pts.slice().sort(function(a, b) { return a.X() - b.X(); });
-    var parts = [];
-    for (var i = 0; i < sorted.length; i++) {
-        parts.push('[' + snapVal(sorted[i].X()) + ',' + snapVal(sorted[i].Y()) + ']');
-    }
-    return '[' + parts.join(',') + ']';
-}
-```
+Serialize points as a Maxima-compatible nested list string: snapped
+values (not raw coordinates), sorted ascending by x on a COPY of the
+point array (`pts.slice()` — never reorder the board's own array, which
+mis-binds the drag handles), e.g.
+`[[1,22.5],[3,28.125],[5,29.53],[7,29.88]]`. The grading side converts
+it with `args()` (see Grading in PRT Feedbackvariables below), so the
+string must parse as a Maxima literal.
 
 ---
 

@@ -1,6 +1,6 @@
 ---
 name: stack-question-validator
-version: 1.1.2
+version: 1.2.0
 description: >
   Use when: STACK XML has been generated and is ready for delivery,
   after completing a STACK question, before exporting XML, when asked
@@ -11,13 +11,17 @@ description: >
 
 # STACK Question Validator
 
-Post-generation validation pass for STACK XML. Checks output against
-PATTERNS.md constraints, Question Design Protocol compliance, and
-pedagogical quality criteria before delivery.
+Post-generation validation pass for STACK XML. Checks output against the
+constraints in this file and pedagogical quality criteria before
+delivery. The P-STACK-NN citations are identifiers: they resolve to full
+rationale in EM-AC-STACK-Assessments (PATTERNS.md, Question Design
+Protocol = CLAUDE.md §8) and are absent in other repos and on claude.ai,
+where the checks still apply unchanged. Two checks CANNOT be run from
+memory and require their reference file open: the Tier 1 answertest
+whitelist and the Tier 4 `<qtest>` schema.
 
 **This is an evaluator skill, not a generator.** It checks work produced
-by stack-xml-generator. Separation of concerns: generator creates,
-validator checks.
+by stack-xml-generator.
 
 ## When to Run
 
@@ -29,7 +33,15 @@ or "is similar to one that already passed." Every question gets validated.
 
 ## Validation Modes
 
-Some checks carry two severities. Decide the mode ONCE, before running:
+Some checks carry two severities. Decide the mode ONCE, before running.
+Infer it from provenance — XML generated or modified in this session is
+NEW-OUTPUT; XML read from an existing bank is DEPLOYED. When
+stack-xml-generator invokes this validator the mode is ALWAYS
+NEW-OUTPUT: do not ask. Only when provenance is genuinely ambiguous
+(a file read mid-session that may have been generated earlier), ASK
+rather than guess — guessing DEPLOYED on new output silently demotes
+seven hard failures to advisories. In Claude Code use AskUserQuestion;
+on claude.ai ask in the reply.
 
 - **NEW-OUTPUT mode** — the XML was just generated or modified in this
   session. All mode-split checks apply at their hard severity.
@@ -50,7 +62,7 @@ Checks without a mode split apply identically in both modes.
 |-------|---------------|
 | `<name>` tag | Full `<name>` tag (not the `<n>` shorthand) AND descriptive content, not abbreviated like `Q1` (P-STACK-01). Applies to question, input, PRT, node, testinput, and expected names. Moodle rejects the short form and fails import. |
 | **Answertest whitelist** | Every `<answertest>` value is an EXACT, case-sensitive match against the 41-name whitelist in `stack-xml-generator/references/answer-tests-and-inputs.md` §11 (v4.9.1-stamped). NO normalization — do not strip an `AT` prefix before checking (the compiler prepends `AT` itself; `ATNumAbsolute` → `ATATNumAbsolute` → `stack_exception` at first student use, and unknown names silently drop testoptions). Any miss is a hard FAIL citing the whitelist; if the name appears in §11's known-invalid alias table, include the rename hint (e.g. `UnitsSigFigs` → `Units`). Both modes: hard FAIL. |
-| **`<stackversion>`** | Present, with the value INSIDE a `<text>` child (`<stackversion><text>2025040100</text></stackversion>`), and equal to the stamp in the Import-Defaults Trap Table (`references/stack-xml-conventions.md`). A bare un-wrapped value imports as version 0. Missing/mismatched/unwrapped = FAIL (new output); advisory (deployed). |
+| **`<stackversion>`** | Present, with the value INSIDE a `<text>` child (`<stackversion><text>2025040100</text></stackversion>`), and equal to the stamp in the Import-Defaults Trap Table (`stack-xml-generator/references/stack-xml-conventions.md`). A bare un-wrapped value imports as version 0. Missing/mismatched/unwrapped = FAIL (new output); advisory (deployed). |
 | **Input-name collision** | No assignment to any `<input>` name inside `<questionvariables>` or any `<feedbackvariables>` (including CDATA). A "write" = the exact input name followed by `:` at a statement start (beginning of block, or after a newline or `;`). `ans1:x` with input `ans1` = write (hard error, both modes — mis-scoring risk + blocks the next edit-form save). Prose mentions like "enter ans1:" in feedback TEXT (HTML, not Maxima code) do not count. |
 | **Input-name form** | Every `<input>` name matches `^([a-zA-Z]+|[a-zA-Z]+[0-9a-zA-Z_]*[0-9a-zA-Z]+)$` and is ≤18 chars (v4.9.1 question.php:1661, questiontype.php:1791; PRT names share the 18-char cap). FAIL (new output); advisory "will block next edit-form save" (deployed). |
 | **Input/validation placeholders** | Question text contains EXACTLY ONE `[[input:X]]` and EXACTLY ONE `[[validation:X]]` per input — required for EVERY input type including dropdown/radio/checkbox (v4.9.1 questiontype.php:1690-1715 has no type exemption). Missing or duplicated = FAIL (new output); advisory "will block next edit-form save" (deployed). |
@@ -104,7 +116,7 @@ Moodle import fails fatally when `<qtest>` blocks are malformed. The typical sym
 | `<testcase>` numbering | Integer, sequential within the question, unique. |
 | `<expectedpenalty>` form | Empty tag `<expectedpenalty/>` when the matched PRT branch has no penalty; decimal otherwise. Not a stringified expression. |
 
-See `references/stack-xml-conventions.md` "Question Tests (`<qtest>`)" section for the verified schema.
+See `stack-xml-generator/references/stack-xml-conventions.md` "Question Tests (`<qtest>`)" section for the verified schema.
 
 ### Tier 5 — Pedagogical Quality (should pass)
 
@@ -154,13 +166,14 @@ After validation, report results:
 - [list any failures]
 
 Mode: NEW-OUTPUT / DEPLOYED
-Advisories and warnings never flip a tier's PASS/FAIL verdict;
-DEPLOYED-mode demotions report as ADVISORY under their own tier with
-the stated rationale.
 Reminder: import validates nothing — after importing, preview at least
 one variant of every question AND run the question tests / bulk-tester
 before releasing to students.
 ```
+
+**Verdict rule (not part of the report):** advisories and warnings never
+flip a tier's PASS/FAIL verdict; DEPLOYED-mode demotions report as
+ADVISORY under their own tier with the stated rationale.
 
 ## Failure Handling
 
@@ -172,12 +185,11 @@ before releasing to students.
   "fix" them uninvited — they are fix-on-next-touch items.
 - **After fixing:** Re-run the full validation. Report the updated results.
 
-## Rationalization Table
+## No waivers
 
-| Excuse Claude might use | Reality |
-|------------------------|---------|
-| "This is a simple question, validation is overkill" | Simple questions still fail Tier 1 checks. Run it. |
-| "I already checked while generating" | Generator and validator are separate concerns. Run the validator. |
-| "The user is in a hurry" | A broken question wastes more time than validation takes. |
-| "It's identical to a question that already passed" | Parameter changes can break grading. Validate every time. |
-| "I'll just do a quick mental check" | Mental checks miss CDATA wrapping, insertstars, MCQ shuffle. Run the validator. |
+The HARD-GATE above admits no exceptions. Neither time pressure nor a
+check already performed while generating substitutes for a full tier
+pass, and a mental spot-check is not a pass — mental passes miss CDATA
+wrapping, insertstars, and MCQ shuffle. Parameter changes alone can
+break grading, so a new variant of an already-passing question is
+validated in full like any other.

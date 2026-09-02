@@ -16,13 +16,6 @@ This skill generates Moodle STACK assessment questions with randomized
 parameters, Potential Response Trees (PRTs), and Maxima CAS code. It
 produces well-structured XML ready for Moodle import.
 
-## When to Use This Skill
-
-- User asks to create Moodle STACK questions
-- User needs randomized exam or practice questions with Maxima CAS
-- User wants to build PRT grading trees for numerical or algebraic answers
-- User needs to convert a problem set into STACK XML format
-
 ## Output Format
 
 - One XML file per question pool, named `pool_q{N}_{difficulty}.xml`
@@ -32,8 +25,10 @@ produces well-structured XML ready for Moodle import.
 
 ## Before Generating
 
-If a course-specific notation-conventions skill is installed, read its
-SKILL.md first. Use it to pick:
+If a course-specific notation-conventions skill is available, load it
+first — in Claude Code invoke the skill or read its `SKILL.md` under
+`.claude/skills/`; on claude.ai read
+`/mnt/skills/user/<skill-name>/SKILL.md`. Use it to pick:
 
 - Variable names that match the textbook students are reading.
 - Maxima-safe ASCII versions of those names (some Greek letters and
@@ -49,6 +44,20 @@ identifiers. Pick once, use consistently.
 
 If no such skill is installed, use sensible defaults from the question
 context.
+
+### Establish the delivery mode first (exam pool vs practice)
+
+Exam-vs-practice decides three things that cannot be recovered from the
+XML afterwards: ZERO `<hint>` elements for exam pools vs 2–3 for
+practice (P-STACK-44 HARD-GATE), the output file-name pattern, and the
+penalty setting (0 for practice, >0 for exams).
+
+Take the mode from an explicit statement, a `pool_q{N}_*` target
+filename, or a named Moodle exam category — never from the topic. If
+none of those settle it, ask before generating: in Claude Code use ONE
+AskUserQuestion call that batches mode, variant count and difficulty; on
+claude.ai ask that same set in a single message. Ask once per batch and
+apply the answer to every question in it.
 
 ### Tag Name Requirement (hard rule)
 
@@ -762,9 +771,10 @@ Include this instruction verbatim with every XML delivery:
 > before releasing to students. Import success proves only that the
 > file parsed.
 
-Before returning XML to the user, read the
-`stack-question-validator/SKILL.md` skill file and apply every tier to
-the generated output.
+Before returning XML to the user, run the stack-question-validator
+skill over the generated output and apply every tier. In Claude Code
+invoke it as a skill, or read its `SKILL.md` under `.claude/skills/`;
+on claude.ai read `/mnt/skills/user/stack-question-validator/SKILL.md`.
 
 - Tier 1–4 failures: fix silently and re-validate. Do not ask the user
   whether to fix — these block structure, grading, security, or Moodle
@@ -773,7 +783,13 @@ the generated output.
 
 This is not optional. The validator is a separate skill because
 generation and validation are separate concerns, but every generation
-ends with a validation pass.
+ends with a validation pass. If you cannot find it, look under both
+`stack-question-validator` and `my-claude-skills:stack-question-validator`
+before concluding it is absent. If it is genuinely unavailable, this
+gate degrades — it does not lift: apply the PRT Validation Checklist
+above (Tiers 1–4) as the minimum floor, open the delivery with the word
+UNVALIDATED, and name what could not be checked. Never describe
+unvalidated output as validated.
 
 ---
 

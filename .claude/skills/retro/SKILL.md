@@ -35,7 +35,9 @@ L-id, re-suffix one with the machine letter (e.g. `L-2026-07-02-03b`).
 constraint* goes to that repo's `PATTERNS.md` via context-evaluator's
 correction capture; a *cross-repo / machine / skill-scoped* lesson goes HERE.
 Never both for the same correction — pick the wider scope if in doubt.
-The remember plugin records narrative; it is never a rules ledger.
+The remember plugin and any auto-memory record narrative and recall;
+neither is a rules ledger. A constraint binds future sessions only once
+it lands in a target file — being remembered is not being binding.
 
 **Nudge coverage:** the pending-count nudge rides the SessionStart sync hook —
 it fires in the sync-consumer repos (see `scripts/sync-config.json`) and in

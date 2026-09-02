@@ -6,6 +6,12 @@ Synced to each project's `.claude/skills/context_evaluator/shared-patterns.md`.
 When a rule here conflicts with a project-specific PATTERNS.md entry,
 the project-specific rule wins.
 
+This file is MACHINE-NEUTRAL. Where a rule here states a machine fact —
+what is installed, what a path looks like, how long a gate takes — the
+machine profile wins: `machines/<machine>.md` in my-claude-skills,
+mirrored in the untracked `Documents\GitHub\CLAUDE.md`. A machine fact
+stated here is a hint; the profile is the answer. (declared 2026-09-02)
+
 ---
 
 ## Communication (P-MSG)
@@ -42,13 +48,13 @@ the project-specific rule wins.
 Retired: no active skill consumer. Revive here if the pattern recurs.
 
 ### P-ENV-03 — [MOVED 2026-04-20] NotebookLM auth tokens expire
-Rule relocated to `personal/notebooklm-guide/SKILL.md` (Auth Recovery section — "Proactive auth check for long sessions"). Domain-specific, not cross-project.
+Rule relocated to the notebooklm-guide skill (Auth Recovery section — "Proactive auth check for long sessions"); that skill was archived 2026-09-02, so the rule now lives at `archive/notebooklm-guide/SKILL.md`. Domain-specific, not cross-project.
 
-### P-ENV-04 — Node.js / npm not installed
-**Pattern:** Sessions attempted `npm install`, `npm test`, or `node <script>` and failed mid-workflow because the environment has no Node runtime.
-**Rule:** Do not attempt any `npm` or `node` command in this environment. If a skill or script requires Node, report the blocker to the user immediately and propose alternatives (syntax-check by reading, ask user to run it locally, or rewrite in PowerShell/Python).
-**Scope:** All sessions, all skills.
-**First seen:** /insights audit, April 2026.
+### P-ENV-04 — Node/npm availability is a MACHINE fact — read the machine profile
+**Pattern:** Sessions prescribed (or refused) `npm`/`node` commands from a blanket assumption. Written April 2026 when lut-laptop was the only machine; the blanket "not installed" is now FALSE on home-desktop (Node v24, 2026-05-29) and citrix-vdi (v24.19.0 LTS, 2026-08-25), where `npm run build` / `lint` / `e2e` ARE the documented, measured gates.
+**Rule:** Never assume Node is present or absent — check this machine's profile (`machines/<machine>.md`, mirrored in the untracked `Documents\GitHub\CLAUDE.md`) before prescribing or refusing an `npm`/`node` command. Where Node is absent (lut-laptop), report the blocker to the user immediately and propose alternatives (syntax-check by reading, run it on a Node machine or in CI, or rewrite in PowerShell/Python) — never silently substitute.
+**Scope:** All sessions, all skills. The per-machine ANSWER lives in `machines/`, never here.
+**First seen:** /insights audit, April 2026. Rescoped 2026-09-02 — the blanket claim had gone false on 2 of 3 machines.
 
 ### P-ENV-05 — Sub-agent Write calls fail on UNC paths
 **Pattern:** Sub-agents delegated Write/Edit tool calls on UNC paths (`Z:\...`, `//maa1...`) failed with permission errors, forcing the main agent to abandon parallelization.
@@ -56,11 +62,11 @@ Rule relocated to `personal/notebooklm-guide/SKILL.md` (Auth Recovery section �
 **Scope:** All sessions using sub-agents.
 **First seen:** /insights audit, April 2026.
 
-### P-ENV-06 — Hook environment has limited PATH
-**Pattern:** SessionStart/Stop hook scripts failed because `python3` and `node` were not on PATH during hook execution, even when available elsewhere.
-**Rule:** Hook scripts must only use tools guaranteed to be on PATH during hook execution — Git Bash builtins, `git`, `cp`, `mkdir`, `bash`. Never add hooks that shell out to `python3`, `node`, or other interpreters. If hook logic needs more, keep the hook minimal and trigger richer logic from within the session.
+### P-ENV-06 — Hook PATH is limited — an interpreter-using hook must probe and degrade
+**Pattern:** SessionStart/Stop hook scripts failed because `python3` and `node` were not on PATH during hook execution, even when available elsewhere. The blanket "never shell out to an interpreter" rule written from that was unenforceable from the start: `scripts/check-skill-edit.sh` (PostToolUse) IS a Python one-liner, and the SessionStart sync hook runs `scripts/sync-to-projects.sh`, whose implementation is embedded Python — both registered in every consumer repo. `machines/SETUP-LUT.md` recorded this as a "KNOWN TENSION" before the 2026-09-02 rewrite.
+**Rule:** Bare-PATH-safe tools — Git Bash builtins, `git`, `cp`, `mkdir`, `bash` — may be called directly. A hook that needs an interpreter must NOT assume one: (a) probe a candidate list, (b) test each candidate for LIVENESS (`"$candidate" -c 'pass'`) not mere presence — `command -v python` succeeds on a Windows Store alias stub that errors on every real call, (c) exit 0 silently when none is live, so a missing interpreter degrades instead of erroring at every session start, and (d) keep hook logic minimal, triggering richer work from within the session. All of (a)–(c) are implemented in `scripts/lib/find-python.sh`, which every interpreter-using script here sources (liveness probe added 2026-09-02) — edit the candidate list there, nowhere else.
 **Scope:** All `.claude/settings.json` hook definitions.
-**First seen:** /insights audit, April 2026.
+**First seen:** /insights audit, April 2026. Rewritten 2026-09-02 to match the shipped hooks — the blanket interpreter ban was contradicted by two live hooks in three repos.
 
 ### P-ENV-07 — `dvisvgm` silently fails on UNC-path output destinations
 **Pattern:** `dvisvgm --pdf input.pdf -o output.svg` reports success ("1 of 1 page converted in 0.09 seconds") on stdout but does NOT actually create the output SVG when the destination path is on a `\\maa1\home\...` UNC share. Stderr contains `"failed to write output to <path>"` and the exit code is non-zero, but wrapper scripts that only check stdout (like `render_circuitikz.py`) propagate the misleading success message. Caught when 4 reluctance diagrams appeared to render but were absent from the filesystem. **Recurrence (2026-04-20):** even with the tempdir-and-copy workaround in place, `v3_toroid_reluctance.svg` silently failed to write on TWO separate render batches in the same session. The wrapper reported success both times; only manual filesystem inspection caught it. Root cause on recurrence: the destination-side `cp` itself can intermittently fail on UNC shares without a non-zero exit code.
@@ -94,7 +100,7 @@ Consider patching `render_circuitikz.py` and similar helpers to apply this worka
 
 ### P-ENV-10 — Windows UNC short alias vs FQDN are distinct SMB connections with separate caches
 **Pattern:** `\\maa1\home\...` (short NetBIOS alias) and `\\maa1.cc.lut.fi\home\...` (FQDN) resolve to the same physical share server, but Windows treats them as two distinct SMB connections with independent client-side caches and, in some configurations, independent authentication sessions. Files written through one path may not appear immediately (or at all) through the other. Discovered when `sync-to-projects.sh` (configured with FQDN `basePath`) reported "up to date" and wrote new content to the FQDN path, while the active Claude Code session — operating from `Z:\...` mapped to the short alias `\\maa1\home` — continued to see the old file. The sync's SHA-256 hash check was cross-alias and genuinely matched on the FQDN side, so no "UPDATE" was reported for the Z:-visible copies.
-**Rule:** [SUPERSEDED in part 2026-07-02, commit b498d1e: `sync-config.json` no longer has a `basePath` key — ignore every basePath reference in this entry, including the Diagnostic paragraph's "compare with `basePath` in `sync-config.json`" step. Still fully in force: pick-ONE-alias for drive mappings and scripts, and both HARD-GATEs, on ANY machine with a mapped UNC home (currently lut-laptop).] Pick ONE SMB alias form for the project and stick with it across `sync-config.json` `basePath`, drive mappings, and any scripts that compute canonical paths. On this workstation the `Z:` drive maps to `\\maa1\home`, so configs and scripts must use the `//maa1/home/...` form (short alias). If a config or script must reference the FQDN for an external reason, after any write to an FQDN path, either (a) force a separate write to the corresponding short-alias path, or (b) explicitly verify the short-alias copy via `stat` / `diff` before trusting sync reports.
+**Rule:** Applies on ANY machine with a mapped UNC home — currently lut-laptop only. Pick ONE SMB alias form for the project and stick with it across drive mappings and any scripts that compute canonical paths. On lut-laptop the `Z:` drive maps to `\\maa1\home`, so scripts must use the `//maa1/home/...` form (short alias). If a config or script must reference the FQDN for an external reason, after any write to an FQDN path, either (a) force a separate write to the corresponding short-alias path, or (b) explicitly verify the short-alias copy via `stat` / `diff` before trusting sync reports. (`sync-config.json` lost its `basePath` key 2026-07-02, commit b498d1e — sync paths are derived from the script's own location, so the alias rule now binds drive mappings and scripts only.)
 **HARD-GATE for Edit/Write tool calls:** <HARD-GATE> Before any `Edit` or `Write` tool invocation, inspect the `file_path` argument. If it begins with `//maa1.cc.lut.fi/`, `\\maa1.cc.lut.fi\`, or any FQDN form of the `maa1` share, REWRITE the path to the `Z:\` (or `/z/`) short-alias equivalent before calling the tool. The FQDN form is a silent-divergence source, not a silent-success target — recurred 2026-04-20 session #5 within 24h of the rule being written. Path rewrite pattern:
   - `//maa1.cc.lut.fi/home/z116447/...` → `Z:\z116447\...` (or `/z/z116447/...` in Git Bash)
   - `\\maa1.cc.lut.fi\home\z116447\...` → same rewrite. </HARD-GATE>
@@ -105,7 +111,7 @@ Consider patching `render_circuitikz.py` and similar helpers to apply this worka
 2. **Post-commit sentinel verification (every commit).** After `git commit`, for every file in the commit pick a commit-specific sentinel — a distinctive phrase from the intended change (e.g., `li += 2` for a new JSXGraph loop, `Edit(exams/**)` for a new allow rule, `red!20` for an opacity fix) — and run `git show HEAD:<file> | grep -c "<sentinel>"`. If any grep returns 0, the commit silently captured stale content; go to step 3. **Do not push until every committed file passes its sentinel check.**
 
 3. **Recovery procedure (silent-revert caught post-commit, pre-push).** Run `git reset --mixed HEAD~1` to undo the bad commit locally (keeps workdir). Force-sync every file in the pending set (cp Z: → FQDN). Stage ONLY the intended files with explicit paths. Inspect `git diff --cached --stat` and confirm it matches expectations (file list + plausible insertion/deletion counts) BEFORE committing. Re-commit, re-verify via the sentinel (step 2), then push. If the bad commit was already pushed, use `git revert <sha>` (non-destructive history) instead of reset. </HARD-GATE>
-**Diagnostic for future sessions:** if `sync-to-projects.sh` reports "up to date" but `grep` on a known-new string finds 0 hits in the synced copy, suspect alias mismatch. `pwsh -NoProfile -Command "(Get-PSDrive Z).DisplayRoot"` reveals what the Z: drive points to; compare with `basePath` in `sync-config.json`. Also: if `git status` shows `MM` on files you just committed, suspect the read-side divergence described in the second HARD-GATE above — the first `M` means git's index already holds a stale blob, the second `M` means workdir is fresh; act on it before pushing.
+**Diagnostic for future sessions:** if `sync-to-projects.sh` reports "up to date" but `grep` on a known-new string finds 0 hits in the synced copy, suspect alias mismatch. `pwsh -NoProfile -Command "(Get-PSDrive Z).DisplayRoot"` reveals what the Z: drive points to; compare it against the alias form used by the drive mapping and by any script computing canonical paths. Also: if `git status` shows `MM` on files you just committed, suspect the read-side divergence described in the second HARD-GATE above — the first `M` means git's index already holds a stale blob, the second `M` means workdir is fresh; act on it before pushing.
 **Scope:** All Windows workstations using mapped UNC drives + Python/bash scripts that reference UNC paths, all Claude Code `Edit`/`Write` tool invocations, and all `git add`/`git commit` operations on UNC-backed repositories.
 **First seen:** EM-AC-STACK-Assessments Session 2026-04-20 (priorities 4+5 upstream sync — wrote P-ENV-07/09 updates to FQDN path, Z:-visible copies stayed stale until manual `cp` within Z: mount). Write-side HARD-GATE added Session 2026-04-20 #5 after the rule fired twice in 24h via FQDN-defaulting `Edit` tool calls. Read-side HARD-GATE added Session 2026-04-22 after the rule fired four times in one session via silent-revert `git add`/`git commit` sequences (commits `4ca6ad2` and `eb881dc` both captured stale blobs from pending-but-unmentioned files).
 
@@ -142,7 +148,7 @@ Do NOT attempt to shorten filenames to work around this — Moodle-exported file
 ### P-ENV-12 — Pass structured payload bodies via stdin/files, never argv or shell echo
 **Pattern:** On the MSYS2 (Git Bash) → native-exe boundary, JSON and backslash-bearing payloads got corrupted two independent ways: argv-fed JSON lost backslashes to Windows command-line quoting (`check-skill-edit.sh` → `json.loads` Invalid \escape), and `echo`/`printf`-built test payloads were mangled by bash escape handling. File-fed stdin worked first try (2026-07-02).
 **Rule:** When a consumer (hook, script, native exe) must RECEIVE JSON or backslash-bearing content, deliver the body via stdin from a byte-exact file (`cmd < payload.json`), written beforehand (Write tool, heredoc-to-file, or redirection). Never place the body itself in argv and never build it inline with `echo`/`printf` piped to the consumer. Flags, filenames, and short backslash-free literals pass as argv normally; a hook printing its own JSON response to stdout is out of scope (P-ENV-06 governs hooks). (verified 2026-07-02)
-**Scope:** All repos — scripts, hooks, and test harnesses on Windows (both machines).
+**Scope:** All repos — scripts, hooks, and test harnesses on Windows (all machines).
 **First seen:** check-skill-edit.sh payload testing, 2026-07-02. Promoted from LESSONS-INBOX L-2026-07-02-08 (re-targeted from machines/home-desktop.md at review).
 
 ---
@@ -151,14 +157,14 @@ Do NOT attempt to shorten filenames to work around this — Moodle-exported file
 
 ### P-TEST-01 — Behavioural tests gate completion claims
 **Pattern:** Claude repeatedly declared work complete based on static checks alone (frontmatter valid, files exist, grep clean) and missed real bugs — JSON reformatting errors, broken cross-references, unverified paths, regressions in other features. The user had to ask "did you test?" before actual verification happened.
-**Rule:** Before claiming any task "done" or "verified": (1) run behavioural tests, not just static checks; (2) explicitly list what was tested with format "Tested: [X, Y, Z]. Not tested: [A, B] because [reason]"; (3) for JSON/XML files, validate via PowerShell — `pwsh -NoProfile -Command "Get-Content <file> \| ConvertFrom-Json \| Out-Null"` for JSON, `pwsh -NoProfile -Command "[xml](Get-Content <file> -Raw) \| Out-Null"` for XML (non-zero exit = invalid); (4) for visual outputs (diagrams, slides, .docx), view the rendered file before claiming correctness; (5) for multi-file or multi-repo changes, spawn a verification sub-agent to audit coverage before declaring complete. `jq` and `xmllint` are NOT installed here — do not prescribe them.
+**Rule:** Before claiming any task "done" or "verified": (1) run behavioural tests, not just static checks; (2) explicitly list what was tested with format "Tested: [X, Y, Z]. Not tested: [A, B] because [reason]"; (3) for JSON/XML files, validate via Python — `python -c "import json,sys; json.load(open(sys.argv[1],encoding='utf-8-sig'))" <file>` for JSON, `python -c "import sys,xml.etree.ElementTree as ET; ET.parse(sys.argv[1])" <file>` for XML (non-zero exit = invalid; same parser `sync-to-projects.sh --verify` and the validator hook use — do NOT prescribe `pwsh`, absent on some machines, and note Windows PowerShell 5.1's `ConvertFrom-Json` falsely rejects empty JSON keys and tsconfig-style comments); (4) for visual outputs (diagrams, slides, .docx), view the rendered file before claiming correctness; (5) for multi-file or multi-repo changes, spawn a verification sub-agent to audit coverage before declaring complete. `jq` and `xmllint` are NOT installed here — do not prescribe them.
 **Scope:** All sessions, all skills.
 **First seen:** /insights audit, April 2026.
 
 ### P-TEST-02 — vitest green ≠ tsc green: per-task type-check on signature changes
 **Pattern:** Vitest transforms via esbuild and never type-checks, so a task passed its own tests while breaking `tsc -b` (a destructured-but-now-unused parameter under `noUnusedParameters`, TS6133). Deferring types to an end-of-batch build gate ships broken intermediate commits and hides which task caused the red.
 **Rule:** Any task that changes a function/component signature, props type, or export surface runs `npx tsc -b --noEmit` as part of ITS OWN verification — never rely on later tasks' gates to catch it. (verified 2026-07-17)
-**Scope:** All TypeScript + vitest repos, both machines.
+**Scope:** All TypeScript + vitest repos, all machines.
 **First seen:** Eng-Physics-LAB physics-truth-batch Task 4, 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-26.
 
 ### P-TEST-03 — Spine-composition changes verify the FULL shared test tree
@@ -170,19 +176,19 @@ Do NOT attempt to shorten filenames to work around this — Moodle-exported file
 ### P-TEST-04 — Page audits measure the real scroll container and enumerate hidden panes
 **Pattern:** Two silent undercount traps invalidated an automated page audit twice: (1) app-shell layouts scroll inside a container (`#main-content`, h-screen shell) — window scrollHeight equals the viewport and `window.scrollTo` is a no-op, so scroll-mounted content never rendered; (2) default-tab-only passes missed everything in non-default tab panes (9 of 36 prediction gates invisible; "0 gates" reported for a section that had them).
 **Rule:** Before trusting any per-page metric from a scripted audit: identify the actual overflow container and scroll THAT, and iterate every `[role=tab]` pane. (verified 2026-07-17)
-**Scope:** All repos, any page-measurement or UX-audit script, both machines.
+**Scope:** All repos, any page-measurement or UX-audit script, all machines.
 **First seen:** EM-CA-LAB audit Dimension D, 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-22.
 
 ### P-TEST-05 — Playwright console-noise filters must also key on msg.location().url
 **Pattern:** Browser console errors for failed resource loads carry generic text ("Failed to load resource: … 404") with the URL only in `msg.location().url` — a noise allowlist tested against `msg.text()` matched nothing, and a pre-existing `/_vercel/insights` 404 registered as a console-error failure on all 29 routes despite the filter naming that exact path.
 **Rule:** In scripted browser walkthroughs, match noise allowlists against BOTH `msg.text()` and `msg.location().url`. (verified 2026-07-17)
-**Scope:** All repos using scripted browser walkthroughs, both machines.
+**Scope:** All repos using scripted browser walkthroughs, all machines.
 **First seen:** EM-CA-LAB math-prereqs Phase-3 walkthrough, 2026-07-04. Promoted from LESSONS-INBOX L-2026-07-04-30.
 
 ### P-TEST-06 — A behavior fix can falsify nearby prose; sweep descriptions of the old behavior
 **Pattern:** A correct physics/behavior fix made an adjacent explainer factually false ("the simulated value and this formula do not match" — after the fix, they matched) with zero test failures: nothing pins prose, so no gate goes red. Same class hit a test docstring citing a superseded convention.
 **Rule:** When a fix changes a displayed value, formula, or observable behavior in teaching content, grep the surrounding section prose, captions, hints, AND test docstrings for text describing the pre-fix behavior — and make that sweep an explicit step of the fix task (add the prose files to the task's file list), never an afterthought. (verified 2026-07-17)
-**Scope:** All teaching-content repos (EM-CA-LAB, Eng-Physics-LAB, EM-AC-STACK-Assessments, EM-CA-Course), both machines.
+**Scope:** All teaching-content repos (EM-CA-LAB, Eng-Physics-LAB, EM-AC-STACK-Assessments, EM-CA-Course), all machines.
 **First seen:** EM-CA-LAB physics-truth-batch Task 7 (Antennas), 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-25.
 
 ---
@@ -192,7 +198,7 @@ Do NOT attempt to shorten filenames to work around this — Moodle-exported file
 ### P-WRITE-01 — Run stop-slop on all human-facing prose
 **Pattern:** Skills produce prose for human readers (paper sections, messages, student-facing summaries, teaching content, Notion pages, STACK question stems and feedback, handover drafts, reading-list entries, school/parent messages) and ship with AI-tells ("delve", "leverage", "it's worth noting", "crucial", hedge-everywhere patterns, uniform sentence rhythm). stop-slop was integrated into eer-paper-writing and message-coach but missed in other prose-producing skills; even in the integrated ones it ran silently, so skipping it left no signal. Same failure mode as "did you test?" — verification claimed without evidence.
 **Rule:** Before delivering any human-facing prose output, run `stop-slop` with the appropriate cluster profile (academic-human / academic-formal for papers, professional-message / informal-message for messages, or the closest match for other contexts — see stop-slop SKILL.md context-profiles.md for the full tolerance matrix). The pass is **cosmetic only** — must never alter meaning, remove content, add new ideas, weaken a deliberate claim, or override voice rules. After running it, **always surface a one-line signal**: either `[stop-slop: clean]` if nothing was changed, `[stop-slop: N edits applied]` with a short summary if edits were made, or `[stop-slop: N tells left intentionally — <reason>]` if pattern hits were kept on purpose. Never run silently with no signal — that makes the pass unverifiable, which is exactly the /insights friction pattern this rule exists to close.
-**Scope:** All skills producing human-facing text — eer-paper-writing, message-coach, recommended-reading-list, em-ca-textbook-conventions (teaching prose only), stack-xml-generator (question stems + feedback text), wilma-processing. (handover and the notion-* quartet were in scope until archived 2026-07-03 — audit decision #2.) Does NOT apply to internal/machine-facing output (SESSION.md, PATTERNS.md, decisions-log.md, git commit messages, bash scripts, XML/JSON/YAML syntax) — those have their own review patterns.
+**Scope:** All skills producing human-facing text — eer-paper-writing, message-coach, em-ca-textbook-conventions (teaching prose only), stack-xml-generator (question stems + feedback text). (handover and the notion-* quartet were in scope until archived 2026-07-03 — audit decision #2; wilma-processing, bussola-semanal and recommended-reading-list until archived 2026-09-02.) Does NOT apply to internal/machine-facing output (SESSION.md, PATTERNS.md, decisions-log.md, git commit messages, bash scripts, XML/JSON/YAML syntax) — those have their own review patterns.
 **First seen:** Writing-skills audit, 2026-04-16.
 
 ---
@@ -296,19 +302,19 @@ Don't spawn at all when a known path/symbol answers via direct Read/Grep — unl
 ### P-EXEC-13 — Parallel Bash calls share ONE persisted shell cwd
 **Pattern:** A same-turn parallel pair of `git push` calls (one per repo) both ran in the repo the sibling had `cd`'d into first — the second printed "Everything up-to-date", a success-shaped output, while the other repo sat unpushed. Caught only because the push output named the wrong remote URL. Earlier the same session, a relative-path `tail` failed because cwd had moved to the sibling repo.
 **Rule:** The Bash tool's working directory persists across calls and is shared by parallel calls in one batch. Any repo-relative command (git push/status/log, npm test, relative-path reads) starts with its own `cd <absolute repo path> &&` or uses absolute paths throughout. Treat a same-turn parallel batch as ONE shell, not N isolated shells. (verified 2026-07-17)
-**Scope:** All repos, both machines (harness behavior).
+**Scope:** All repos, all machines (harness behavior).
 **First seen:** STACK Phase-3 close, 2026-07-10/11. Promoted from LESSONS-INBOX L-2026-07-11-34.
 
 ### P-EXEC-14 — Preflight a reviewed plan against HEAD before executing it
 **Pattern:** A plan that passed adversarial review at WRITE time still shipped 3 gate-breakers invisible at plan-review altitude: an edit that orphaned a parameter under `noUnusedParameters` (build red), a helper export tripping an error-severity lint rule, and a caveat the fix itself turned factually false. Line drift was zero — the value was gate-interaction hunting, not line re-location.
 **Rule:** Before Task 1 of any reviewed plan, run a bounded read-only preflight against the EXECUTION tree: (a) verify every file:line claim by content, and (b) hunt gate interactions plan review structurally cannot see — compiler flags, lint rules, and prose/comments the change turns false. Budget ONE round; fold only file-verified defects into the plan, then execute without re-litigating. (verified 2026-07-17)
-**Scope:** All repos, any plan-execution session, both machines.
+**Scope:** All repos, any plan-execution session, all machines.
 **First seen:** EM-CA-LAB physics-truth-batch preflight, 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-24.
 
 ### P-EXEC-15 — Patch source files with the Edit tool, never shell-quoted interpreter one-liners
 **Pattern:** A regex patch applied via `py -c` under bash double quotes crossed TWO escaping layers (shell quote + language string literal): `\b` silently became a literal backspace (\x08) inside a committed regex, caught only by eslint's no-control-regex.
 **Rule:** Targeted source edits go through the harness Edit tool (literal text, no quoting layers). If a file genuinely cannot be Edit-matched (invisible characters), use an interpreter SCRIPT that manipulates codepoints explicitly (`chr(8)`), never escape sequences through shell quoting. (verified 2026-07-17)
-**Scope:** All repos, both machines.
+**Scope:** All repos, all machines.
 **First seen:** Eng-Physics-LAB PR9, 2026-07-05. Promoted from LESSONS-INBOX L-2026-07-05-33b.
 
 ---
@@ -318,7 +324,7 @@ Don't spawn at all when a known path/symbol answers via direct Read/Grep — unl
 ### P-PLAN-01 — Revising a plan's content strings requires re-checking its embedded test snippets
 **Pattern:** A plan embedded both content strings AND verbatim test code — two copies of one truth. A review fold-in reworded a content sentence but left the plan's own test regex pinning the OLD wording, shipping an internally contradictory mandate (sentence verbatim-bound, regex unsatisfiable) the executor had to escalate mid-task. Same class: a mandated test MOCK whose accompanying comment described behavior the mock shape cannot produce (a `render: vi.fn()` that never throws, described as "passes raw LaTeX through").
 **Rule:** Any revision to a plan's content string (adversarial fold-in, mid-flight amendment) immediately re-checks the plan's own embedded test snippets and mock comments against the new string, before the plan is handed to an executor. (verified 2026-07-17)
-**Scope:** All repos using verbatim implementation plans (writing-plans style), both machines.
+**Scope:** All repos using verbatim implementation plans (writing-plans style), all machines.
 **First seen:** EM-CA-LAB math-prereqs, 2026-07-04. Promoted from LESSONS-INBOX L-2026-07-04-31.
 
 ---
@@ -328,19 +334,19 @@ Don't spawn at all when a known path/symbol answers via direct Read/Grep — unl
 ### P-AGENT-01 — Workflow-script args can arrive JSON-stringified; missing interpolations become literal "undefined"
 **Pattern:** In a Workflow-tool script, `args` passed as a JSON object reached the script as a STRING (so `args.x` was undefined), and the template literal silently embedded the text "undefined" into subagent prompts — 3 agents critiqued nothing (2 fully blocked). The guard, added afterwards, caught the same class in the next workflow before burning 8 agents.
 **Rule:** Guard every Workflow script: `const A = typeof args === 'string' ? JSON.parse(args) : args` plus an explicit non-empty assertion (throw) before any `agent()` call. Prefer not passing bulky payloads via args at all — inline constants in the script, or have agents Read a scratchpad file against an ID list. (verified 2026-07-17)
-**Scope:** Any session using the Workflow tool, all repos, both machines.
+**Scope:** Any session using the Workflow tool, all repos, all machines.
 **First seen:** EM-CA-LAB audit workflows wf_dbe6910a / wf_ee8bd77e, 2026-07-03. Promoted from LESSONS-INBOX L-2026-07-03-20.
 
 ### P-AGENT-02 — Numeric goldens in agent prompts: instruct recompute-and-verify, never transcribe
 **Pattern:** Two orchestrator-supplied hand-computed goldens were WRONG (soundSpeed(293)=342.91 not 342.94; example k=39.478 vs shipped k=40) and were caught only because the foundation agents recomputed from first principles — a transcribing agent would have pinned falsehoods green.
 **Rule:** When an orchestrator supplies numeric goldens/constants in a subagent prompt, instruct the agent to RECOMPUTE and pin the true value, flagging any mismatch — never to transcribe the prompt's number into a test. (verified 2026-07-17)
-**Scope:** All multi-agent runs, all repos, both machines.
+**Scope:** All multi-agent runs, all repos, all machines.
 **First seen:** Eng-Physics-LAB M3 run, 2026-07-15/16. Promoted from LESSONS-INBOX L-2026-07-16-42.
 
 ### P-AGENT-03 — Parallel foundation agents diverge on shared seams; reconcile BEFORE the consumer builds
 **Pattern:** Two parallel agents authored coupled artifacts from one spec (a physics layer and a content layer meeting at a numeric-problem shape) and made different reasonable interpretations of the seam (z·e/eV vs macroscopic µC/J). Where the orchestrator diffed the reports and issued a binding ruling in the consumer's prompt, the build shipped clean; where it did not (a two-battery challenge vs a single-battery builder), the mismatch reached review as a fix-first blocker.
 **Rule:** After parallel agents author coupled artifacts, the orchestrator diffs their reports for shared-seam divergences and issues an explicit BINDING reconciliation in the consumer agent's prompt — never let the consumer discover and improvise mid-build. (verified 2026-07-17)
-**Scope:** Any multi-agent build workflow, all repos, both machines.
+**Scope:** Any multi-agent build workflow, all repos, all machines.
 **First seen:** EM-CA-LAB M1 PR15 / PR17, 2026-07-11. Promoted from LESSONS-INBOX L-2026-07-13-37.
 
 ### P-AGENT-04 — Subagent model tier must be EXPLICIT on every spawn; omission inherits the session model

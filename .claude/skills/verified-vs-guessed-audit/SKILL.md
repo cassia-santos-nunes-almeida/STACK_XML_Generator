@@ -29,23 +29,18 @@ inherit the credibility of the verified ones. Splitting them apart is
 the only honest way to surface the doubt.
 
 See also: `citation-verification` (checks external citations against
-databases) and `verify` (end-to-end behavioural check of code before
-declaring it done). This skill complements both — it audits Claude's
-own claims, not external sources or code behaviour.
+databases) and `self-verify` (end-to-end check of Claude's own work
+before returning control). This skill complements both — it audits
+Claude's own claims, not external sources or code behaviour.
 
 ## When to use
 
-Trigger on any of:
-
-- "how much did you guess"
-- "mark verified vs guessed"
-- "what did you actually check"
-- "audit this for verification"
-- "rewrite keeping only what you verified"
-- "which parts are real"
-- "verified-only rewrite"
-- equivalents in Portuguese ("o que você realmente checou", "marca o
-  que é verificado e o que é chute")
+Trigger on "how much did you guess", "mark verified vs guessed",
+"what did you actually check", "audit this for verification",
+"rewrite keeping only what you verified", "which parts are real",
+"verified-only rewrite", the Portuguese equivalents ("o que você
+realmente checou", "marca o que é verificado e o que é chute"), or
+anything equivalent.
 
 Also self-trigger when the user is about to act on a research output,
 citation set, or technical claim where a hallucinated detail would be
@@ -64,10 +59,8 @@ evidence for it, in THIS session:
 - `ls`, `find`, `Glob` → file-existence claims are verified
 - `grep`, `Grep` → presence/absence claims are verified
 - Ran a test, script, or build → execution-result claims are verified
-- `WebFetch`, `mcp__*` data tools → URL-content and database claims
-  are verified
-- An MCP tool returned the data → claims grounded in that data are
-  verified
+- `WebFetch` and MCP data tools (`mcp__*`) → URL-content and database
+  claims are verified, for what the call actually returned
 
 A claim is **guessed** if any of the following apply:
 
@@ -80,10 +73,21 @@ A claim is **guessed** if any of the following apply:
   "might", "in most cases"
 - Stated with confidence but never tool-checked — confidence is not
   evidence
+- Supported only by a search result's title or snippet (`WebSearch`,
+  or an MCP search returning metadata rather than content). A search
+  locates a source; it does not verify what the source says. Fetch
+  it, or mark the claim guessed.
 
 A claim is **user-asserted** if the user supplied it earlier in the
 conversation and Claude did not independently verify it. Tag it
 `[USER]`, not `[VERIFIED]`. The user vouches for it; Claude does not.
+
+"THIS session" includes agents this session delegated to — subagents,
+forks, workflow steps. A delegated finding is `[VERIFIED]` only if
+that agent's report named the tool call and the evidence behind it;
+say which agent. An agent's conclusion with no tool named is
+`[GUESSED]` — "the agent said so" is not evidence, and a delegated
+audit inherits this same bar.
 
 When in doubt, mark guessed. The cost of a wrong `[VERIFIED]` label
 is much higher than the cost of a wrong `[GUESSED]` label, because
@@ -98,6 +102,12 @@ Produce exactly two sections.
 Reproduce the prior response. Add `[VERIFIED]`, `[GUESSED]`, or
 `[USER]` inline before each substantive claim. Metadiscourse
 (transitions, hedges, "next I will…") needs no tag.
+
+If the prior response is too long to reproduce whole, quote every
+claim-bearing sentence verbatim and elide only the connective text,
+marking each elision "[…]". Never elide a sentence you are unsure
+about — when in doubt it carries a claim, so keep it. Section 1 must
+still let the user challenge any single marking.
 
 Example:
 
@@ -114,6 +124,13 @@ Rewrite the response keeping only the `[VERIFIED]` and `[USER]`
 claims. Drop everything tagged `[GUESSED]`. End the section with a
 short **Dropped** list — one line per removed claim, naming the
 claim and why it failed the verified bar.
+
+After both sections are shown, you may offer to close the loop: name
+the tool call that would settle each dropped claim and ask whether to
+run them. Offer, never auto-run, and never edit the Dropped list in
+place — if the user accepts, the results go into a fresh audit. The
+gap this audit surfaced is the deliverable; it has to survive being
+fixed.
 
 Edge variations:
 
@@ -197,9 +214,12 @@ claims, see `references/marking-examples.md`.
   against academic databases. Use first when the question is "are
   these citations real?". Use this skill when the question is "of
   everything I just said, what did I actually check?".
-- `verify` — end-to-end behavioural verification of code before
-  declaring a feature done. Operates on running software. This skill
-  operates on prose and claims.
+- `self-verify` — end-to-end check of Claude's own work against the
+  task requirements before returning control; its second phase asks
+  the same question this skill asks. The difference is the output:
+  it gates a handover, this skill marks claim provenance and emits a
+  verified-only rewrite with a Dropped list. Running code settles
+  behaviour; an unexecuted code claim is verified-as-written at best.
 - `stop-slop` — detects AI-pattern prose (overuse of "crucial",
   "delve", etc.). This skill detects guessed claims. Both can run
   on the same draft; they address different problems.

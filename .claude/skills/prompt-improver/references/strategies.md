@@ -124,18 +124,16 @@ test that catches this."
 
 ## How to use this rubric in the prompt-improver flow
 
-When filling Section 1 (Shortcomings) of the prompt-improver output:
+Run all four strategies against the draft. Two hard rules on the
+result:
 
-1. Read the draft.
-2. For each strategy, ask: does the draft satisfy this strategy, or
-   is there a gap?
-3. For each gap, write one bullet quoting the relevant phrase or
-   omission and naming which strategy applies.
-4. If a strategy clearly does not apply (e.g. Symptom on a feature
-   prompt with no bug), say so explicitly — do not invent a
-   shortcoming.
+- **One bullet per real gap**, quoting the phrase or naming the
+  omission, and naming the strategy it fails.
+- **A strategy that does not apply is stated, not filled** (e.g.
+  Symptom on a feature prompt with no bug) — never invent a
+  shortcoming to complete the set.
 
-Then in Section 2 (Improved prompt), apply each strategy's fix:
-narrow the scope, name the sources, point to a reference example,
-describe the symptom. The improved prompt should pass all four
-strategy checks (or have a documented reason for skipping one).
+Section 2 then applies each strategy's fix: narrow the scope, name
+the sources, point to a reference example, describe the symptom. The
+improved prompt must pass all four checks, or carry a documented
+reason for skipping one.

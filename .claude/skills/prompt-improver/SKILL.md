@@ -5,7 +5,9 @@ description: >
   wants it stress-tested before sending. Triggers on "help me improve
   this prompt", "make this prompt better", "is this prompt clear
   enough", "before I send this, can you tighten it", "review my
-  prompt", "stress-test this prompt", and any time the user shares a
+  prompt", "stress-test this prompt", the Portuguese equivalents
+  ("revisa esse prompt", "melhora esse prompt antes de eu mandar"),
+  and any time the user shares a
   draft they intend to paste into a fresh session or send to a
   subagent. High value when briefing an autonomous task, drafting a
   feature spec, preparing a code-review request, or writing the prompt
@@ -31,22 +33,18 @@ that output. A 30-second critique pass before sending catches the
 vague asks, missing files, and unstated success criteria that would
 otherwise surface only after the work is half-done.
 
-See also: `clarify-before-coding` (different problem — Claude is
-ambiguous about its own task and needs to ask the user; this skill
-audits a draft the user wrote) and `interview-first-spec` (heavier,
-produces a SPEC.md file).
+Boundary in one line: this skill audits a draft the *user* wrote for
+*another* session. When it is Claude's *current* task that is
+ambiguous, that is a different problem — see "Boundary vs related
+skills" at the end.
 
 ## When to use
 
-Trigger on any of:
-
-- "help me improve this prompt"
-- "make this prompt better"
-- "is this prompt clear enough"
-- "before I send this, can you tighten it"
-- "review my prompt", "stress-test this prompt"
-- equivalents in Portuguese ("revisa esse prompt", "melhora esse
-  prompt antes de eu mandar")
+Trigger on "help me improve this prompt", "make this prompt better",
+"is this prompt clear enough", "before I send this, can you tighten
+it", "review my prompt", "stress-test this prompt", or the Portuguese
+equivalents ("revisa esse prompt", "melhora esse prompt antes de eu
+mandar").
 
 Also self-trigger when the user shares a multi-line draft and says
 they are about to paste it into another session, a subagent task, or
@@ -58,7 +56,11 @@ mid-execution.
 ## How to invoke
 
 The user must provide two things. If either is missing, ask before
-critiquing:
+critiquing — in Claude Code, `AskUserQuestion` with concrete options
+beats open prose, and both gaps go in ONE call. Batches can come back
+with an item silently unanswered: diff answers against questions per
+question, re-ask a miss once, then treat it as deferred (never as
+approval) and proceed under "User did not provide goal context".
 
 1. **The draft prompt** — exactly as they plan to send it.
 2. **Goal or context** — what outcome they want, and where the prompt
@@ -67,9 +69,10 @@ critiquing:
    draft serves the goal.
 
 If the user says "just improve it, you'll figure out the goal", push
-back once. The single most common failure of prompt improvement is
-assuming the wrong goal and producing a polished prompt that solves
-the wrong problem.
+back once — assuming the wrong goal and producing a polished prompt
+that solves the wrong problem is this skill's most expensive failure.
+If they hold, do not stall: proceed under "User did not provide goal
+context" below, which covers a refusal too and sets the terms.
 
 ## Output contract
 
@@ -125,6 +128,29 @@ A short bulleted list of what was added or assumed:
 
 If nothing was assumed, write "No assumptions made." Do not pad.
 
+## Optional — the cold-read test (Claude Code only)
+
+Section 2 claims the improved prompt is self-contained, and this
+session is the one reader who cannot check that: it already knows
+what the prompt leaves out. When the stakes justify a spawn, offer
+one test — never run it unprompted:
+
+> Want me to cold-read it? I'll hand the improved prompt to a
+> fresh-context subagent and report what it thinks it's being asked.
+
+If accepted, spawn ONE subagent — pass the model tier explicitly, one
+below the session (P-AGENT-04) — whose whole prompt is the Section 2
+block plus: **do not do the work; restate the task in your own words,
+list every file or fact you would have to ask for before starting,
+name anything ambiguous; under 200 words.**
+
+Read the result asymmetrically: whatever it asks for is a real gap,
+but a clean read proves little — a subagent still inherits this
+machine's CLAUDE.md and memory, so it resolves references that a
+fresh window, Cowork or claude.ai would not.
+
+On claude.ai there is no subagent — skip this section.
+
 ## Edge cases
 
 ### Draft is already excellent
@@ -142,8 +168,11 @@ honest review.
 
 If the draft bundles two or more goals (e.g. "refactor auth AND add
 2FA") and the user only stated one goal: stop, disambiguate, and
-ask which goal takes priority before revising. A prompt that tries to
-do two things at once is usually a worse prompt, not a better one.
+ask which goal takes priority before revising — in Claude Code the
+bundled goals ARE the options, so offer them directly via
+`AskUserQuestion` ("refactor auth" / "add 2FA" / "split into two
+prompts"). A prompt that tries to do two things at once is usually a
+worse prompt, not a better one.
 
 ### User did not provide goal context
 
@@ -172,20 +201,22 @@ that the improvement may serve the wrong target.
 
 ## Boundary vs related skills
 
-- `clarify-before-coding` — Claude asks the *user* clarifying
-  questions when the user's *current* task is ambiguous. This skill
-  audits a *draft prompt* the user wrote for *another* session.
-- `interview-first-spec` — heavier flow that produces a `SPEC.md`
-  file via `AskUserQuestion`. Use that when the prompt describes a
-  whole feature; use this skill when the prompt is for a single,
-  scoped task.
-- `deep-goal-analysis` — analyses whether a *goal* itself is sound.
-  This skill assumes the goal is fixed and improves the prompt
-  serving it. If the user is unsure of the goal, run
-  `deep-goal-analysis` first.
-- `stop-slop` / `voice-rewrite` — prose-style passes on draft
-  *content*. This skill targets prompt structure and completeness,
-  not prose style.
-
-For the four rich-context-prompt strategies with before/after
-examples, see `references/strategies.md`.
+- **Claude's own current task is ambiguous** (not the user's draft) —
+  ask, don't run this skill. In Claude Code, plan mode and
+  `AskUserQuestion` already own that case.
+- **The draft describes a whole feature, not a scoped task** — the
+  fix is a spec, not a tighter prompt. Settle the spec first, then
+  improve the prompt that executes it.
+- **The goal itself may be wrong** — this skill assumes the goal is
+  fixed and improves the prompt serving it. If the user is unsure of
+  the goal, settle the goal before revising: a polished prompt aimed
+  at the wrong target is the most expensive failure here.
+- `message-coach` / `stop-slop` — prose passes on draft *content*,
+  and note the **opposite contract**: message-coach preserves meaning
+  and content exactly and only adjusts tone, while this skill ADDS
+  what the draft is missing (paths, criteria, constraints). If the
+  user wants their own words kept intact, they want message-coach.
+- Prompts *Claude* writes for its own subagents follow a different
+  contract — self-contained: goal / background / concrete task /
+  output format + length cap. (Full rule: P-EXEC-12 in the
+  `my-claude-skills` repo's `patterns/shared-patterns.md`.)

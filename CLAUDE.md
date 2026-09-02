@@ -61,9 +61,11 @@ edit sources there, never the copies here). Key ones for this repo:
 
 ## Session Boundary Protocol
 
-At **session end**, run context_evaluator close protocol: write SESSION.md, capture patterns.
+At **session end**, invoke **close-session** — it owns close and delegates the
+SESSION.md / pattern writes to context_evaluator (`context_evaluator/SKILL.md:12-15`).
 
-At **session start**, context_evaluator loads local files automatically.
+At **session start**, invoke context_evaluator ("open session") to read the
+Reference-table files — nothing loads them automatically.
 
 ## Task Decomposition
 
@@ -84,5 +86,5 @@ Before returning any output:
 ## JSXGraph Conventions
 
 - Generator presets documented in `docs/jsxgraph-conventions.md` (generator implementation focus)
-- STACK authoring conventions in EM-AC-STACK-Assessments repo at `.claude/skills/stack-xml-generator/references/jsxgraph-conventions.md`
+- STACK authoring conventions synced HERE: `.claude/skills/stack-xml-generator/references/jsxgraph-conventions.md` (byte-identical copy in EM-AC-STACK-Assessments)
 - The two files have different scopes — read the §0 header in each to understand which to consult
